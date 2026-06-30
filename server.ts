@@ -2551,9 +2551,7 @@ User voice transcript: "${transcript}"`;
           inputs: [speakText],
           target_language_code: targetLangCode,
           speaker: "priya",
-          pitch: 0,
           pace: 0.85,
-          loudness: 1.5,
           speech_sample_rate: 8000,
           enable_preprocessing: true,
           model: "bulbul:v3"
