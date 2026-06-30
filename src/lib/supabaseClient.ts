@@ -606,33 +606,30 @@ class FullStackClient {
 
     if (user.id === 'user-default' || !auth.currentUser) {
       this.localRequests.push(payload);
-      if (request.itemType === 'volunteer_support' || request.itemType === 'grievance') {
-        await this.createVolunteerCase({
-          requestId: payload.id,
-          citizenName: payload.citizenName,
-          primaryLanguage: user.selectedLanguage,
-          category: request.itemType === 'grievance' ? 'legal_aid' : 'scheme_help',
-          priority: request.itemType === 'grievance' ? 'high' : 'medium',
-          notes: `Citizen requested urgent hands-on assistance regarding: "${request.itemName}"`
-        });
-      }
+      // Auto-create volunteer case for all requests/applications
+      await this.createVolunteerCase({
+        requestId: payload.id,
+        citizenName: payload.citizenName || user.name || 'Citizen',
+        primaryLanguage: user.selectedLanguage,
+        category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',
+        priority: request.itemType === 'grievance' ? 'high' : 'medium',
+        notes: `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
+      });
       return payload;
     }
 
     try {
       await setDoc(doc(db, 'requests', requestId), payload);
 
-      // Auto-create volunteer case if it is a volunteer request or if urgent safety
-      if (request.itemType === 'volunteer_support' || request.itemType === 'grievance') {
-        await this.createVolunteerCase({
-          requestId: payload.id,
-          citizenName: payload.citizenName,
-          primaryLanguage: user.selectedLanguage,
-          category: request.itemType === 'grievance' ? 'legal_aid' : 'scheme_help',
-          priority: request.itemType === 'grievance' ? 'high' : 'medium',
-          notes: `Citizen requested urgent hands-on assistance regarding: "${request.itemName}"`
-        });
-      }
+      // Auto-create volunteer case for all requests/applications
+      await this.createVolunteerCase({
+        requestId: payload.id,
+        citizenName: payload.citizenName || user.name || 'Citizen',
+        primaryLanguage: user.selectedLanguage,
+        category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',
+        priority: request.itemType === 'grievance' ? 'high' : 'medium',
+        notes: `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
+      });
       return payload;
     } catch (e) {
       handleFirestoreError(e, OperationType.CREATE, `requests/${requestId}`);
