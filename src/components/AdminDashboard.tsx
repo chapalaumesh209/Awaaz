@@ -183,7 +183,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Telangana Weaver toolkit grant"
+                      placeholder="e.g. Central India Weaver toolkit grant"
                       className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     />
                   </div>

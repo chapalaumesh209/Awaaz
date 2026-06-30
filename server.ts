@@ -1002,8 +1002,8 @@ app.post('/api/ai/form-filling-assistant', async (req, res) => {
   const occupation = profile?.occupation || "Artisan";
   const income = profile?.householdIncome || 85000;
   const category = profile?.category || "OBC";
-  const state = profile?.state || "Telangana";
-  const location = profile?.location || "Moinabad";
+  const state = profile?.state || "Delhi";
+  const location = profile?.location || "New Delhi";
 
   // Check document availability
   const uploadedTypes = documents ? documents.map((d: any) => d.type) : [];
@@ -2425,8 +2425,8 @@ User voice transcript: "${transcript}"`;
         patch.gender = "Male";
       }
     } else if (current_q === 4 && transcript.trim()) {
-      patch.state = "Telangana";
-      patch.district = transcript.replace(/telangana|district|రాష్ట్రం|జిల్లా|राज्य/gi, "").trim() || "Hyderabad";
+      patch.state = "Delhi";
+      patch.district = transcript.replace(/telangana|delhi|district|రాష్ట్రం|జिलासమీపంలో|राज्य/gi, "").trim() || "New Delhi";
     } else if (current_q === 5 && transcript.trim()) {
       patch.occupation = transcript;
     } else if (current_q === 6 && transcript.trim()) {
@@ -2473,8 +2473,8 @@ User voice transcript: "${transcript}"`;
           .replace("{name}", p.full_name || patch.full_name || "Lakshmi")
           .replace("{age}", String(p.age || patch.age || 32))
           .replace("{gender}", p.gender || patch.gender || "Female")
-          .replace("{district}", p.district || patch.district || "Hyderabad")
-          .replace("{state}", p.state || patch.state || "Telangana")
+          .replace("{district}", p.district || patch.district || "New Delhi")
+          .replace("{state}", p.state || patch.state || "Delhi")
           .replace("{occupation}", p.occupation || patch.occupation || "Domestic worker")
           .replace("{income}", String(p.monthly_income || patch.monthly_income || 10000));
         actionStr = "confirm_form";

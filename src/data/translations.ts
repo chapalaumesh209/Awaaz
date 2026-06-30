@@ -83,7 +83,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     appInfoDesc: "AWAAZ आवाज is a secure, offline-first citizen assistance platform designed to build trust and empower communities with frictionless local access.",
     systemFeaturesTitle: "Core System Features",
     feature1Title: "AI Entitlements Screening",
-    feature1Desc: "Diagnose eligibility across 12+ premium central/state welfare schemes instantly via voice in local dialects.",
+    feature1Desc: "Diagnose eligibility across 10+ premium Central Government of India welfare schemes instantly via voice in local dialects.",
     feature2Title: "Paperless Documents Cabinet",
     feature2Desc: "Interactive OCR engine extracts, verifies, and stores Aadhaar, Ration, and income credentials safely.",
     feature3Title: "Stateless Identity Wallet & Legal Affidavits",

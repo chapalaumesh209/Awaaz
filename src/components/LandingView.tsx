@@ -337,7 +337,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     <span className="text-xs font-mono font-bold text-gray-300">01</span>
                   </div>
                   <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature1Title', 'AI Entitlements Screening')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature1Desc', 'Diagnose eligibility across 12+ premium central/state welfare schemes instantly via voice in local dialects.')}</p>
+                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature1Desc', 'Diagnose eligibility across 10+ premium Central Government of India welfare schemes instantly via voice in local dialects.')}</p>
                 </div>
               </div>
 
