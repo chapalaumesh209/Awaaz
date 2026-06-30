@@ -771,226 +771,227 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     setTimeout(() => handleVoiceAgentTurn(null, ''), 100);
   };
 
-  const canRecord = voiceState === 'ready_to_listen' || voiceState === 'idle' || voiceState === 'error_voice_failed' || voiceState === 'asking_clarification';
-  const suggestions = SUGGESTED_RESPONSES[selectedLanguage]?.[currentQuestionNumber] || SUGGESTED_RESPONSES["English"]?.[currentQuestionNumber] || [];
-  const stateLabel = VOICE_STATE_LABELS[voiceState];
-  const stateBadgeColor = VOICE_STATE_COLORS[voiceState];
+  try {
+    const canRecord = voiceState === 'ready_to_listen' || voiceState === 'idle' || voiceState === 'error_voice_failed' || voiceState === 'asking_clarification';
+    const suggestions = SUGGESTED_RESPONSES[selectedLanguage]?.[currentQuestionNumber] || SUGGESTED_RESPONSES["English"]?.[currentQuestionNumber] || [];
+    const stateLabel = VOICE_STATE_LABELS[voiceState];
+    const stateBadgeColor = VOICE_STATE_COLORS[voiceState];
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-teal-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="voice-assistant-modal">
-      <div className="bg-[#FDFBF7] text-[#1A2E2A] w-full max-w-4xl rounded-[32px] border border-teal-800 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
-        
-        <div className="flex-1 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-teal-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="voice-assistant-modal">
+        <div className="bg-[#FDFBF7] text-[#1A2E2A] w-full max-w-4xl rounded-[32px] border border-teal-800 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
           
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="bg-teal-900 p-2.5 rounded-2xl text-teal-300">
-                <Bot className="h-5 w-5 animate-bounce" />
-              </div>
-              <div>
-                <h4 className="font-serif text-lg font-bold text-teal-900">AWAAZ Voice Assistant</h4>
-                <p className="text-[10px] text-gray-400 font-mono">12 LANGUAGES • SARVAM AI VOICE</p>
-              </div>
-            </div>
-            <button 
-              onClick={onClose}
-              className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-teal-900 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="my-6 flex-1 flex flex-col justify-center space-y-4">
-            <div className="bg-teal-50/50 border border-teal-100 rounded-3xl p-6 relative">
-              <span className={`absolute -top-2.5 left-6 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${stateBadgeColor}`}>
-                {stateLabel}
-              </span>
-              
-              <p className="font-serif text-xl md:text-2xl font-bold leading-relaxed text-teal-950 italic">
-                "{displayText || "Loading your helper assistant..."}"
-              </p>
-
-              {voiceState === 'error_microphone_denied' && (
-                <div className="mt-3 flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2">
-                  <MicOff className="h-4 w-4 text-red-600 shrink-0" />
-                  <p className="text-xs text-red-700 font-semibold">Microphone permission is needed for voice help. Please allow mic access in your browser.</p>
-                </div>
-              )}
-
-              <div className="mt-4 flex items-center space-x-2">
-                <button
-                  id="voice-speak-question-button"
-                  onClick={speakAgain}
-                  disabled={!displayText || isLoading}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold text-teal-800 transition-colors disabled:opacity-40"
-                >
-                  <Volume2 className={`h-4 w-4 ${isSynthesizing ? 'text-teal-600 animate-pulse' : 'text-teal-800'}`} />
-                  <span>{isSynthesizing ? 'Speaking...' : 'Speak Question'}</span>
-                </button>
-
-                {voiceState === 'asking_clarification' && (
-                  <span className="text-xs text-orange-700 font-semibold bg-orange-50 border border-orange-200 px-2 py-1 rounded-xl">
-                    Please speak again clearly
-                  </span>
-                )}
-
-                {voiceState === 'form_complete' && (
-                  <span className="flex items-center space-x-1 text-xs text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-xl">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Form Complete!</span>
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <select
-                  id="voice-language-dropdown"
-                  value={selectedLanguage}
-                  onChange={(e) => {
-                    const newLang = e.target.value;
-                    setSelectedLanguage(newLang);
-                    setTimeout(() => handleVoiceAgentTurn(null, '', newLang), 100);
-                  }}
-                  className="bg-white border border-gray-200 rounded-2xl px-3 py-2 text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                >
-                  {LANGUAGES.map(lang => (
-                    <option key={lang.code} value={lang.code}>{lang.label}</option>
-                  ))}
-                </select>
-
-                <input
-                  id="voice-input-text"
-                  type="text"
-                  value={userInputText}
-                  onChange={(e) => setUserInputText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && userInputText.trim()) {
-                      handleVoiceAgentTurn(null, userInputText);
-                    }
-                  }}
-                  placeholder="Spoken transcript will appear here..."
-                  className="flex-1 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 text-xs text-teal-950 font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
-                />
-
-                <button
-                  id="voice-submit-text-button"
-                  type="button"
-                  onClick={() => handleVoiceAgentTurn(null)}
-                  disabled={isLoading || !userInputText.trim()}
-                  className="bg-teal-700 hover:bg-teal-800 text-white p-3 rounded-2xl flex items-center justify-center shadow-md transition-all active:scale-95 disabled:opacity-50"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <button
-                  id="voice-recording-button"
-                  onClick={startRealRecording}
-                  disabled={isLoading || (!canRecord && !isRecording)}
-                  className={`w-full py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs font-bold transition-all shadow-md active:scale-95 ${
-                    isRecording
-                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
-                      : voiceState === 'error_microphone_denied'
-                        ? 'bg-red-100 text-red-700 border border-red-300 cursor-not-allowed'
-                        : canRecord
-                          ? 'bg-teal-900 hover:bg-teal-950 text-white'
-                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {isLoading ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>
-                        {voiceState === 'transcribing' ? 'Transcribing...' :
-                         voiceState === 'understanding' ? 'Understanding...' :
-                         voiceState === 'processing_audio' ? 'Processing audio...' :
-                         'Loading...'}
-                      </span>
-                    </>
-                  ) : isRecording ? (
-                    <>
-                      <StopCircle className="h-4 w-4 fill-white" />
-                      <span>Recording... Tap to Finish</span>
-                    </>
-                  ) : voiceState === 'error_microphone_denied' ? (
-                    <>
-                      <MicOff className="h-4 w-4" />
-                      <span>Microphone Access Denied</span>
-                    </>
-                  ) : voiceState === 'assistant_speaking' ? (
-                    <>
-                      <Volume2 className="h-4 w-4 text-teal-300 animate-pulse" />
-                      <span>Assistant Speaking...</span>
-                    </>
-                  ) : canRecord ? (
-                    <>
-                      <Mic className="h-4 w-4 text-teal-300" />
-                      <span>Tap to Speak (Voice Input)</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4" />
-                      <span>Please Wait...</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {(isRecording || isSynthesizing) && (
-                <div className="flex items-center justify-center space-x-1.5 py-2">
-                  <span className="w-1.5 h-6 bg-teal-600 rounded-full animate-bounce delay-75"></span>
-                  <span className="w-1.5 h-10 bg-teal-700 rounded-full animate-bounce delay-150"></span>
-                  <span className="w-1.5 h-8 bg-teal-800 rounded-full animate-bounce delay-300"></span>
-                  <span className="w-1.5 h-12 bg-teal-900 rounded-full animate-bounce delay-75"></span>
-                  <span className="w-1.5 h-5 bg-teal-700 rounded-full animate-bounce delay-200"></span>
-                </div>
-              )}
-            </div>
-
-            {suggestions.length > 0 && voiceState !== 'form_complete' && (
-              <div className="space-y-1.5 mt-2 bg-gray-50 border border-gray-100 p-3 rounded-2xl">
-                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider">
-                  Demo answers — tap to simulate speaking ({selectedLanguage}):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {suggestions.map((sug, sIdx) => (
-                    <button
-                      id={`voice-suggestion-btn-${sIdx}`}
-                      key={sIdx}
-                      onClick={() => {
-                        setUserInputText(sug);
-                        handleVoiceAgentTurn(null, sug);
-                      }}
-                      disabled={isLoading || isSynthesizing}
-                      className="px-2.5 py-1.5 bg-white hover:bg-teal-50 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-700 hover:text-teal-900 transition-all text-left truncate max-w-xs disabled:opacity-50"
-                    >
-                      🗣️ "{sug}"
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
-            <button
-              id="voice-reset-assistant-button"
-              onClick={handleRestart}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-100 transition-colors"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Reset Assistant</span>
-            </button>
+          <div className="flex-1 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
             
-            <div className="text-[10px] text-gray-400 font-mono">
-              {voiceState.toUpperCase()} • Q: {currentQuestionNumber}/8
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="bg-teal-900 p-2.5 rounded-2xl text-teal-300">
+                  <Bot className="h-5 w-5 animate-bounce" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-lg font-bold text-teal-900">AWAAZ Voice Assistant</h4>
+                  <p className="text-[10px] text-gray-400 font-mono">12 LANGUAGES • SARVAM AI VOICE</p>
+                </div>
+              </div>
+              <button 
+                onClick={onClose}
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-teal-900 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          </div>
 
-        </div>
+            <div className="my-6 flex-1 flex flex-col justify-center space-y-4">
+              <div className="bg-teal-50/50 border border-teal-100 rounded-3xl p-6 relative">
+                <span className={`absolute -top-2.5 left-6 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${stateBadgeColor}`}>
+                  {stateLabel}
+                </span>
+                
+                <p className="font-serif text-xl md:text-2xl font-bold leading-relaxed text-teal-950 italic">
+                  "{displayText || "Loading your helper assistant..."}"
+                </p>
+
+                {voiceState === 'error_microphone_denied' && (
+                  <div className="mt-3 flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2">
+                    <MicOff className="h-4 w-4 text-red-600 shrink-0" />
+                    <p className="text-xs text-red-700 font-semibold">Microphone permission is needed for voice help. Please allow mic access in your browser.</p>
+                  </div>
+                )}
+
+                <div className="mt-4 flex items-center space-x-2">
+                  <button
+                    id="voice-speak-question-button"
+                    onClick={speakAgain}
+                    disabled={!displayText || isLoading}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold text-teal-800 transition-colors disabled:opacity-40"
+                  >
+                    <Volume2 className={`h-4 w-4 ${isSynthesizing ? 'text-teal-600 animate-pulse' : 'text-teal-800'}`} />
+                    <span>{isSynthesizing ? 'Speaking...' : 'Speak Question'}</span>
+                  </button>
+
+                  {voiceState === 'asking_clarification' && (
+                    <span className="text-xs text-orange-700 font-semibold bg-orange-50 border border-orange-200 px-2 py-1 rounded-xl">
+                      Please speak again clearly
+                    </span>
+                  )}
+
+                  {voiceState === 'form_complete' && (
+                    <span className="flex items-center space-x-1 text-xs text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-xl">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      <span>Form Complete!</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <select
+                    id="voice-language-dropdown"
+                    value={selectedLanguage}
+                    onChange={(e) => {
+                      const newLang = e.target.value;
+                      setSelectedLanguage(newLang);
+                      setTimeout(() => handleVoiceAgentTurn(null, '', newLang), 100);
+                    }}
+                    className="bg-white border border-gray-200 rounded-2xl px-3 py-2 text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  >
+                    {LANGUAGES.map(lang => (
+                      <option key={lang.code} value={lang.code}>{lang.label}</option>
+                    ))}
+                  </select>
+
+                  <input
+                    id="voice-input-text"
+                    type="text"
+                    value={userInputText}
+                    onChange={(e) => setUserInputText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && userInputText.trim()) {
+                        handleVoiceAgentTurn(null, userInputText);
+                      }
+                    }}
+                    placeholder="Spoken transcript will appear here..."
+                    className="flex-1 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 text-xs text-teal-950 font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                  />
+
+                  <button
+                    id="voice-submit-text-button"
+                    type="button"
+                    onClick={() => handleVoiceAgentTurn(null)}
+                    disabled={isLoading || !userInputText.trim()}
+                    className="bg-teal-700 hover:bg-teal-800 text-white p-3 rounded-2xl flex items-center justify-center shadow-md transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <button
+                    id="voice-recording-button"
+                    onClick={startRealRecording}
+                    disabled={isLoading || (!canRecord && !isRecording)}
+                    className={`w-full py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs font-bold transition-all shadow-md active:scale-95 ${
+                      isRecording
+                        ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                        : voiceState === 'error_microphone_denied'
+                          ? 'bg-red-100 text-red-700 border border-red-300 cursor-not-allowed'
+                          : canRecord
+                            ? 'bg-teal-900 hover:bg-teal-950 text-white'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>
+                          {voiceState === 'transcribing' ? 'Transcribing...' :
+                           voiceState === 'understanding' ? 'Understanding...' :
+                           voiceState === 'processing_audio' ? 'Processing audio...' :
+                           'Loading...'}
+                        </span>
+                      </>
+                    ) : isRecording ? (
+                      <>
+                        <StopCircle className="h-4 w-4 fill-white" />
+                        <span>Recording... Tap to Finish</span>
+                      </>
+                    ) : voiceState === 'error_microphone_denied' ? (
+                      <>
+                        <MicOff className="h-4 w-4" />
+                        <span>Microphone Access Denied</span>
+                      </>
+                    ) : voiceState === 'assistant_speaking' ? (
+                      <>
+                        <Volume2 className="h-4 w-4 text-teal-300 animate-pulse" />
+                        <span>Assistant Speaking...</span>
+                      </>
+                    ) : canRecord ? (
+                      <>
+                        <Mic className="h-4 w-4 text-teal-300" />
+                        <span>Tap to Speak (Voice Input)</span>
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4" />
+                        <span>Please Wait...</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {(isRecording || isSynthesizing) && (
+                  <div className="flex items-center justify-center space-x-1.5 py-2">
+                    <span className="w-1.5 h-6 bg-teal-600 rounded-full animate-bounce delay-75"></span>
+                    <span className="w-1.5 h-10 bg-teal-700 rounded-full animate-bounce delay-150"></span>
+                    <span className="w-1.5 h-8 bg-teal-800 rounded-full animate-bounce delay-300"></span>
+                    <span className="w-1.5 h-12 bg-teal-900 rounded-full animate-bounce delay-75"></span>
+                    <span className="w-1.5 h-5 bg-teal-700 rounded-full animate-bounce delay-200"></span>
+                  </div>
+                )}
+              </div>
+
+              {suggestions.length > 0 && voiceState !== 'form_complete' && (
+                <div className="space-y-1.5 mt-2 bg-gray-50 border border-gray-100 p-3 rounded-2xl">
+                  <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider">
+                    Demo answers — tap to simulate speaking ({selectedLanguage}):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestions.map((sug, sIdx) => (
+                      <button
+                        id={`voice-suggestion-btn-${sIdx}`}
+                        key={sIdx}
+                        onClick={() => {
+                          setUserInputText(sug);
+                          handleVoiceAgentTurn(null, sug);
+                        }}
+                        disabled={isLoading || isSynthesizing}
+                        className="px-2.5 py-1.5 bg-white hover:bg-teal-50 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-700 hover:text-teal-900 transition-all text-left truncate max-w-xs disabled:opacity-50"
+                      >
+                        🗣️ "{sug}"
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
+              <button
+                id="voice-reset-assistant-button"
+                onClick={handleRestart}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-100 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Reset Assistant</span>
+              </button>
+              
+              <div className="text-[10px] text-gray-400 font-mono">
+                {voiceState.toUpperCase()} • Q: {currentQuestionNumber}/8
+              </div>
+            </div>
+
+          </div>
 
         <div className="w-full md:w-[320px] bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 flex flex-col justify-between">
           <div>
@@ -1056,5 +1057,17 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
 
       </div>
     </div>
-  );
+    );
+  } catch (err: any) {
+    console.error("VoiceAssistantForm render error:", err);
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-red-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white p-6 rounded-3xl max-w-md w-full border border-red-200 shadow-xl text-left">
+          <h4 className="text-red-900 font-bold">Voice Assistant Failed to Load</h4>
+          <p className="text-xs text-red-700 mt-2">{err?.message || String(err)}</p>
+          <button onClick={onClose} className="mt-4 px-4 py-2 bg-red-800 text-white rounded-xl text-xs font-bold">Close</button>
+        </div>
+      </div>
+    );
+  }
 };
