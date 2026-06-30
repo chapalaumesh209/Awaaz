@@ -479,7 +479,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
 
       if (audioBlob) setVoiceState('transcribing');
       
-      const response = await fetch('/voice-agent-turn', {
+      const response = await fetch('/api/ai/voice-agent-turn', {
         method: 'POST',
         body: formData
       });
