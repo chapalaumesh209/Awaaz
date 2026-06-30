@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { SCHEMES, evaluateEligibility } from '../data/schemes';
 import { CitizenProfile, Scheme, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
-import { Search, SlidersHorizontal, CheckCircle, AlertTriangle, ArrowRight, BookOpen } from 'lucide-react';
+import { generateVoiceEligibilityEvaluation } from '../lib/aiService';
+import { 
+  Search, SlidersHorizontal, CheckCircle, AlertTriangle, ArrowRight, 
+  BookOpen, Mic, Volume2, Square, Sparkles, RefreshCw, X, Check, HelpCircle 
+} from 'lucide-react';
 
 interface SchemesViewProps {
   currentLanguage: LanguageCode;
@@ -14,6 +18,37 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
+  // Voice checker states
+  const [showVoiceCheck, setShowVoiceCheck] = useState(false);
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const [answers, setAnswers] = useState<string[]>(Array(8).fill(''));
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState<any>(null);
+
+  const voiceQuestions = [
+    "What is your full name?",
+    "What is your age in years?",
+    "What is your gender? (e.g. Female, Male, or Other)",
+    "What is your primary occupation?",
+    "What is your estimated annual household income?",
+    "Which social category or caste do you belong to? (General, OBC, SC, or ST)",
+    "What is your current district/location in Telangana?",
+    "Do you or anyone in your household have a physical or visual disability?"
+  ];
+
+  // Prepopulated mock voice inputs based on typical profiles to make the simulated voice input feel highly realistic and seamless
+  const mockVoiceTranscripts = [
+    "Ramesh Kumar",
+    "42 years old",
+    "Male",
+    "Agriculture tenant farmer",
+    "48000 rupees per year",
+    "SC category",
+    "Moinabad block Rangareddy",
+    "No, no disability"
+  ];
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -21,6 +56,48 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
   const loadProfile = async () => {
     const profile = await dbClient.getProfile();
     setActiveProfile(profile);
+  };
+
+  const handleStartVoiceCheck = () => {
+    setShowVoiceCheck(true);
+    setCurrentQuestionIdx(0);
+    setAnswers(Array(8).fill(''));
+    setEvaluationResult(null);
+  };
+
+  const handleRecordVoice = () => {
+    setIsRecording(true);
+    // Simulate speech-to-text writing a realistic transcript after 1.5s
+    setTimeout(() => {
+      const updated = [...answers];
+      updated[currentQuestionIdx] = mockVoiceTranscripts[currentQuestionIdx];
+      setAnswers(updated);
+      setIsRecording(false);
+    }, 1800);
+  };
+
+  const handleNextQuestion = () => {
+    if (!answers[currentQuestionIdx].trim()) {
+      alert("Please speak or write your answer to proceed.");
+      return;
+    }
+    if (currentQuestionIdx < 7) {
+      setCurrentQuestionIdx(currentQuestionIdx + 1);
+    } else {
+      handleEvaluateVoiceAnswers();
+    }
+  };
+
+  const handleEvaluateVoiceAnswers = async () => {
+    setVoiceLoading(true);
+    try {
+      const response = await generateVoiceEligibilityEvaluation(answers, currentLanguage);
+      setEvaluationResult(response);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setVoiceLoading(false);
+    }
   };
 
   const categories = ['All', 'Business', 'Agriculture', 'Healthcare', 'Housing', 'Scholarship', 'Pension'];
@@ -48,7 +125,161 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
             Browse list of seeded schemes. Eligibility calculations are evaluated instantly against your active profile.
           </p>
         </div>
+        
+        {/* Voice Checker Action Trigger */}
+        <button
+          onClick={handleStartVoiceCheck}
+          className="bg-teal-900 hover:bg-teal-950 text-white px-5 py-3 rounded-2xl flex items-center space-x-2.5 text-xs font-bold font-sans shadow-md border border-teal-800 transition-all active:scale-95 shrink-0"
+        >
+          <Mic className="h-4.5 w-4.5 text-teal-300 animate-pulse" />
+          <span>AWAAZ AI 8-Question Voice Checker</span>
+        </button>
       </div>
+
+      {/* Voice Eligibility Checker Section */}
+      {showVoiceCheck && (
+        <div className="bg-teal-950 text-white rounded-[32px] p-6 mb-8 border border-teal-800 relative shadow-lg">
+          <button 
+            onClick={() => setShowVoiceCheck(false)}
+            className="absolute top-5 right-5 text-teal-300 hover:text-white transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {!evaluationResult ? (
+            <div className="space-y-6">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="h-5 w-5 text-teal-400 animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-widest text-teal-300">AWAAZ Interactive AI Scheme Audit</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-teal-300 font-mono">
+                  <span>Question {currentQuestionIdx + 1} of 8</span>
+                  <span>{Math.round(((currentQuestionIdx + 1) / 8) * 100)}% Answered</span>
+                </div>
+                <div className="w-full bg-teal-900 h-1.5 rounded-full">
+                  <div className="bg-teal-400 h-1.5 rounded-full transition-all duration-300" style={{ width: `${((currentQuestionIdx + 1) / 8) * 100}%` }} />
+                </div>
+              </div>
+
+              {/* Active question */}
+              <div className="space-y-4">
+                <h3 className="font-serif text-2xl font-bold text-white leading-snug">
+                  "{voiceQuestions[currentQuestionIdx]}"
+                </h3>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={handleRecordVoice}
+                    disabled={isRecording || voiceLoading}
+                    className={`px-5 py-3 rounded-xl text-xs font-bold font-sans flex items-center justify-center space-x-2 transition-all active:scale-95 ${
+                      isRecording 
+                        ? 'bg-red-600 text-white animate-pulse' 
+                        : 'bg-teal-800 hover:bg-teal-700 text-teal-100'
+                    }`}
+                  >
+                    {isRecording ? (
+                      <>
+                        <Square className="h-4 w-4 fill-white animate-spin" />
+                        <span>Listening... Speak Now</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="h-4 w-4" />
+                        <span>Simulate Voice Response</span>
+                      </>
+                    )}
+                  </button>
+
+                  <input
+                    type="text"
+                    value={answers[currentQuestionIdx]}
+                    onChange={(e) => {
+                      const updated = [...answers];
+                      updated[currentQuestionIdx] = e.target.value;
+                      setAnswers(updated);
+                    }}
+                    placeholder="Speak using the button or type your answer here..."
+                    className="flex-1 bg-teal-900/50 border border-teal-800 rounded-xl px-4 py-3 text-xs text-white placeholder-teal-300/50 focus:ring-1 focus:ring-teal-400 focus:outline-none"
+                  />
+                </div>
+
+                {isRecording && (
+                  <div className="flex items-center space-x-1.5 text-[10px] text-teal-300 animate-pulse">
+                    <Volume2 className="h-4 w-4 text-teal-400" />
+                    <span>Capturing dynamic voice frequencies and transcribing in Real Time...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation buttons */}
+              <div className="flex justify-between items-center border-t border-teal-900 pt-4">
+                <button
+                  type="button"
+                  disabled={currentQuestionIdx === 0}
+                  onClick={() => setCurrentQuestionIdx(currentQuestionIdx - 1)}
+                  className="px-4 py-2 border border-teal-800 text-teal-300 hover:text-white rounded-lg text-xs font-bold font-sans disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextQuestion}
+                  disabled={voiceLoading}
+                  className="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-teal-950 rounded-lg text-xs font-extrabold font-sans flex items-center space-x-1"
+                >
+                  {voiceLoading ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>Evaluating Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{currentQuestionIdx === 7 ? "Submit & Check Eligibility" : "Next Question"}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-teal-900 pb-4">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-6 w-6 text-emerald-400" />
+                  <h3 className="font-serif text-xl font-bold">Your AI Eligibility Evaluation Report</h3>
+                </div>
+                <button
+                  onClick={handleStartVoiceCheck}
+                  className="px-3.5 py-1.5 border border-teal-800 text-teal-300 hover:text-white rounded-lg text-[10px] font-bold font-mono uppercase flex items-center space-x-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Restart Check</span>
+                </button>
+              </div>
+
+              <div className="bg-teal-900/40 border border-teal-800 rounded-2xl p-5 text-xs space-y-4 leading-relaxed font-sans text-teal-100">
+                <p className="whitespace-pre-line text-xs font-medium">
+                  {evaluationResult}
+                </p>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => setShowVoiceCheck(false)}
+                  className="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-teal-950 font-extrabold text-xs rounded-xl transition-all"
+                >
+                  Continue Browsing Schemes
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search & Category Filter bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10">

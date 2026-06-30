@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { SCHEMES, evaluateEligibility } from '../data/schemes';
 import { CitizenProfile, Scheme, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
-import { explainScheme, generateNextSteps, generateAssistantReply } from '../lib/aiService';
+import { explainScheme, generateNextSteps, generateAssistantReply, generateFilledForm } from '../lib/aiService';
 import { 
   ArrowLeft, CheckCircle2, AlertTriangle, HelpCircle, Bot, Send, 
-  BadgeAlert, ClipboardList, Check, UserCheck, ShieldCheck 
+  BadgeAlert, ClipboardList, Check, UserCheck, ShieldCheck, Languages, Sparkles, RefreshCw, Eye 
 } from 'lucide-react';
 
 interface SchemeDetailViewProps {
@@ -34,6 +34,29 @@ export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
   // Application submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Form filling assistant states
+  const [showFormAssistant, setShowFormAssistant] = useState(false);
+  const [selectedFormLang, setSelectedFormLang] = useState('English');
+  const [fillLoading, setFillLoading] = useState(false);
+  const [filledFormResult, setFilledFormResult] = useState<any>(null);
+  const [scanSimulating, setScanSimulating] = useState(false);
+  const [scanDocName, setScanDocName] = useState<string>('');
+
+  const languages12 = [
+    { code: 'English', label: 'English' },
+    { code: 'Hindi', label: 'हिन्दी (Hindi)' },
+    { code: 'Telugu', label: 'తెలుగు (Telugu)' },
+    { code: 'Tamil', label: 'தமிழ் (Tamil)' },
+    { code: 'Urdu', label: 'اردو (Urdu)' },
+    { code: 'Marathi', label: 'मराठी (Marathi)' },
+    { code: 'Kannada', label: 'ಕನ್ನಡ (Kannada)' },
+    { code: 'Malayalam', label: 'മലയാളം (Malayalam)' },
+    { code: 'Bengali', label: 'বাংলা (Bengali)' },
+    { code: 'Gujarati', label: 'ગુજરાતી (Gujarati)' },
+    { code: 'Odia', label: 'ଓଡ଼ିଆ (Odia)' },
+    { code: 'Punjabi', label: 'ਪੰਜਾਬੀ (Punjabi)' }
+  ];
 
   useEffect(() => {
     const s = SCHEMES.find(sc => sc.id === schemeId);
@@ -120,6 +143,46 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleAutoFillForm = async () => {
+    if (!scheme) return;
+    setFillLoading(true);
+    setFilledFormResult(null);
+    try {
+      const documents = await dbClient.getDocuments();
+      const profile = activeProfile || {
+        name: 'Ramesh Kumar',
+        age: 42,
+        gender: 'Male',
+        occupation: 'Agricultural tenant farmer',
+        householdIncome: 48000,
+        category: 'SC',
+        disability: 'No',
+        documents: []
+      };
+      
+      const response = await generateFilledForm(
+        scheme.id,
+        selectedFormLang,
+        profile,
+        documents
+      );
+      setFilledFormResult(response);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFillLoading(false);
+    }
+  };
+
+  const handleSimulateScan = (docType: string) => {
+    setScanSimulating(true);
+    setScanDocName(docType);
+    setTimeout(() => {
+      setScanSimulating(false);
+      alert(`📸 Simulated scan of ${docType.toUpperCase()} completed! Text coordinates read successfully, ready to auto-fill.`);
+    }, 1500);
   };
 
   if (!scheme) {
@@ -325,6 +388,92 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
             {queryReply && (
               <div className="mt-3 bg-teal-50/50 p-3 rounded-2xl border border-teal-100/50 text-xs text-teal-950 font-medium whitespace-pre-line leading-relaxed">
                 {queryReply}
+              </div>
+            )}
+          </div>
+
+          {/* AI Multilingual Form-Filling Assistant in 12 languages */}
+          <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs space-y-4">
+            <div className="flex items-center space-x-1.5 border-b border-gray-100 pb-2">
+              <Languages className="h-4.5 w-4.5 text-teal-700" />
+              <h3 className="font-sans text-xs font-bold text-gray-900">AI Multilingual Form-Filling</h3>
+            </div>
+            <p className="text-[10px] text-gray-400 leading-relaxed">
+              Scan documents or use your digital vault to auto-fill official government registration forms in 12 languages. Missing documents are flagged instantly.
+            </p>
+
+            <div className="space-y-2">
+              <label className="block text-[9px] font-bold text-gray-500 uppercase">Select Target Language (12 options)</label>
+              <select
+                value={selectedFormLang}
+                onChange={(e) => setSelectedFormLang(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
+              >
+                {languages12.map(lang => (
+                  <option key={lang.code} value={lang.code}>{lang.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <span className="block text-[9px] font-bold text-gray-500 uppercase">Scan Supporting Paperwork</span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSimulateScan('Aadhaar Card')}
+                  className="p-2 border border-gray-200 rounded-xl text-[10px] font-bold hover:bg-gray-50 text-gray-600 flex items-center justify-center space-x-1"
+                >
+                  <span>📷 Scan Aadhaar</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSimulateScan('Income Certificate')}
+                  className="p-2 border border-gray-200 rounded-xl text-[10px] font-bold hover:bg-gray-50 text-gray-600 flex items-center justify-center space-x-1"
+                >
+                  <span>📷 Scan Income</span>
+                </button>
+              </div>
+            </div>
+
+            {scanSimulating && (
+              <div className="text-[10px] text-teal-600 animate-pulse font-bold">Scanning and reading text coordinates from {scanDocName}...</div>
+            )}
+
+            <button
+              onClick={handleAutoFillForm}
+              disabled={fillLoading}
+              className="w-full py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center space-x-1"
+            >
+              {fillLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Auto-filling and Auditing...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 text-teal-300 animate-pulse" />
+                  <span>Auto-fill Form & Run Audit</span>
+                </>
+              )}
+            </button>
+
+            {filledFormResult && (
+              <div className="bg-[#FDFBF7] p-3.5 rounded-2xl border border-teal-100 text-xs font-serif text-teal-950 space-y-3 whitespace-pre-line leading-relaxed max-h-[300px] overflow-y-auto">
+                <div className="flex justify-between items-center border-b pb-1.5 border-teal-100/50">
+                  <span className="font-sans font-bold text-[9px] uppercase tracking-wider text-teal-800">Auto-filled Form Audit</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(JSON.stringify(filledFormResult, null, 2));
+                      alert("📋 Filled form copy copied to clipboard!");
+                    }}
+                    className="text-[9px] text-teal-700 underline font-sans font-semibold"
+                  >
+                    Copy
+                  </button>
+                </div>
+                <div className="text-[11px] font-mono whitespace-pre-wrap leading-normal text-gray-700">
+                  {filledFormResult}
+                </div>
               </div>
             )}
           </div>

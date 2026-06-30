@@ -138,6 +138,140 @@ export async function mockOcrDocument(documentName: string, citizenName?: string
   return getMockOcrResult(documentName, citizenName);
 }
 
+export async function generateCasteReferral(
+  title: string,
+  description: string,
+  location: string,
+  targetAuthority: string,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/caste-discrimination-referral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description, location, targetAuthority, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.referralDraft;
+    }
+  } catch (e) {
+    console.error("Caste referral AI error:", e);
+  }
+  return `Offline Fallback: Caste discrimination referral draft could not be generated dynamically.`;
+}
+
+export async function generateDisabilityReport(
+  location: string,
+  inaccessibilityType: string,
+  description: string,
+  photoDescription: string,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/disability-access-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location, inaccessibilityType, description, photoDescription, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.auditReport;
+    }
+  } catch (e) {
+    console.error("Disability access report AI error:", e);
+  }
+  return `Offline Fallback: Disability access audit report could not be generated dynamically.`;
+}
+
+export async function generateAllyTrainingFeedback(
+  role: string,
+  scenarioId: string,
+  selectedOptionText: string,
+  isCorrect: boolean,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/ally-training-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, scenarioId, selectedOptionText, isCorrect, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.feedback;
+    }
+  } catch (e) {
+    console.error("Ally training feedback AI error:", e);
+  }
+  return isCorrect ? "Excellent selection!" : "Try reflecting on inclusion principles.";
+}
+
+export async function generateVoiceEligibilityEvaluation(
+  answers: Record<string, any>,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/voice-eligibility-evaluation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.evaluation;
+    }
+  } catch (e) {
+    console.error("Voice eligibility evaluation AI error:", e);
+  }
+  return `Offline Fallback: Voice eligibility evaluation report could not be generated dynamically.`;
+}
+
+export async function generateFilledForm(
+  schemeId: string,
+  language: LanguageCode,
+  profile: CitizenProfile,
+  documents: any[]
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/form-filling-assistant', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schemeId, language, profile, documents }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.filledForm;
+    }
+  } catch (e) {
+    console.error("Form filling assistant AI error:", e);
+  }
+  return `Offline Fallback: Filled application form could not be simulated dynamically.`;
+}
+
+export async function generateGrievanceFollowUp(
+  requestName: string,
+  trackingId: string,
+  submittedAt: string,
+  updates: any[],
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/grievance-followup-bot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestName, trackingId, submittedAt, updates, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.rtiDraft;
+    }
+  } catch (e) {
+    console.error("Grievance follow-up AI error:", e);
+  }
+  return `Offline Fallback: RTI and WhatsApp follow-up logs could not be compiled dynamically.`;
+}
+
 // ==========================================
 // STATIC FRONTEND MOCK FALLBACKS (MANDATORY)
 // ==========================================

@@ -640,6 +640,515 @@ Example format:
   res.json({ translations });
 });
 
+// ==========================================
+// NEW AI-POWERED BACKEND CONTROLLERS (6 FEATURES)
+// ==========================================
+
+// 1. Caste Discrimination Incident Reporting & Legal Referral API
+app.post('/api/ai/caste-discrimination-referral', async (req, res) => {
+  const { title, description, location, targetAuthority, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are a human rights lawyer and legal advisor specializing in the Scheduled Castes and Scheduled Tribes (Prevention of Atrocities) Act, 1989.
+Draft a highly professional, formal, and court-admissible Legal Referral and Official Complaint regarding a Caste Discrimination Incident.
+Details:
+- Incident Title: ${title}
+- Location: ${location}
+- Accused Authority / Ward: ${targetAuthority || "Local Public Body"}
+- Description of Atrocity / Discrimination: "${description}"
+
+The complaint letter must be addressed to the Chairperson of the National Commission for Scheduled Castes (NCSC) or the State Human Rights Commission. It should cite specific provisions of the SC/ST (Prevention of Atrocities) Act (such as Section 3), demand an immediate First Information Report (FIR) registration, request police protection for the victim (deponent), and require a transparent inquiry by an officer not below the rank of Deputy Superintendent of Police (DSP).
+Generate the complaint in the specified language: '${language}'. Format cleanly in Markdown with professional legal headings and sign-off placeholders.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ referralDraft: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Caste Complaint Referral draft failed, using offline fallback:", e);
+    }
+  }
+
+  // Robust Offline Fallback Template
+  const fallbackComplaint = `======================================================================
+  LEGAL REFERRAL & OFFICIAL COMPLAINT UNDER THE SC/ST ACT, 1989
+======================================================================
+To,
+The Chairperson,
+State Commission for Scheduled Castes / National Commission for Scheduled Castes (NCSC),
+New Delhi, India.
+
+Date: ${new Date().toLocaleDateString('en-IN')}
+
+SUBJECT: Formal Complaint for Registration of FIR under Section 3 of the Scheduled Castes and Scheduled Tribes (Prevention of Atrocities) Act, 1989.
+
+Respected Sir/Madam,
+
+I am writing to formally log an egregious incident of caste discrimination and social exclusion that took place at **${location}**.
+
+1. **INCIDENT PROFILE**:
+   - **Nature of Grievance**: ${title}
+   - **Location of Atrocity**: ${location}
+   - **Accused Party / Entity**: ${targetAuthority || "Local Ward Administrators / Public Servants"}
+   - **Exact Description**: "${description}"
+
+2. **LEGAL SECTIONS INVOLVED**:
+   - Section 3(1) of the SC/ST (Prevention of Atrocities) Act, 1989 (as amended in 2015), which prohibits humiliating, assaulting, boycotting, or denying access to public services to members of Scheduled Castes.
+   - Article 17 of the Constitution of India (Abolition of Untouchability).
+
+3. **SPECIFIC RELIEFS SOUGHT**:
+   - Immediate registration of a First Information Report (FIR) under the SC/ST (Prevention of Atrocities) Act.
+   - An independent, unbiased investigation to be conducted by a police officer not below the rank of Deputy Superintendent of Police (DSP) as per Rule 7 of the PoA Rules.
+   - Immediate protection and legal aid support for the deponent/complainant to prevent any retributive intimidation.
+
+This referral is drafted securely using HaqSetu's Human Rights Anonymity Proxies. We urge your esteemed office to direct the District Superintendent of Police to initiate immediate action and submit a status report within 72 hours.
+
+Sincerely,
+Advocate on behalf of Complainant
+[SECURE PROXY CODE: HS-NCSC-${Math.floor(10000 + Math.random() * 90000)}]`;
+
+  res.json({ referralDraft: fallbackComplaint });
+});
+
+// 2. Disability Access Audit & Municipal Report API
+app.post('/api/ai/disability-access-report', async (req, res) => {
+  const { location, inaccessibilityType, description, photoDescription, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are a certified accessibility auditor and a disability rights advocate.
+Draft a highly structured, authoritative Municipal Accessibility Improvement Petition addressed to the Municipal Commissioner and Ward Block Development Officer.
+Details:
+- Location of Inaccessible Infrastructure: ${location}
+- Infrastructure Inaccessibility Type: ${inaccessibilityType} (e.g. Broken Tactile, No Wheelchair Ramp, Blocked Entrance)
+- Physical Description: "${description}"
+- Geo-tagged Photo Metadata & Evidence: ${photoDescription || "Provided high-resolution photographic proof"}
+
+The report must reference the Rights of Persons with Disabilities (RPWD) Act, 2016, specifically Section 44 and Section 45 (which mandate accessible public buildings and services within a strict timeframe). Include a professional table of architectural gaps, proposed design remediation (e.g., standard 1:12 slope ramp with handrails), and a formal request for an immediate budget allocation.
+Generate the report in: '${language}'. Format cleanly in Markdown.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ auditReport: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Disability Report draft failed, using offline fallback:", e);
+    }
+  }
+
+  // Robust Offline Fallback Template
+  const fallbackAuditReport = `### ACCESS AUDIT REPORT & MUNICIPAL REMEDIATION DEMAND
+**UNDER SECTION 44/45 OF THE RIGHTS OF PERSONS WITH DISABILITIES (RPWD) ACT, 2016**
+
+**To:**
+The Municipal Commissioner / Block Development Officer,
+Department of Public Infrastructure & Town Planning,
+${location}
+
+**Date:** ${new Date().toLocaleDateString('en-IN')}
+
+---
+
+#### 1. SITE AUDIT OVERVIEW
+- **Audit Location:** ${location}
+- **Identified Barrier:** **${inaccessibilityType.toUpperCase()}**
+- **Detailed Finding:** ${description}
+- **Supporting Evidence:** Geo-tagged Photographic Evidence attached with verified latitude/longitude metadata.
+
+#### 2. LEGAL COMPLIANCE FAILURE
+Under **Section 44 of the RPWD Act, 2016**, no establishment shall be granted permission to construct any public building unless it complies with the Harmonised Guidelines and Standards for Universal Accessibility. Furthermore, **Section 45** mandates that all existing public buildings must be made barrier-free. 
+The current state of public infrastructure at this site represents a clear legal violation, causing severe exclusion of locomotor, visual, and elderly citizens.
+
+#### 3. ACTIONABLE REMEDIATION RECOMMENDATION
+| Identified Gap | Mandatory Standard (RPWD Act) | Recommended Engineering Action |
+|---|---|---|
+| Accessible Entrance | 1:12 Ramp Slope with Non-slip surface | Re-pour concrete ramp, install dual-height handrails (700mm & 900mm) |
+| Lack of Assistive Aids | Wheelchair availability & Tactile guidance | Supply manual wheelchairs, lay yellow tactile directional paving tiles |
+
+#### 4. DEMAND FOR TIME-BOUND REPAIR
+We request your office to inspect this site within **15 business days** and release local municipal funds to implement these accessibility repairs. Failing this, we reserve the right to escalate this matter to the Chief Commissioner for Persons with Disabilities.
+
+**Report Compiled by:**
+Certified Access Auditor
+*HaqSetu Civic Disability Access Hub (Audit Ref: HS-RPWD-${Math.floor(1000 + Math.random() * 9000)})*`;
+
+  res.json({ auditReport: fallbackAuditReport });
+});
+
+// 3. AI Ally Training Tool Feedback API
+app.post('/api/ai/ally-training-feedback', async (req, res) => {
+  const { role, scenarioId, selectedOptionText, isCorrect, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are a diversity, equity, and social inclusion (DEI) trainer for Indian Panchayats and Corporate HR departments.
+The user has responded to a scenario-based anti-discrimination training exercise.
+- Role Selected by User: ${role} (Panchayat Member / Corporate HR Manager)
+- Scenario Context ID: ${scenarioId}
+- User's Chosen Action: "${selectedOptionText}"
+- Correct Option?: ${isCorrect ? "Yes (Correct)" : "No (Incorrect)"}
+
+Explain to the user why their chosen response is either highly supportive (if correct) or where it falls short in terms of caste, gender, or disability sensitivity (if incorrect). Cite practical guidelines, local constitutional values (such as Article 15), and HR code/panchayat procedures. Keep the tone encouraging, educational, and deeply insightful.
+Provide response in language: '${language}'. Wrap in short, scannable paragraphs under 120 words.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ feedback: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Training feedback failed, using offline fallback:", e);
+    }
+  }
+
+  // Offline Fallback Feedback
+  let fallbackFeedback = "";
+  if (isCorrect) {
+    fallbackFeedback = `🌟 **Excellent Decision!** Your response reflects deep social sensitivity, constitutional integrity (Article 15), and excellent leadership. By addressing bias actively rather than ignoring it, you create an environment where women, Scheduled Castes, and disabled individuals feel secure and respected. This is precisely how we build caste-free and gender-equal communities!`;
+  } else {
+    fallbackFeedback = `⚠️ **Opportunity for Growth:** While your response might seem practical, it lacks active advocacy. Passively ignoring discrimination or telling victims to 'adjust' perpetuates systemic barriers. As an ally (Panchayat or HR Leader), you must take active corrective steps, register reports, and enforce zero-tolerance codes. Let's try again to stand up for equity!`;
+  }
+
+  res.json({ feedback: fallbackFeedback });
+});
+
+// 4. Entitlement Eligibility Checker (8-Question Voice Input) API
+app.post('/api/ai/voice-eligibility-evaluation', async (req, res) => {
+  const { answers, language } = req.body;
+  const ai = getAiClient();
+
+  // Extract variables
+  const name = answers.name || "Citizen";
+  const age = Number(answers.age) || 30;
+  const gender = (answers.gender || "female").toLowerCase();
+  const occupation = answers.occupation || "Street Vendor";
+  const income = Number(answers.income) || 0;
+  const category = answers.category || "OBC";
+  const location = answers.location || "Moinabad";
+  const disability = answers.disability === true || answers.disability === 'true';
+
+  if (ai) {
+    try {
+      const prompt = `You are the Entitlement Eligibility Auditor for Indian central and state welfare programs.
+Evaluate the following citizen profile and determine exactly which schemes they qualify for:
+- Name: ${name}
+- Age: ${age}
+- Gender: ${gender}
+- Occupation: ${occupation}
+- Annual Household Income: ₹${income}
+- Caste/Social Category: ${category}
+- Location: ${location}
+- Disability Status: ${disability ? "Yes" : "No"}
+
+Schemes in scope to evaluate:
+1. PM SVANidhi (street vendors, collateral-free loan of ₹10,000-₹50,000)
+2. PM Vishwakarma (traditional artisans, ₹15,000 toolkit voucher, skill stipend)
+3. Ayushman Bharat (Pradhan Mantri Jan Arogya Yojana - health cover of ₹5L per family; eligibility: low income/BPL, rural, worker)
+4. Indira Gandhi National Disability Pension Scheme (IGNDPS - eligibility: age 18-79, severe disability >80%, below poverty line BPL)
+5. State Women Financial Aid (eligibility: women, low income)
+
+For every matching scheme, provide:
+- **Scheme Name**
+- **Match Confidence (Percentage)**
+- **Exact Actionable Application Steps (Step 1, Step 2, Step 3)**
+- **Required Documents Checklist**
+
+Return your analysis in language: '${language}'. Structure clearly in Markdown with friendly, comforting, and direct advice.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ evaluation: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Voice Eligibility failed, using offline fallback:", e);
+    }
+  }
+
+  // Offline Rule Engine Fallback
+  const eligibleSchemes = [];
+  if (occupation.toLowerCase().includes('vendor') || occupation.toLowerCase().includes('shop') || occupation.toLowerCase().includes('seller')) {
+    eligibleSchemes.push({
+      name: "PM SVANidhi Scheme",
+      confidence: "95%",
+      steps: [
+        "Visit your local municipal corporation office or local public bank.",
+        "Request a 'Letter of Recommendation' (LoR) verifying your vendor status.",
+        "Submit the application online via the PM SVANidhi portal to claim your ₹10,000 interest-subsidized loan."
+      ],
+      docs: ["Aadhaar Card", "Voter ID", "Mobile Linked Bank Passbook", "Vendor ID/Letter of Recommendation"]
+    });
+  }
+
+  if (occupation.toLowerCase().includes('artisan') || occupation.toLowerCase().includes('weaver') || occupation.toLowerCase().includes('carpenter') || occupation.toLowerCase().includes('potter') || occupation.toLowerCase().includes('barber')) {
+    eligibleSchemes.push({
+      name: "PM Vishwakarma Yojana",
+      confidence: "98%",
+      steps: [
+        "Go to the nearest Common Service Centre (CSC) with your biometric Aadhaar verification.",
+        "Submit your craft categories (e.g. weaver, carpenter, blacksmith).",
+        "Complete the 5-day basic training to receive the ₹15,000 e-voucher for tools."
+      ],
+      docs: ["Aadhaar Card", "Ration Card", "Active Bank Passbook", "Caste Certificate (if OBC/SC/ST)"]
+    });
+  }
+
+  if (income <= 120000) {
+    eligibleSchemes.push({
+      name: "Ayushman Bharat PM-JAY (Free Healthcare Cover)",
+      confidence: "90%",
+      steps: [
+        "Check your family name in the SECC-2011 database or present your BPL Ration Card at any empaneled government hospital.",
+        "Present your Aadhaar card to the 'Ayushman Mitra' kiosk inside the hospital.",
+        "Receive your 'Golden Card' to claim free cashless treatment up to ₹5,00,000 per family annually."
+      ],
+      docs: ["Aadhaar Card", "BPL Ration Card (White/Yellow)", "Income Certificate (₹1.2 Lakh cap)"]
+    });
+  }
+
+  if (disability) {
+    eligibleSchemes.push({
+      name: "Indira Gandhi National Disability Pension",
+      confidence: "85%",
+      steps: [
+        "Acquire a Unique Disability ID (UDID) Card from the local district medical board.",
+        "Submit a pension application to the block development officer (BDO) or Gram Panchayat office.",
+        "Monthly direct cash pension will be deposited directly to your DBT bank account."
+      ],
+      docs: ["Aadhaar Card", "UDID Disability Certificate (>40% disability)", "BPL Ration Card", "Bank Passbook"]
+    });
+  }
+
+  // Generate output string in requested language
+  let output = `### 📋 ENTILEMENT ELIGIBILITY REPORT FOR **${name.toUpperCase()}**\n\n`;
+  output += `Thank you for completing the 8-question voice assessment. Based on your inputs, here are the schemes you are eligible for:\n\n`;
+
+  if (eligibleSchemes.length === 0) {
+    output += `*No high-confidence matches were found based on the basic income and occupational filters. However, we recommend uploading your documents in the vault to unlock deeper state-specific schemes.*`;
+  } else {
+    eligibleSchemes.forEach(sc => {
+      output += `#### 🌟 **${sc.name}** (Confidence: ${sc.confidence})\n`;
+      output += `**Documents Needed:** ${sc.docs.join(', ')}\n\n`;
+      output += `**Actionable Application Steps:**\n`;
+      sc.steps.forEach((st, idx) => {
+        output += `${idx + 1}. ${st}\n`;
+      });
+      output += `\n---\n`;
+    });
+  }
+
+  res.json({ evaluation: output });
+});
+
+// 5. AI Form-Filling Assistant in 12 Languages API
+app.post('/api/ai/form-filling-assistant', async (req, res) => {
+  const { schemeId, language, profile, documents } = req.body;
+  const ai = getAiClient();
+
+  const name = profile?.name || "Verified Citizen";
+  const age = profile?.age || 32;
+  const gender = profile?.gender || "Female";
+  const occupation = profile?.occupation || "Artisan";
+  const income = profile?.householdIncome || 85000;
+  const category = profile?.category || "OBC";
+  const state = profile?.state || "Telangana";
+  const location = profile?.location || "Moinabad";
+
+  // Check document availability
+  const uploadedTypes = documents ? documents.map((d: any) => d.type) : [];
+  const hasAadhaar = uploadedTypes.includes('aadhaar');
+  const hasRation = uploadedTypes.includes('ration_card');
+  const hasIncome = uploadedTypes.includes('income_cert');
+  const hasCaste = uploadedTypes.includes('caste_cert');
+
+  if (ai) {
+    try {
+      const prompt = `You are an expert AI Form-Filling Assistant for Indian public services.
+The user wants to auto-fill an application form for Scheme ID: "${schemeId}".
+User Profile:
+- Name: ${name}
+- Age: ${age}
+- Gender: ${gender}
+- Occupation: ${occupation}
+- Income: ₹${income}/year
+- Category: ${category}
+- State: ${state}
+- Location: ${location}
+
+Documents currently verified in their wallet: ${uploadedTypes.join(', ')}
+
+Your task:
+1. Render a simulated, auto-filled official government application form with structured fields in the specified language: '${language}'.
+2. Run a "Document Completeness Audit": Check what documents are required for "${schemeId}" and flag any critical missing ones as warnings (e.g. PM Vishwakarma requires Ration Card, Ayushman Bharat requires Income Certificate under 1.2 Lakh).
+3. Warn the citizen of any mismatch or missing documents before they submit.
+
+Keep the output structured with standard input boxes represented in Markdown (e.g. [ Name: Ramesh ]). Do not return any extra developer notes.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ filledForm: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Form Filling assistant failed, running offline simulator:", e);
+    }
+  }
+
+  // Multilingual Offline Simulator Fallback
+  let warnings = [];
+  if (schemeId === 'pm-svanidhi' && !hasAadhaar) {
+    warnings.push("⚠️ WARNING: PM SVANidhi requires an Aadhaar Card. Please upload Aadhaar to your wallet first!");
+  }
+  if (schemeId === 'pm-vishwakarma' && !hasRation) {
+    warnings.push("⚠️ WARNING: PM Vishwakarma requires a family Ration Card for biometric registration.");
+  }
+  if (schemeId === 'pm-jay' && !hasIncome) {
+    warnings.push("⚠️ WARNING: Ayushman Bharat eligibility requires a verified Income Certificate showing income < ₹1.2 Lakh.");
+  }
+
+  const dateToday = new Date().toLocaleDateString();
+
+  const mockForm = `
+[====================================================================]
+             GOVERNMENT OF INDIA - OFFICIAL APPLICATION FORM
+                     SCHEME: ${schemeId.toUpperCase().replace('-', ' ')}
+[====================================================================]
+
+Section A: PERSONAL INFORMATION
+--------------------------------------------------------------------
+- Full Name:       [ ${name} ]
+- Age / Gender:    [ ${age} Years ] / [ ${gender} ]
+- Social Category: [ ${category} ]
+- Occupation:      [ ${occupation} ]
+- Annual Income:   [ ₹${income.toLocaleString()} ]
+
+Section B: RESIDENCY & ADDRESS
+--------------------------------------------------------------------
+- Address Details: [ Ward 4, ${location}, ${state} ]
+- Home State:      [ ${state} ]
+
+Section C: UPLOADED DOCUMENT AUDIT & COMPLIANCE
+--------------------------------------------------------------------
+- Aadhaar Card:    [ ${hasAadhaar ? "✅ VERIFIED & ATTACHED" : "❌ MISSING"} ]
+- Ration Card:     [ ${hasRation ? "✅ VERIFIED & ATTACHED" : "❌ MISSING"} ]
+- Income Cert:     [ ${hasIncome ? "✅ VERIFIED & ATTACHED" : "❌ MISSING"} ]
+- Date of Filing:  [ ${dateToday} ]
+
+--------------------------------------------------------------------
+📋 PRE-SUBMISSION AUDIT RESULT:
+--------------------------------------------------------------------
+${warnings.length > 0 
+  ? warnings.join('\n') 
+  : "🎉 CONGRATULATIONS! Your Document Vault contains 100% of the required credentials. Your application is fully compliant and ready for final submission."}
+
+--------------------------------------------------------------------
+[  CLICK SUBMIT SECURELY  ]  [  PRINT PDF  ]
+`;
+
+  res.json({ filledForm: mockForm });
+});
+
+// 6. Grievance Follow-up Bot & RTI Generator API
+app.post('/api/ai/grievance-followup-bot', async (req, res) => {
+  const { requestName, trackingId, submittedAt, updates, language } = req.body;
+  const ai = getAiClient();
+
+  const elapsedDays = Math.round((Date.now() - new Date(submittedAt).getTime()) / (1000 * 60 * 60 * 24)) || 14;
+
+  if (ai) {
+    try {
+      const prompt = `You are an expert RTI (Right to Information Act, 2005) lawyer and social accountability bot in India.
+A citizen has an unanswered government application or grievance petition:
+- Application Name: ${requestName}
+- Tracking ID / Ref: ${trackingId}
+- Submitted On: ${new Date(submittedAt).toLocaleDateString()}
+- Days Elapsed without Resolution: ${elapsedDays} days
+- Audit log status: ${JSON.stringify(updates)}
+
+Generate two helpful items for the citizen in the requested language '${language}':
+1. A formally structured Right to Information (RTI) Application under Section 6(1) of the RTI Act, 2005. It should be addressed to the Public Information Officer (PIO) of the concerned department, asking specific, sharp questions regarding the timeline, delayed reason, names of officers who sat on the file, and daily progress logs.
+2. A short, WhatsApp-optimized escalation follow-up message to be sent to municipal ward officers or panchayat help desks. Use bold formatting, bullet points, and an urgent but completely professional tone.
+
+Format the output cleanly in Markdown with separate visible blocks for the PIO RTI Letter and the WhatsApp text.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ rtiDraft: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Grievance Followup failed, using offline fallback:", e);
+    }
+  }
+
+  // High Quality Offline RTI & WhatsApp Fallback Draft
+  const fallbackRti = `### 📜 FORMAL RTI APPLICATION UNDER SECTION 6(1) OF THE RTI ACT, 2005
+
+To,
+The Public Information Officer (PIO),
+Office of the Gram Panchayat / Block Development Officer (BDO),
+${requestName.includes('Grievance') ? 'Civic Grievance Cell' : 'Welfare Welfare Division'}
+
+**Date:** ${new Date().toLocaleDateString('en-IN')}
+
+**1. Name of the Applicant:** [ Citizen of India ]
+**2. Details of Information Sought under Section 6(1):**
+Regarding the application for **"${requestName}"** submitted on **${new Date(submittedAt).toLocaleDateString('en-IN')}** bearing local reference tracking ID **${trackingId}** which remains pending for **${elapsedDays} days**.
+
+Please provide the following structured details:
+- **Query 1:** Please provide the daily progress report of the application from the date of receipt to the current date, including details of every officer who has reviewed or processed this file.
+- **Query 2:** Specify the standard citizen charter timeline for processing this application, and provide the written reasons as recorded in files for exceeding this standard timeline.
+- **Query 3:** Provide the names, designations, and contact details of the official(s) currently responsible for verifying this request.
+
+**3. Application Fee:** A postal order of Rs. 10/- is attached herewith towards the standard application fee. I am a citizen of India.
+
+---
+
+### 💬 WHATSAPP COMPLAINT & ESCALATION DRAFT
+*(Copy and send this directly to the Local Officer or Grievance Help Desk)*
+
+🚨 *URGENT FOLLOW-UP: UNANSWERED APPLICATION DELAY* 🚨
+
+Dear Officer,
+I am writing to draw your urgent attention to my pending application:
+- 📌 *Service Name:* ${requestName}
+- 🆔 *Tracking Reference:* ${trackingId}
+- 📅 *Submitted On:* ${new Date(submittedAt).toLocaleDateString('en-IN')}
+- ⏳ *Delay Status:* *${elapsedDays} Days have elapsed* with no official response or resolution.
+
+Under the state Right to Service Act and public accountability guidelines, I request an immediate update on my application status. 
+
+Thank you,
+[Citizen Proxy HS-${Math.floor(1000 + Math.random() * 9000)}]
+*Sent via Awaaz Public Accountability Grievance Bot*`;
+
+  res.json({ rtiDraft: fallbackRti });
+});
+
 function getLocalFallbackTranslation(text: string, lang: string): string {
   const lower = text.toLowerCase();
   if (lang === 'te') {

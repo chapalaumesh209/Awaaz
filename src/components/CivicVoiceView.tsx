@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { GramSabhaMeeting, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
+import { generateAllyTrainingFeedback } from '../lib/aiService';
 import { 
   Landmark, Calendar, MapPin, Scale, Award, 
-  HelpCircle, Check, X, ShieldCheck, Trophy, LandmarkIcon 
+  HelpCircle, Check, X, ShieldCheck, Trophy, LandmarkIcon, Users, Sparkles, RefreshCw, MessageSquare 
 } from 'lucide-react';
 
 interface CivicVoiceViewProps {
@@ -12,10 +13,59 @@ interface CivicVoiceViewProps {
 
 export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage }) => {
   const [meetings, setMeetings] = useState<GramSabhaMeeting[]>([]);
+  
+  // Game states
   const [gameStep, setGameStep] = useState(0);
   const [gameScore, setGameScore] = useState(0);
   const [selectedAnswerIdx, setSelectedAnswerIdx] = useState<number | null>(null);
   const [answered, setAnswered] = useState(false);
+
+  // AI Ally training states
+  const [activeRightTab, setActiveRightTab] = useState<'ally' | 'game'>('ally');
+  const [trainingRole, setTrainingRole] = useState<'panchayat' | 'hr'>('panchayat');
+  const [customResponseText, setCustomResponseText] = useState('');
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackResult, setFeedbackResult] = useState('');
+
+  const trainingScenarios = {
+    panchayat: [
+      {
+        id: 'p1',
+        title: "Caste Segregation in Assembly",
+        scenario: "During a Gram Sabha assembly, a small group of influential landholding members demands that representatives from marginalized caste communities sit on the floor at the back, claiming it represents 'local social custom'.",
+        options: [
+          "Ask the marginalized representatives to comply temporarily to keep the peace and proceed with the meeting.",
+          "Politely ignore the dispute and begin reading the budget, hoping the issue resolves itself.",
+          "Firmly reject the demand, cite the constitutional prohibition of untouchability and discrimination, and ensure equal seating for all representatives."
+        ],
+        correctOptionIdx: 2
+      },
+      {
+        id: 'p2',
+        title: "Disability exclusion at Well",
+        scenario: "A citizen with a visual impairment requests the Gram Panchayat to install concrete handrails and high-contrast brick edging near the central village drinking well. Traditionalists object, saying it wastes resources.",
+        options: [
+          "Advise the citizen's family members to accompany them always, rather than changing the infrastructure.",
+          "Declare the request as a non-essential aesthetic project and defer fund allocation indefinitely.",
+          "Approve the modifications immediately under the RPWD Act, emphasizing accessibility as a fundamental right of access to public resources."
+        ],
+        correctOptionIdx: 2
+      }
+    ],
+    hr: [
+      {
+        id: 'h1',
+        title: "Ignored Accommodations Complaint",
+        scenario: "An employee who uses a wheelchair reports that company social retreats are routinely scheduled at an offsite venue with only step entrances. A manager responds: 'It's just a fun outing, they can skip it without professional impact.'",
+        options: [
+          "Agree with the manager, as retreats are not core billable hours.",
+          "Quietly suggest the employee stay home and offer them a small food delivery voucher as compensation.",
+          "Halt the venue booking, mandate that all company outings must occur at accessible venues, and educate managers on systemic exclusion."
+        ],
+        correctOptionIdx: 2
+      }
+    ]
+  };
 
   useEffect(() => {
     loadMeetings();
@@ -24,6 +74,28 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
   const loadMeetings = async () => {
     const list = await dbClient.getGramSabhaMeetings();
     setMeetings(list);
+  };
+
+  const handleFetchAllyFeedback = async (optionSelectedText?: string) => {
+    setFeedbackLoading(true);
+    setFeedbackResult('');
+    try {
+      const selectedScenario = trainingScenarios[trainingRole][0];
+      const answer = optionSelectedText || customResponseText;
+      const isCorrect = optionSelectedText ? (selectedScenario.options[selectedScenario.correctOptionIdx] === optionSelectedText) : false;
+      const feedback = await generateAllyTrainingFeedback(
+        trainingRole,
+        selectedScenario.id,
+        answer,
+        isCorrect,
+        currentLanguage
+      );
+      setFeedbackResult(feedback);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFeedbackLoading(false);
+    }
   };
 
   // Panchayat budget figures
@@ -176,79 +248,219 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
             </div>
           </div>
 
-        </div>
-
-        {/* Right Column: Civic Board Game */}
+            {/* Right Column: AI Ally Discrimination Training / Board Game */}
         <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs flex flex-col justify-between">
           
           <div>
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
-              <div className="flex items-center space-x-1.5">
-                <Trophy className="h-5 w-5 text-amber-500 animate-pulse" />
-                <h3 className="font-sans text-sm font-bold text-gray-900">Panchayat Wisdom Game</h3>
-              </div>
-              <span className="text-xs font-extrabold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md">
-                Score: {gameScore}
-              </span>
+            {/* Header Tabs */}
+            <div className="flex border-b border-gray-100 pb-2 mb-4 space-x-2">
+              <button
+                onClick={() => setActiveRightTab('ally')}
+                className={`flex-1 py-1 text-center text-xs font-bold font-sans rounded-lg transition-all ${
+                  activeRightTab === 'ally'
+                    ? 'bg-teal-50 text-teal-950 font-extrabold border-b-2 border-b-teal-600'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                🤝 AI Ally Training
+              </button>
+              <button
+                onClick={() => setActiveRightTab('game')}
+                className={`flex-1 py-1 text-center text-xs font-bold font-sans rounded-lg transition-all ${
+                  activeRightTab === 'game'
+                    ? 'bg-teal-50 text-teal-950 font-extrabold border-b-2 border-b-teal-600'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
+              >
+                🏆 Wisdom Game
+              </button>
             </div>
 
-            <p className="text-[10px] text-gray-400 leading-relaxed mb-4">
-              Test your knowledge of standard citizens rights and earn digital honor titles!
-            </p>
-
-            {/* MCQ Card */}
-            <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 space-y-4">
-              <span className="text-[9px] uppercase font-bold tracking-wider text-gray-400 block">Question {gameStep + 1} of 3</span>
-              <p className="text-xs font-bold text-gray-800 leading-relaxed">
-                {gameQuestions[gameStep].q}
-              </p>
-
-              <div className="space-y-2">
-                {gameQuestions[gameStep].options.map((opt, idx) => {
-                  let btnStyle = 'bg-white border-gray-100 text-gray-700 hover:border-teal-300';
-                  if (answered) {
-                    if (idx === gameQuestions[gameStep].correctIdx) {
-                      btnStyle = 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold';
-                    } else if (idx === selectedAnswerIdx) {
-                      btnStyle = 'bg-red-50 border-red-200 text-red-950';
-                    } else {
-                      btnStyle = 'bg-white border-gray-100 text-gray-400 opacity-60';
-                    }
-                  }
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      disabled={answered}
-                      onClick={() => handleAnswerClick(idx)}
-                      className={`w-full p-3 rounded-xl border text-left text-xs font-semibold transition-all flex items-center justify-between ${btnStyle}`}
-                    >
-                      <span>{opt}</span>
-                      {answered && idx === gameQuestions[gameStep].correctIdx && <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Explanation display */}
-              {answered && (
-                <div className="mt-4 bg-teal-50/50 p-3 rounded-xl border border-teal-100/50 text-[10px] text-teal-900 leading-relaxed font-semibold">
-                  {gameQuestions[gameStep].explanation}
+            {activeRightTab === 'ally' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-1">
+                    <Sparkles className="h-4.5 w-4.5 text-teal-700 animate-pulse" />
+                    <span className="text-xs font-extrabold text-teal-950">AI Discrimination Ally Training</span>
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <p className="text-[10px] text-gray-400 leading-relaxed">
+                  Interactive legal scenarios teaching HR managers and local Panchayat leaders to recognize, intervene, and systemic respond to discrimination.
+                </p>
+
+                {/* Role Switcher */}
+                <div className="flex rounded-xl bg-gray-50 p-1 border border-gray-100">
+                  <button
+                    onClick={() => {
+                      setTrainingRole('panchayat');
+                      setFeedbackResult('');
+                      setCustomResponseText('');
+                    }}
+                    className={`flex-1 py-1.5 text-center text-[10px] font-bold rounded-lg transition-all ${
+                      trainingRole === 'panchayat' 
+                        ? 'bg-teal-700 text-white shadow-xs' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    🏡 Panchayat Leader
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTrainingRole('hr');
+                      setFeedbackResult('');
+                      setCustomResponseText('');
+                    }}
+                    className={`flex-1 py-1.5 text-center text-[10px] font-bold rounded-lg transition-all ${
+                      trainingRole === 'hr' 
+                        ? 'bg-teal-700 text-white shadow-xs' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    🏢 Corporate HR
+                  </button>
+                </div>
+
+                {/* Active Scenario Card */}
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 space-y-3">
+                  <span className="text-[9px] uppercase font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-100/50 inline-block">
+                    {trainingScenarios[trainingRole][0].title}
+                  </span>
+                  <p className="text-xs font-bold text-gray-800 leading-relaxed font-sans">
+                    "{trainingScenarios[trainingRole][0].scenario}"
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-gray-200">
+                    <span className="block text-[9px] font-bold text-gray-500 uppercase">Interactive response choices:</span>
+                    {trainingScenarios[trainingRole][0].options.map((opt, oIdx) => (
+                      <button
+                        key={oIdx}
+                        type="button"
+                        onClick={() => {
+                          setCustomResponseText(opt);
+                          handleFetchAllyFeedback(opt);
+                        }}
+                        disabled={feedbackLoading}
+                        className="w-full text-left p-2.5 border border-gray-200 bg-white rounded-xl text-xs font-semibold hover:border-teal-500 hover:bg-teal-50/20 text-gray-700 leading-relaxed transition-all"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-1 pt-2">
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase">Or, compose custom response:</label>
+                    <textarea
+                      value={customResponseText}
+                      onChange={(e) => setCustomResponseText(e.target.value)}
+                      placeholder="Compose how you would intervene, resolve, or mediate here..."
+                      className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                    />
+                    <button
+                      onClick={() => handleFetchAllyFeedback()}
+                      disabled={feedbackLoading || !customResponseText.trim()}
+                      className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1"
+                    >
+                      {feedbackLoading ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>Gemini Consulting guidelines...</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Get Gemini AI Feedback</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Training Feedback report card */}
+                {feedbackResult && (
+                  <div className="bg-[#FDFBF7] p-3.5 rounded-2xl border border-teal-100 text-xs font-sans text-teal-950 space-y-1 leading-relaxed max-h-[180px] overflow-y-auto">
+                    <div className="flex items-center space-x-1 border-b pb-1 mb-1 border-teal-100/50">
+                      <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                      <span className="font-sans font-bold text-[9px] uppercase text-teal-800">Gemini Expert Feedback</span>
+                    </div>
+                    <p className="whitespace-pre-line text-[11px] text-gray-700 leading-normal">
+                      {feedbackResult}
+                    </p>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
+                  <div className="flex items-center space-x-1.5">
+                    <Trophy className="h-5 w-5 text-amber-500 animate-pulse" />
+                    <h3 className="font-sans text-sm font-bold text-gray-900">Panchayat Wisdom Game</h3>
+                  </div>
+                  <span className="text-xs font-extrabold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md">
+                    Score: {gameScore}
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-gray-400 leading-relaxed mb-4">
+                  Test your knowledge of standard citizens rights and earn digital honor titles!
+                </p>
+
+                {/* MCQ Card */}
+                <div className="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 space-y-4">
+                  <span className="text-[9px] uppercase font-bold tracking-wider text-gray-400 block">Question {gameStep + 1} of 3</span>
+                  <p className="text-xs font-bold text-gray-800 leading-relaxed">
+                    {gameQuestions[gameStep].q}
+                  </p>
+
+                  <div className="space-y-2">
+                    {gameQuestions[gameStep].options.map((opt, idx) => {
+                      let btnStyle = 'bg-white border-gray-100 text-gray-700 hover:border-teal-300';
+                      if (answered) {
+                        if (idx === gameQuestions[gameStep].correctIdx) {
+                          btnStyle = 'bg-emerald-50 border-emerald-300 text-emerald-950 font-bold';
+                        } else if (idx === selectedAnswerIdx) {
+                          btnStyle = 'bg-red-50 border-red-200 text-red-950';
+                        } else {
+                          btnStyle = 'bg-white border-gray-100 text-gray-400 opacity-60';
+                        }
+                      }
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={answered}
+                          onClick={() => handleAnswerClick(idx)}
+                          className={`w-full p-3 rounded-xl border text-left text-xs font-semibold transition-all flex items-center justify-between ${btnStyle}`}
+                        >
+                          <span>{opt}</span>
+                          {answered && idx === gameQuestions[gameStep].correctIdx && <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Explanation display */}
+                  {answered && (
+                    <div className="mt-4 bg-teal-50/50 p-3 rounded-xl border border-teal-100/50 text-[10px] text-teal-900 leading-relaxed font-semibold">
+                      {gameQuestions[gameStep].explanation}
+                    </div>
+                  )}
+                </div>
+
+                {answered && (
+                  <button
+                    onClick={handleNextQuestion}
+                    className="mt-6 w-full py-3 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <span>{gameStep === gameQuestions.length - 1 ? 'Restart Game' : 'Next Question'}</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          {answered && (
-            <button
-              onClick={handleNextQuestion}
-              className="mt-6 w-full py-3 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-center space-x-1"
-            >
-              <span>{gameStep === gameQuestions.length - 1 ? 'Restart Game' : 'Next Question'}</span>
-            </button>
-          )}
-
-        </div>
+        </div>      </div>
 
       </div>
 
