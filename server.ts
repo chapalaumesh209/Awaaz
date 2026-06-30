@@ -2137,59 +2137,7 @@ app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], async (req, res) => 
 
   const targetLangCode = languageMap[selectedLang] || 'en-IN';
 
-  let transcript = '';
-
-  // 1. STT: If an audio file is uploaded, transcribe it using Sarvam AI STT
-  if (req.body.audio_base64) {
-    const sarvamApiKey = process.env.SARVAM_API_KEY;
-    if (sarvamApiKey) {
-      try {
-        console.log(`Sending base64 audio to Sarvam STT for language ${selectedLang} (${targetLangCode})...`);
-        const formData = new FormData();
-        
-        const audioBuffer = Buffer.from(req.body.audio_base64, 'base64');
-        const mime = req.body.audio_mime_type || 'audio/webm';
-        const audioBlob = new Blob([audioBuffer], { type: mime });
-        
-        let ext = 'wav';
-        if (mime.includes('webm')) ext = 'webm';
-        else if (mime.includes('ogg')) ext = 'ogg';
-        else if (mime.includes('mp4') || mime.includes('m4a')) ext = 'm4a';
-        
-        const filename = `audio.${ext}`;
-        formData.append('file', audioBlob, filename);
-        formData.append('model', 'saaras:v3');
-        formData.append('language_code', targetLangCode);
-
-        const sttResponse = await fetch('https://api.sarvam.ai/speech-to-text', {
-          method: 'POST',
-          headers: {
-            'api-subscription-key': sarvamApiKey
-          },
-          body: formData
-        });
-
-        if (sttResponse.ok) {
-          const sttData = await sttResponse.json() as any;
-          transcript = sttData.transcript || sttData.transcript_original || '';
-          console.log(`Sarvam STT transcribed: "${transcript}"`);
-        } else {
-          const errText = await sttResponse.text();
-          console.error(`Sarvam STT failed with status ${sttResponse.status}: ${errText}`);
-        }
-      } catch (sttErr) {
-        console.error("Error invoking Sarvam Speech-to-Text:", sttErr);
-      }
-    } else {
-      console.warn("SARVAM_API_KEY is not defined. Skipping Sarvam STT API call.");
-    }
-  }
-
-  // Fallback to text transcription field if STT was unsuccessful or not provided
-  if (!transcript && req.body.user_voice_transcript) {
-    transcript = req.body.user_voice_transcript;
-    console.log(`Using text-provided user voice transcript: "${transcript}"`);
-  }
+  let transcript = req.body.user_voice_transcript || '';
 
   // 2. Gemini Turn Processing (Normalize & Decide next question)
   const systemInstruction = `You are a multilingual voice-first assistant. Your main job is to help citizens fill an application form through voice conversation only.
@@ -2289,6 +2237,7 @@ Your output must conform exactly to this JSON schema:
   "speak": "Voice response in the selected language",
   "display_text": "Same response for screen display in the selected language",
   "next_question": "Next question in the selected language",
+  "user_transcript": "Transcription of the user's spoken words in the selected language from their audio. If they typed text or user_voice_transcript was provided, copy that. If none, set to null.",
   "needs_clarification": false,
   "clarification_reason": null,
   "form_patch": {
@@ -2336,16 +2285,28 @@ Your output must conform exactly to this JSON schema:
 Current Question Number: ${currentQuestionNumber}
 Current form state: ${JSON.stringify(formState)}
 Previous conversation state: ${JSON.stringify(conversationState)}
-User voice transcript: "${transcript}"`;
+User voice transcript: "${transcript}"
+If you received an audio input file alongside this prompt, listen to it, transcribe it, and perform the conversation turn using the spoken response.`;
 
   let geminiResult: any = null;
   const ai = getAiClient();
 
   if (ai) {
     try {
+      const contents: any[] = [];
+      if (req.body.audio_base64) {
+        contents.push({
+          inlineData: {
+            mimeType: req.body.audio_mime_type || 'audio/webm',
+            data: req.body.audio_base64
+          }
+        });
+      }
+      contents.push(prompt);
+
       const response = await ai.models.generateContent({
         model: "gemini-3.5-flash",
-        contents: prompt,
+        contents: contents,
         config: {
           systemInstruction: systemInstruction,
           responseMimeType: "application/json",
@@ -2354,6 +2315,9 @@ User voice transcript: "${transcript}"`;
 
       if (response.text) {
         geminiResult = JSON.parse(response.text.trim());
+        if (geminiResult && geminiResult.user_transcript) {
+          transcript = geminiResult.user_transcript;
+        }
       }
     } catch (e) {
       console.error("Gemini failed inside voice-agent-turn, running offline simulator:", e);
@@ -2533,49 +2497,10 @@ User voice transcript: "${transcript}"`;
     };
   }
 
-  // 3. TTS: Convert speak text to voice audio using Sarvam AI TTS
-  let base64Audio: string | null = null;
-  const speakText = geminiResult.speak || '';
-  const sarvamApiKey = process.env.SARVAM_API_KEY;
-
-  if (speakText && sarvamApiKey) {
-    try {
-      console.log(`Sending speak text to Sarvam TTS in language ${selectedLang} (${targetLangCode})...`);
-      const ttsResponse = await fetch('https://api.sarvam.ai/text-to-speech', {
-        method: 'POST',
-        headers: {
-          'api-subscription-key': sarvamApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          inputs: [speakText],
-          target_language_code: targetLangCode,
-          speaker: "priya",
-          pace: 0.85,
-          speech_sample_rate: 8000,
-          enable_preprocessing: true,
-          model: "bulbul:v3"
-        })
-      });
-
-      if (ttsResponse.ok) {
-        const ttsData = await ttsResponse.json() as any;
-        if (ttsData && ttsData.audios && ttsData.audios.length > 0) {
-          base64Audio = ttsData.audios[0];
-          console.log(`Successfully generated voice audio from Sarvam TTS (${base64Audio.length} chars base64)`);
-        }
-      } else {
-        const errText = await ttsResponse.text();
-        console.error(`Sarvam TTS failed with status ${ttsResponse.status}: ${errText}`);
-      }
-    } catch (ttsErr) {
-      console.error("Error invoking Sarvam Text-to-Speech:", ttsErr);
-    }
-  }
-
+  // TTS: Return null so the client automatically falls back to browser-native SpeechSynthesis
   res.json({
     transcript: transcript,
-    audio: base64Audio,
+    audio: null,
     data: geminiResult
   });
 });
