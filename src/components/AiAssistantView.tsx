@@ -3,6 +3,7 @@ import { LanguageCode } from '../types';
 import { generateAssistantReply } from '../lib/aiService';
 import { TRANSLATIONS } from '../data/translations';
 import { Bot, Send, User, Mic, Sparkles, AlertCircle, Volume2, MicOff, Languages } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 
 interface AiAssistantViewProps {
   currentLanguage: LanguageCode;
@@ -165,6 +166,16 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({ currentLanguag
           <Languages className="h-4 w-4 text-teal-700" />
           <span>{t.voiceGateway || "Multilingual Voice Gateway Active"}</span>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <SuggestedInquiries screenId="AiAssistantView" onQuerySelect={(q, a) => {
+          setMessages(prev => [
+            ...prev,
+            { sender: 'citizen', text: q, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
+            { sender: 'ai', text: a, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+          ]);
+        }} />
       </div>
 
       {/* Messages Scroll Area */}

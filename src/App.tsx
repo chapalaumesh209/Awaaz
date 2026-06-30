@@ -22,6 +22,7 @@ import CivicVoiceView from './components/CivicVoiceView';
 import VolunteerDashboard from './components/VolunteerDashboard';
 import VolunteerCaseDetailView from './components/VolunteerCaseDetailView';
 import AdminDashboard from './components/AdminDashboard';
+import AdminSeedView from './components/AdminSeedView';
 import AuthView from './components/AuthView';
 
 // Bottom Nav Icons for Mobile Citizen Flow
@@ -224,6 +225,8 @@ export default function App() {
       // Admin views
       case 'admin':
         return <AdminDashboard currentLanguage={currentLanguage} onNavigate={handleNavigate} />;
+      case 'admin-seed-companion':
+        return <AdminSeedView onNavigate={handleNavigate} />;
 
       default:
         return (

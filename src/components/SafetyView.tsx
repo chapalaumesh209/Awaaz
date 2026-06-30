@@ -5,8 +5,11 @@ import {
   MapPin, AlertTriangle, HelpCircle, Activity, Calendar,
   MessageSquare, Volume2, Mic, MicOff, Phone, Map, Landmark, 
   Plus, ThumbsUp, Send, Loader2, Sparkles, AlertOctagon, ShieldAlert,
-  MapPinned, CheckCircle2, RefreshCw, EyeOff, Users, ArrowRight
+  MapPinned, CheckCircle2, RefreshCw, EyeOff, Users, ArrowRight,
+  PhoneCall, Search, Lock, Share2, Info, Navigation, User, StopCircle,
+  FileText, ChevronRight, Check, CheckCircle, Lightbulb, UserCheck, Play, Save, CheckSquare, Droplet
 } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 import dbClient from '../lib/supabaseClient';
 import { generateAssistantReply } from '../lib/aiService';
 
@@ -562,6 +565,10 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
         </div>
       </div>
 
+      <div className="mb-6 -mt-2">
+        <SuggestedInquiries screenId="SafetyView" />
+      </div>
+
       {/* Primary Category Selector Tabs */}
       <div className="grid grid-cols-3 border-b border-[#E8E2D6] mb-8 gap-2">
         <button
@@ -667,7 +674,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                         commuting ? 'bg-amber-600 text-white hover:bg-amber-700' : 'bg-[#F3F0E9] border border-[#DED9CE] text-teal-800 hover:bg-[#E8E2D6]'
                       }`}
                     >
-                      {commuting ? 'End Journey Monitoring' : 'Start Active Commute'}
+                      {commuting ? 'End Journey Monitoring' : 'Activate Commute'}
                     </button>
                   )}
                 </div>

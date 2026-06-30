@@ -1,9 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Mic, MicOff, Volume2, RefreshCw, Check, CheckCircle2, AlertCircle, 
   Sparkles, StopCircle, Trash2, Play, Square, ArrowRight, User, Globe, Bot, X
 } from 'lucide-react';
 import { LanguageCode } from '../types';
+
+type VoiceState =
+  | 'idle'
+  | 'assistant_speaking'
+  | 'ready_to_listen'
+  | 'listening'
+  | 'processing_audio'
+  | 'transcribing'
+  | 'understanding'
+  | 'updating_profile'
+  | 'asking_clarification'
+  | 'form_complete'
+  | 'error_microphone_denied'
+  | 'error_voice_failed';
 
 interface VoiceAssistantFormProps {
   currentLanguage: LanguageCode;
@@ -24,7 +38,7 @@ const LANGUAGES = [
   { code: 'Gujarati', label: 'Gujarati (ગુજરાતી)', locale: 'gu-IN' },
   { code: 'Punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)', locale: 'pa-IN' },
   { code: 'Odia', label: 'Odia (ଓଡ଼ିଆ)', locale: 'or-IN' },
-  { code: 'Urdu', label: 'Urdu (اردو)', locale: 'ur-PK' }
+  { code: 'Urdu', label: 'Urdu (اردو)', locale: 'ur-IN' }
 ];
 
 const SUGGESTED_RESPONSES: Record<string, Record<number, string[]>> = {
@@ -79,6 +93,36 @@ const FIELD_LABELS: Record<string, string> = {
   has_bank_account: "Has Bank Account"
 };
 
+const VOICE_STATE_LABELS: Record<VoiceState, string> = {
+  idle: 'READY',
+  assistant_speaking: 'ASSISTANT SPEAKING',
+  ready_to_listen: 'TAP TO SPEAK',
+  listening: 'LISTENING',
+  processing_audio: 'PROCESSING',
+  transcribing: 'TRANSCRIBING',
+  understanding: 'UNDERSTANDING',
+  updating_profile: 'PROFILE UPDATED',
+  asking_clarification: 'PLEASE REPEAT',
+  form_complete: 'FORM COMPLETE',
+  error_microphone_denied: 'MIC DENIED',
+  error_voice_failed: 'ERROR — RETRY'
+};
+
+const VOICE_STATE_COLORS: Record<VoiceState, string> = {
+  idle: 'bg-gray-700 text-gray-100',
+  assistant_speaking: 'bg-teal-800 text-teal-100',
+  ready_to_listen: 'bg-emerald-700 text-emerald-100',
+  listening: 'bg-red-700 text-red-100',
+  processing_audio: 'bg-amber-700 text-amber-100',
+  transcribing: 'bg-blue-700 text-blue-100',
+  understanding: 'bg-purple-700 text-purple-100',
+  updating_profile: 'bg-emerald-700 text-emerald-100',
+  asking_clarification: 'bg-orange-700 text-orange-100',
+  form_complete: 'bg-teal-900 text-teal-100',
+  error_microphone_denied: 'bg-red-900 text-red-100',
+  error_voice_failed: 'bg-red-800 text-red-100'
+};
+
 export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
   currentLanguage,
   onComplete,
@@ -89,6 +133,15 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
   const getInitialLanguage = (): string => {
     if (currentLanguage === 'te') return 'Telugu';
     if (currentLanguage === 'hi') return 'Hindi';
+    if (currentLanguage === 'ta') return 'Tamil';
+    if (currentLanguage === 'kn') return 'Kannada';
+    if (currentLanguage === 'ml') return 'Malayalam';
+    if (currentLanguage === 'mr') return 'Marathi';
+    if (currentLanguage === 'bn') return 'Bengali';
+    if (currentLanguage === 'gu') return 'Gujarati';
+    if (currentLanguage === 'pa') return 'Punjabi';
+    if (currentLanguage === 'or') return 'Odia';
+    if (currentLanguage === 'ur') return 'Urdu';
     return 'English';
   };
 
@@ -99,6 +152,8 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
   const [displayText, setDisplayText] = useState<string>('');
   const [userInputText, setUserInputText] = useState<string>('');
   const [needsClarification, setNeedsClarification] = useState<boolean>(false);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const lastAudioBase64Ref = useRef<string | null>(null);
   
   // Stored form states
   const [completeFormData, setCompleteFormData] = useState<any>({
@@ -120,9 +175,9 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     has_bank_account: null
   });
 
-  const [missingFields, setMissingFields] = useState<string[]>([
-    "full_name", "age", "gender", "state", "district", "occupation", "monthly_income", "has_aadhaar", "has_bank_account"
-  ]);
+  const [missingFields, setMissingFields] = useState<string[]>(
+    ["full_name", "age", "gender", "state", "district", "occupation", "monthly_income", "has_aadhaar", "has_bank_account"]
+  );
 
   // Audio wave and recording states
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -143,7 +198,6 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     handleVoiceAgentTurn(null, '');
     
     return () => {
-      // Cleanup on unmount
       cleanupVoiceResources();
     };
   }, []);
@@ -160,7 +214,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       cancelAnimationFrame(animationFrameRef.current);
     }
     if (audioContextRef.current) {
-      audioContextRef.current.close().catch(e => console.error("Error closing audio context:", e));
+      audioContextRef.current.close().catch(() => {});
       audioContextRef.current = null;
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
@@ -171,9 +225,14 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
 
   // Real voice recording via browser MediaRecorder API
   const startRealRecording = async () => {
-    // Prevent multiple parallel sessions
+    // If already recording, stop
     if (isRecording) {
       stopRealRecording();
+      return;
+    }
+
+    // Only allow recording when ready
+    if (voiceState !== 'ready_to_listen' && voiceState !== 'idle' && voiceState !== 'error_voice_failed' && voiceState !== 'asking_clarification') {
       return;
     }
 
@@ -189,8 +248,10 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
 
-      let options = {};
-      if (MediaRecorder.isTypeSupported('audio/webm')) {
+      let options: MediaRecorderOptions = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options = { mimeType: 'audio/webm;codecs=opus' };
+      } else if (MediaRecorder.isTypeSupported('audio/webm')) {
         options = { mimeType: 'audio/webm' };
       } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
         options = { mimeType: 'audio/ogg' };
@@ -206,49 +267,50 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/wav' });
-        
-        // Release hardware resources immediately
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
         stream.getTracks().forEach(track => track.stop());
-
-        // Process recorded audio blob
         handleVoiceAgentTurn(audioBlob);
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250); // collect data every 250ms
       setIsRecording(true);
+      setVoiceState('listening');
 
-      // Web Audio API Silence Detection setup
       setupSilenceDetection(stream);
 
-      // Keep recordings under 30 seconds for sync STT
+      // Auto-stop after 30 seconds
       timeoutIdRef.current = setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
+          setIsRecording(false);
+          setVoiceState('processing_audio');
         }
       }, 30000);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Microphone permission denied or hardware error:", err);
-      alert("Microphone access is required to use the real voice assistant. Please allow mic permission and try again.");
       setIsRecording(false);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setVoiceState('error_microphone_denied');
+        setDisplayText('Microphone permission is needed for voice help. Please allow mic permission in your browser settings and try again.');
+      } else {
+        setVoiceState('error_voice_failed');
+        setDisplayText('Could not access microphone. Please check your device settings.');
+      }
     }
   };
 
   const stopRealRecording = () => {
-    if (timeoutIdRef.current) {
-      clearTimeout(timeoutIdRef.current);
-    }
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
+    if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
+    setVoiceState('processing_audio');
   };
 
-  // Automatic silence detection (stops recording when speaker finishes speaking)
+  // Automatic silence detection
   const setupSilenceDetection = (stream: MediaStream) => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -269,19 +331,14 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       audioContextRef.current = audioContext;
 
       const checkSilence = () => {
-        if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
-          return;
-        }
+        if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return;
 
         analyser.getByteFrequencyData(dataArray);
-
-        // Compute peak amplitude level
         let maxVal = 0;
         for (let i = 0; i < bufferLength; i++) {
           if (dataArray[i] > maxVal) maxVal = dataArray[i];
         }
 
-        // Standard silence trigger threshold (above threshold is human speech)
         const speechThreshold = 35;
         const now = Date.now();
 
@@ -290,9 +347,8 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
           hasSpoken = true;
         } else {
           const silentDuration = now - lastActiveTime;
-          // If speech is recognized, and silent for more than 2.0 seconds, auto-submit
           if (hasSpoken && silentDuration > 2000) {
-            console.log("Silence detected: automatically stopping and submitting turn.");
+            console.log('Silence detected: auto-stopping recording.');
             stopRealRecording();
             return;
           }
@@ -303,13 +359,14 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
 
       animationFrameRef.current = requestAnimationFrame(checkSilence);
     } catch (e) {
-      console.error("Failed to setup real-time silence detection:", e);
+      console.error('Failed to setup silence detection:', e);
     }
   };
 
-  // Play audio base64 payload from Sarvam AI TTS
-  const playBase64Audio = (base64String: string, speakText: string, nextAction?: string) => {
+  // Play Sarvam TTS base64 audio
+  const playBase64Audio = (base64String: string, text: string) => {
     try {
+      lastAudioBase64Ref.current = base64String;
       if (activeAudioRef.current) {
         activeAudioRef.current.pause();
         activeAudioRef.current = null;
@@ -321,69 +378,96 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
 
       audio.onplay = () => {
         setIsSynthesizing(true);
+        setVoiceState('assistant_speaking');
       };
 
       audio.onended = () => {
         setIsSynthesizing(false);
+        setVoiceState('ready_to_listen');
+        activeAudioRef.current = null;
       };
 
-      audio.onerror = (e) => {
-        console.error("Audio playback failed, falling back to Web Speech API:", e);
+      audio.onerror = () => {
         setIsSynthesizing(false);
-        handleTextToSpeech(speakText, nextAction);
+        handleTextToSpeech(text);
       };
 
-      audio.play().catch(playErr => {
-        console.warn("Autoplay was prevented by browser. Falling back to native synthesis...", playErr);
+      audio.play().catch(() => {
         setIsSynthesizing(false);
-        handleTextToSpeech(speakText, nextAction);
+        handleTextToSpeech(text);
       });
     } catch (e) {
-      console.error("Error setting up audio player:", e);
       setIsSynthesizing(false);
-      handleTextToSpeech(speakText, nextAction);
+      handleTextToSpeech(text);
     }
   };
 
-  // Browser offline text-to-speech fallback
-  const handleTextToSpeech = (text: string, nextAction?: string) => {
-    if (!('speechSynthesis' in window)) return;
+  // Browser speech synthesis fallback
+  const handleTextToSpeech = (text: string) => {
+    if (!('speechSynthesis' in window)) {
+      setVoiceState('ready_to_listen');
+      return;
+    }
     window.speechSynthesis.cancel();
+    setVoiceState('assistant_speaking');
 
     const matchedLang = LANGUAGES.find(l => l.code === selectedLanguage);
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = matchedLang ? matchedLang.locale : 'en-IN';
 
     const voices = window.speechSynthesis.getVoices();
-    const desiredVoice = voices.find(v => v.lang.startsWith(utterance.lang));
-    if (desiredVoice) {
-      utterance.voice = desiredVoice;
-    }
+    const desiredVoice = voices.find(v => v.lang.startsWith(utterance.lang.substring(0, 2)));
+    if (desiredVoice) utterance.voice = desiredVoice;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.05;
 
-    utterance.onstart = () => setIsSynthesizing(true);
+    utterance.onstart = () => {
+      setIsSynthesizing(true);
+      setVoiceState('assistant_speaking');
+    };
     utterance.onend = () => {
       setIsSynthesizing(false);
+      setVoiceState('ready_to_listen');
     };
-    utterance.onerror = () => setIsSynthesizing(false);
+    utterance.onerror = () => {
+      setIsSynthesizing(false);
+      setVoiceState('ready_to_listen');
+    };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  // End-to-end multi-lingual pipeline call: STT -> Gemini -> TTS
+  // Replay last spoken audio or TTS
+  const speakAgain = () => {
+    if (lastAudioBase64Ref.current && speakText) {
+      playBase64Audio(lastAudioBase64Ref.current, speakText);
+    } else if (displayText) {
+      handleTextToSpeech(displayText);
+    }
+  };
+
+  // Main voice agent turn — STT + Gemini + TTS pipeline
   const handleVoiceAgentTurn = async (audioBlob: Blob | null, textOverride?: string) => {
     const transcript = textOverride !== undefined ? textOverride : userInputText;
     setIsLoading(true);
 
-    // Cancel current playbacks
+    if (!transcript && !audioBlob) {
+      // Initial greeting turn
+      setVoiceState('understanding');
+    } else if (audioBlob) {
+      setVoiceState('transcribing');
+    } else {
+      setVoiceState('understanding');
+    }
+
     cleanupVoiceResources();
 
     try {
       const formData = new FormData();
       if (audioBlob) {
-        formData.append('audio', audioBlob, 'audio.wav');
+        const ext = audioBlob.type.includes('webm') ? 'webm' : audioBlob.type.includes('ogg') ? 'ogg' : 'wav';
+        formData.append('audio', audioBlob, `audio.${ext}`);
       }
-      
-      // Send text override if suggestions or manual text was input
       if (transcript.trim()) {
         formData.append('user_voice_transcript', transcript);
       }
@@ -393,14 +477,16 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       formData.append('form_state', JSON.stringify(completeFormData));
       formData.append('conversation_state', JSON.stringify(chatLog));
 
+      if (audioBlob) setVoiceState('transcribing');
+      
       const response = await fetch('/voice-agent-turn', {
         method: 'POST',
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to communicate with voice agent endpoint");
-      }
+      setVoiceState('understanding');
+
+      if (!response.ok) throw new Error('Voice agent endpoint error');
 
       const turnResult = await response.json();
       const transcribedText = turnResult.transcript || transcript || '';
@@ -413,62 +499,63 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       if (data) {
         setCurrentQuestionNumber(data.current_question_number);
         setAction(data.action);
-        setSpeakText(data.speak);
-        setDisplayText(data.display_text);
+        setSpeakText(data.speak || '');
+        setDisplayText(data.display_text || data.speak || '');
         setNeedsClarification(data.needs_clarification || false);
 
+        // Update profile form
         if (data.complete_form_data) {
+          setVoiceState('updating_profile');
           setCompleteFormData(data.complete_form_data);
-          if (onUpdate) {
-            onUpdate(data.complete_form_data);
-          }
+          if (onUpdate) onUpdate(data.complete_form_data);
         }
-        if (data.missing_fields) {
-          setMissingFields(data.missing_fields);
-        }
+        if (data.missing_fields) setMissingFields(data.missing_fields);
 
-        setChatLog(prev => [...prev, { sender: 'assistant', text: data.speak, lang: selectedLanguage }]);
+        setChatLog(prev => [...prev, { sender: 'assistant', text: data.speak || '', lang: selectedLanguage }]);
         setUserInputText('');
 
-        // Play returned Sarvam TTS audio or invoke client fallback synthesis
-        if (turnResult.audio) {
-          playBase64Audio(turnResult.audio, data.speak, data.action);
+        // Handle clarification state
+        if (data.needs_clarification) {
+          setVoiceState('asking_clarification');
+        } else if (data.form_ready) {
+          setVoiceState('form_complete');
+        }
+
+        // Speak the assistant response
+        const textToSpeak = data.speak || '';
+        if (textToSpeak) {
+          if (turnResult.audio) {
+            playBase64Audio(turnResult.audio, textToSpeak);
+          } else {
+            handleTextToSpeech(textToSpeak);
+          }
         } else {
-          handleTextToSpeech(data.speak, data.action);
+          setVoiceState('ready_to_listen');
         }
 
         if (data.form_ready) {
           setTimeout(() => {
             onComplete(data.complete_form_data);
-          }, 1500);
+          }, 2000);
         }
       }
     } catch (err) {
-      console.error("E2E voice agent turn error:", err);
-      alert("Error contacting the voice-agent. Using browser-side fallback helper...");
+      console.error('Voice agent turn error:', err);
+      setVoiceState('error_voice_failed');
+      setDisplayText('Something went wrong. Please tap the mic and try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRestart = () => {
+    cleanupVoiceResources();
     setCompleteFormData({
-      full_name: null,
-      age: null,
-      gender: null,
-      state: null,
-      district: null,
-      occupation: null,
-      monthly_income: null,
-      is_student: false,
-      is_farmer: false,
-      is_worker: false,
-      is_woman: false,
-      is_senior_citizen: false,
-      is_migrant: false,
-      is_disabled: false,
-      has_aadhaar: null,
-      has_bank_account: null
+      full_name: null, age: null, gender: null, state: null,
+      district: null, occupation: null, monthly_income: null,
+      is_student: false, is_farmer: false, is_worker: false,
+      is_woman: false, is_senior_citizen: false, is_migrant: false,
+      is_disabled: false, has_aadhaar: null, has_bank_account: null
     });
     setCurrentQuestionNumber(1);
     setAction('ask_question');
@@ -476,29 +563,31 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     setUserInputText('');
     setSpeakText('');
     setDisplayText('');
-    setTimeout(() => {
-      handleVoiceAgentTurn(null, '');
-    }, 100);
+    lastAudioBase64Ref.current = null;
+    setVoiceState('idle');
+    setMissingFields(["full_name", "age", "gender", "state", "district", "occupation", "monthly_income", "has_aadhaar", "has_bank_account"]);
+    setTimeout(() => handleVoiceAgentTurn(null, ''), 100);
   };
 
+  const canRecord = voiceState === 'ready_to_listen' || voiceState === 'idle' || voiceState === 'error_voice_failed' || voiceState === 'asking_clarification';
   const suggestions = SUGGESTED_RESPONSES[selectedLanguage]?.[currentQuestionNumber] || SUGGESTED_RESPONSES["English"]?.[currentQuestionNumber] || [];
+  const stateLabel = VOICE_STATE_LABELS[voiceState];
+  const stateBadgeColor = VOICE_STATE_COLORS[voiceState];
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-teal-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="voice-assistant-modal">
       <div className="bg-[#FDFBF7] text-[#1A2E2A] w-full max-w-4xl rounded-[32px] border border-teal-800 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
         
-        {/* Left Interactive Assistant panel */}
         <div className="flex-1 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
           
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div className="flex items-center space-x-2.5">
               <div className="bg-teal-900 p-2.5 rounded-2xl text-teal-300">
-                <Bot className="h-5.5 w-5.5 animate-bounce" />
+                <Bot className="h-5 w-5 animate-bounce" />
               </div>
               <div>
                 <h4 className="font-serif text-lg font-bold text-teal-900">AWAAZ Voice Assistant</h4>
-                <p className="text-[10px] text-gray-400 font-mono">12 LANGUAGES • AUDIO TRANSCRIPTION</p>
+                <p className="text-[10px] text-gray-400 font-mono">12 LANGUAGES • SARVAM AI VOICE</p>
               </div>
             </div>
             <button 
@@ -509,40 +598,56 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
             </button>
           </div>
 
-          {/* Assistant Bubble display */}
           <div className="my-6 flex-1 flex flex-col justify-center space-y-4">
             <div className="bg-teal-50/50 border border-teal-100 rounded-3xl p-6 relative">
-              <span className="absolute -top-2.5 left-6 bg-teal-800 text-teal-100 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                ASSISTANT SPEAKING
+              <span className={`absolute -top-2.5 left-6 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${stateBadgeColor}`}>
+                {stateLabel}
               </span>
               
               <p className="font-serif text-xl md:text-2xl font-bold leading-relaxed text-teal-950 italic">
                 "{displayText || "Loading your helper assistant..."}"
               </p>
 
-              {/* Speech control */}
+              {voiceState === 'error_microphone_denied' && (
+                <div className="mt-3 flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2">
+                  <MicOff className="h-4 w-4 text-red-600 shrink-0" />
+                  <p className="text-xs text-red-700 font-semibold">Microphone permission is needed for voice help. Please allow mic access in your browser.</p>
+                </div>
+              )}
+
               <div className="mt-4 flex items-center space-x-2">
                 <button
                   id="voice-speak-question-button"
-                  onClick={() => handleTextToSpeech(displayText)}
-                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold text-teal-800 transition-colors"
+                  onClick={speakAgain}
+                  disabled={!displayText || isLoading}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold text-teal-800 transition-colors disabled:opacity-40"
                 >
                   <Volume2 className={`h-4 w-4 ${isSynthesizing ? 'text-teal-600 animate-pulse' : 'text-teal-800'}`} />
-                  <span>{isSynthesizing ? "Speaking..." : "Speak Question"}</span>
+                  <span>{isSynthesizing ? 'Speaking...' : 'Speak Question'}</span>
                 </button>
+
+                {voiceState === 'asking_clarification' && (
+                  <span className="text-xs text-orange-700 font-semibold bg-orange-50 border border-orange-200 px-2 py-1 rounded-xl">
+                    Please speak again clearly
+                  </span>
+                )}
+
+                {voiceState === 'form_complete' && (
+                  <span className="flex items-center space-x-1 text-xs text-emerald-700 font-extrabold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-xl">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Form Complete!</span>
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Input & Record controls */}
             <div className="space-y-3">
               <div className="flex gap-2">
-                {/* Language Picker */}
                 <select
                   id="voice-language-dropdown"
                   value={selectedLanguage}
                   onChange={(e) => {
                     setSelectedLanguage(e.target.value);
-                    // trigger refresh
                     setTimeout(() => handleVoiceAgentTurn(null, ''), 200);
                   }}
                   className="bg-white border border-gray-200 rounded-2xl px-3 py-2 text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-500 focus:outline-none"
@@ -557,6 +662,11 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
                   type="text"
                   value={userInputText}
                   onChange={(e) => setUserInputText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && userInputText.trim()) {
+                      handleVoiceAgentTurn(null, userInputText);
+                    }
+                  }}
                   placeholder="Spoken transcript will appear here..."
                   className="flex-1 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 text-xs text-teal-950 font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
                 />
@@ -565,40 +675,67 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
                   id="voice-submit-text-button"
                   type="button"
                   onClick={() => handleVoiceAgentTurn(null)}
-                  disabled={isLoading}
+                  disabled={isLoading || !userInputText.trim()}
                   className="bg-teal-700 hover:bg-teal-800 text-white p-3 rounded-2xl flex items-center justify-center shadow-md transition-all active:scale-95 disabled:opacity-50"
                 >
-                  <ArrowRight className="h-4.5 w-4.5" />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Simulated / Real record toggle */}
               <div className="flex items-center justify-between">
                 <button
                   id="voice-recording-button"
                   onClick={startRealRecording}
-                  disabled={isLoading}
+                  disabled={isLoading || (!canRecord && !isRecording)}
                   className={`w-full py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs font-bold transition-all shadow-md active:scale-95 ${
-                    isRecording 
-                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
-                      : 'bg-teal-900 hover:bg-teal-950 text-white'
+                    isRecording
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                      : voiceState === 'error_microphone_denied'
+                        ? 'bg-red-100 text-red-700 border border-red-300 cursor-not-allowed'
+                        : canRecord
+                          ? 'bg-teal-900 hover:bg-teal-950 text-white'
+                          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  {isRecording ? (
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>
+                        {voiceState === 'transcribing' ? 'Transcribing...' :
+                         voiceState === 'understanding' ? 'Understanding...' :
+                         voiceState === 'processing_audio' ? 'Processing audio...' :
+                         'Loading...'}
+                      </span>
+                    </>
+                  ) : isRecording ? (
                     <>
                       <StopCircle className="h-4 w-4 fill-white" />
                       <span>Recording... Tap to Finish</span>
                     </>
-                  ) : (
+                  ) : voiceState === 'error_microphone_denied' ? (
+                    <>
+                      <MicOff className="h-4 w-4" />
+                      <span>Microphone Access Denied</span>
+                    </>
+                  ) : voiceState === 'assistant_speaking' ? (
+                    <>
+                      <Volume2 className="h-4 w-4 text-teal-300 animate-pulse" />
+                      <span>Assistant Speaking...</span>
+                    </>
+                  ) : canRecord ? (
                     <>
                       <Mic className="h-4 w-4 text-teal-300" />
                       <span>Tap to Speak (Voice Input)</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      <span>Please Wait...</span>
                     </>
                   )}
                 </button>
               </div>
 
-              {/* Audio Wave Visualizer representation */}
               {(isRecording || isSynthesizing) && (
                 <div className="flex items-center justify-center space-x-1.5 py-2">
                   <span className="w-1.5 h-6 bg-teal-600 rounded-full animate-bounce delay-75"></span>
@@ -610,11 +747,10 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
               )}
             </div>
 
-            {/* Tap suggested responses to simulate spoken text */}
-            {suggestions.length > 0 && (
+            {suggestions.length > 0 && voiceState !== 'form_complete' && (
               <div className="space-y-1.5 mt-2 bg-gray-50 border border-gray-100 p-3 rounded-2xl">
                 <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider">
-                  Tap to simulate spoken answer ({selectedLanguage}):
+                  Demo answers — tap to simulate speaking ({selectedLanguage}):
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestions.map((sug, sIdx) => (
@@ -625,7 +761,8 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
                         setUserInputText(sug);
                         handleVoiceAgentTurn(null, sug);
                       }}
-                      className="px-2.5 py-1.5 bg-white hover:bg-teal-50 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-700 hover:text-teal-900 transition-all text-left truncate max-w-xs"
+                      disabled={isLoading || isSynthesizing}
+                      className="px-2.5 py-1.5 bg-white hover:bg-teal-50 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-700 hover:text-teal-900 transition-all text-left truncate max-w-xs disabled:opacity-50"
                     >
                       🗣️ "{sug}"
                     </button>
@@ -635,7 +772,6 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
             )}
           </div>
 
-          {/* Reset / Status footer */}
           <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
             <button
               id="voice-reset-assistant-button"
@@ -647,36 +783,34 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
             </button>
             
             <div className="text-[10px] text-gray-400 font-mono">
-              STAGE: {action.toUpperCase()} • Q: {currentQuestionNumber}/8
+              {voiceState.toUpperCase()} • Q: {currentQuestionNumber}/8
             </div>
           </div>
 
         </div>
 
-        {/* Right English Form representation panel */}
         <div className="w-full md:w-[320px] bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 flex flex-col justify-between">
           <div>
             <div className="flex items-center space-x-1.5 mb-4 pb-2 border-b border-gray-100">
-              <CheckCircle2 className="h-4.5 w-4.5 text-teal-700" />
+              <CheckCircle2 className="h-4 w-4 text-teal-700" />
               <h5 className="font-serif text-sm font-bold text-teal-950">English Normalized Profile</h5>
             </div>
 
             <p className="text-[10px] text-gray-400 leading-normal mb-4">
-              All spoken inputs are automatically translated and normalized into English for standard government system storage.
+              All spoken inputs are automatically translated and normalized into English for government system storage.
             </p>
 
             <div className="space-y-3">
               {Object.entries(completeFormData).map(([key, val]) => {
                 if (key.startsWith('is_') || key.startsWith('has_')) {
-                  // Boolean flag representation
                   return (
                     <div key={key} className="flex items-center justify-between bg-gray-50/50 p-2 rounded-xl border border-gray-100">
                       <span className="text-[10px] font-semibold text-gray-500">{FIELD_LABELS[key] || key}</span>
                       <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-sm ${
-                        val === true 
-                          ? 'bg-emerald-50 text-emerald-800' 
-                          : val === false 
-                            ? 'bg-red-50 text-red-800' 
+                        val === true
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : val === false
+                            ? 'bg-red-50 text-red-800'
                             : 'bg-gray-100 text-gray-400'
                       }`}>
                         {val === true ? 'YES' : val === false ? 'NO' : 'PENDING'}
@@ -705,7 +839,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
           <div className="pt-4 mt-6 border-t border-gray-100">
             <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
               <div 
-                className="bg-teal-600 h-1.5 rounded-full transition-all duration-300" 
+                className="bg-teal-600 h-1.5 rounded-full transition-all duration-500" 
                 style={{ width: `${Math.round(((9 - missingFields.length) / 9) * 100)}%` }} 
               />
             </div>

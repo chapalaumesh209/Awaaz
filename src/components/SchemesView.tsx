@@ -7,6 +7,7 @@ import {
   Search, SlidersHorizontal, CheckCircle, AlertTriangle, ArrowRight, 
   BookOpen, Mic, Volume2, Square, Sparkles, RefreshCw, X, Check, HelpCircle 
 } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 
 interface SchemesViewProps {
   currentLanguage: LanguageCode;
@@ -128,6 +129,9 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
       </div>
 
       {/* Search & Category Filter bar */}
+      <div className="mb-4 -mt-4">
+        <SuggestedInquiries screenId="SchemesView" />
+      </div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10">
         
         {/* Search */}
@@ -162,6 +166,16 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
 
       </div>
 
+      {/* No Profile Banner */}
+      {!activeProfile && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center space-x-3 text-xs font-semibold text-amber-900">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+          <span>
+            No eligibility profile set yet. Go to <strong>My Profile</strong> and save your details to see accurate match percentages for each scheme.
+          </span>
+        </div>
+      )}
+
       {/* Schemes Grid with high contrast, editorial look */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="schemes-grid">
         {filteredSchemes.map((scheme) => {
@@ -192,7 +206,12 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
                   </span>
                   
                   {/* Dynamic Eligibility Tag */}
-                  {eligible ? (
+                  {!activeProfile ? (
+                    <span className="flex items-center space-x-1 text-xs font-bold text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
+                      <HelpCircle className="h-3.5 w-3.5" />
+                      <span>Set Profile</span>
+                    </span>
+                  ) : eligible ? (
                     <span className="flex items-center space-x-1 text-xs font-bold text-emerald-800 bg-[#ECFDF5] border border-emerald-200 px-3 py-1 rounded-full">
                       <CheckCircle className="h-3.5 w-3.5" />
                       <span>{score}% Qualified</span>

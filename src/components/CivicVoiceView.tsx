@@ -12,6 +12,7 @@ import {
   HelpCircle, Check, X, ShieldCheck, Trophy, LandmarkIcon, Users, Sparkles, RefreshCw, MessageSquare,
   Share2, MessageCircle, ThumbsUp, AlertTriangle, Send, Volume2, BookOpen, User, Play, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 
 interface CivicVoiceViewProps {
   currentLanguage: LanguageCode;
@@ -392,12 +393,14 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
       
       {/* Page Header */}
       <div className="border-b border-gray-100 pb-4 mb-8">
-        <h2 className="font-sans text-2xl font-extrabold text-gray-900 tracking-tight">
-          Civic Voice & Gram Sabha Hub
-        </h2>
-        <p className="text-sm text-gray-500 font-medium mt-1">
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">Civic Voice & Gram Sabha Hub</h1>
+        <p className="mt-1 text-sm text-gray-500 font-medium max-w-3xl">
           Review Gram Panchayat budgets, RSVP for upcoming assemblies, or play our Panchayat rights learning board game!
         </p>
+      </div>
+
+      <div className="mb-6 -mt-4">
+        <SuggestedInquiries screenId="CivicVoiceView" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

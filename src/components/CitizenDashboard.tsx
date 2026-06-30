@@ -6,8 +6,10 @@ import { extractProfileFields } from '../lib/aiService';
 import { VoiceAssistantForm } from './VoiceAssistantForm';
 import { 
   Bot, Award, FileText, Activity, ShieldAlert, AlertCircle, Sparkles, UserCheck, CheckCircle2,
-  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck, Mic
+  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck, Mic,
+  Upload, Plus, Edit2, Shield, Volume2, Search, ArrowRight, Share2, HelpCircle
 } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 
 interface CitizenDashboardProps {
   currentLanguage: LanguageCode;
@@ -122,7 +124,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       
       const matchedDocs = [];
       if (completeData.has_aadhaar) matchedDocs.push('aadhaar');
-      if (completeData.has_bank_account) matchedDocs.push('bankPassbook');
+      if (completeData.has_bank_account) matchedDocs.push('bank_passbook');
       if (matchedDocs.length > 0) {
         setExistingDocs(matchedDocs);
       }
@@ -167,7 +169,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       
       const matchedDocs = [];
       if (completeData.has_aadhaar) matchedDocs.push('aadhaar');
-      if (completeData.has_bank_account) matchedDocs.push('bankPassbook');
+      if (completeData.has_bank_account) matchedDocs.push('bank_passbook');
       if (matchedDocs.length > 0) {
         setExistingDocs(matchedDocs);
       }
@@ -220,7 +222,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       householdIncome: Number(income),
       category,
       disabilityStatus: disability,
-      disabilityType: disability ? disabilityType : undefined,
+      disabilityType: disability ? disabilityType : null,
       existingDocuments: existingDocs,
       readinessScore: computedReadiness,
       primaryLanguage: currentLanguage
@@ -282,6 +284,10 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
             <span>{t.womenHelpline || "Women Helpline (1091)"}</span>
           </a>
         </div>
+      </div>
+
+      <div className="mb-6 -mt-2">
+        <SuggestedInquiries screenId="CitizenDashboard" />
       </div>
 
       {/* 3. Stats Bento Grid */}
@@ -387,40 +393,6 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
             </div>
           </div>
 
-          {/* AI Autofill Prompt Assist */}
-          <div className="mb-6 bg-teal-50/40 p-4 rounded-2xl border border-teal-100/50">
-            <div className="flex items-center space-x-1.5 mb-2">
-              <Bot className="h-4 w-4 text-teal-700" />
-              <span className="text-xs font-bold text-teal-800 uppercase tracking-wide">{t.autofillAi || "Autofill Profile with Gemini AI"}</span>
-            </div>
-            <p className="text-xs text-gray-500 mb-3">
-              {t.autofillDesc || "Describe your background in a few words and our AI extraction utility will auto-populate your age, state, job, and income!"}
-            </p>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={aiText}
-                onChange={(e) => setAiText(e.target.value)}
-                placeholder={t.autofillPlaceholder || "Example: I am Lakshmi, a 32 years old domestic worker in Hyderabad making 90,000 yearly."}
-                className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
-              />
-              <button
-                type="button"
-                onClick={handleAiAutofill}
-                disabled={aiExtracting}
-                className="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors flex items-center space-x-1 whitespace-nowrap"
-              >
-                {aiExtracting ? (
-                  <span>{t.extracting || "Extracting..."}</span>
-                ) : (
-                  <>
-                    <Sparkles className="h-3 w-3" />
-                    <span>{t.autofillBtn || "Autofill"}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
 
           {/* Form */}
           <form onSubmit={handleSaveProfile} className="space-y-4">

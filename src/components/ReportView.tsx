@@ -6,6 +6,7 @@ import {
   Shield, Sparkles, Send, EyeOff, Bot, RefreshCw, FileText, 
   CheckCircle, ShieldAlert, Accessibility, MapPin, Camera, BarChart3, AlertOctagon 
 } from 'lucide-react';
+import { SuggestedInquiries } from './SuggestedInquiries';
 
 interface ReportViewProps {
   currentLanguage: LanguageCode;
@@ -158,12 +159,14 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
       
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
-        <h2 className="font-sans text-2xl font-extrabold text-gray-900 tracking-tight">
-          Secure Accountability, Reporting & Advocacy Hub
-        </h2>
-        <p className="text-sm text-gray-500 font-medium mt-1">
-          Anonymously document social atrocities, infrastructural accessibility deficits, or civic grievances. Draft legal complaint petitions instantly.
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">Incident & Audit Reporting</h1>
+        <p className="mt-1 text-sm text-gray-500 font-medium max-w-3xl">
+          Secure, anonymous infrastructure for filing civic grievances, logging systemic discrimination for advocacy partners, and crowdsourcing accessibility audits. 
         </p>
+      </div>
+
+      <div className="mb-6 -mt-2">
+        <SuggestedInquiries screenId="ReportView" />
       </div>
 
       {/* Primary Tabs selection */}
