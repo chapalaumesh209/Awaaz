@@ -3,7 +3,7 @@ import { LanguageCode } from '../types';
 import { generateAssistantReply } from '../lib/aiService';
 import { TRANSLATIONS } from '../data/translations';
 import { Bot, Send, User, Mic, Sparkles, AlertCircle, Volume2, MicOff, Languages } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 
 interface AiAssistantViewProps {
   currentLanguage: LanguageCode;

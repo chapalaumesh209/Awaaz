@@ -7,7 +7,7 @@ import {
   Search, SlidersHorizontal, CheckCircle, AlertTriangle, ArrowRight, 
   BookOpen, Mic, Volume2, Square, Sparkles, RefreshCw, X, Check, HelpCircle 
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 
 interface SchemesViewProps {
   currentLanguage: LanguageCode;
@@ -130,7 +130,7 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
 
       {/* Search & Category Filter bar */}
       <div className="mb-4 -mt-4">
-        <SuggestedInquiries screenId="SchemesView" />
+        
       </div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-10">
         

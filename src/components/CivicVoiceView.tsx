@@ -12,7 +12,7 @@ import {
   HelpCircle, Check, X, ShieldCheck, Trophy, LandmarkIcon, Users, Sparkles, RefreshCw, MessageSquare,
   Share2, MessageCircle, ThumbsUp, AlertTriangle, Send, Volume2, BookOpen, User, Play, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 
 interface CivicVoiceViewProps {
   currentLanguage: LanguageCode;
@@ -400,7 +400,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
       </div>
 
       <div className="mb-6 -mt-4">
-        <SuggestedInquiries screenId="CivicVoiceView" />
+        
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

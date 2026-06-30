@@ -7,7 +7,7 @@ import {
   ChevronRight, Award, Landmark, HardHat, FileSpreadsheet,
   Check, Info, UserCheck, RefreshCw, Layers
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 import { dbClient } from '../lib/supabaseClient';
 import { LanguageCode } from '../types';
 
@@ -457,7 +457,7 @@ Place: ______________________      Court/Registration No: _________`;
       </div>
 
       <div className="mb-6 -mt-2">
-        <SuggestedInquiries screenId="RecordlessView" />
+        
       </div>
 
       {/* Action Alerts */}

@@ -9,7 +9,7 @@ import {
   PhoneCall, Search, Lock, Share2, Info, Navigation, User, StopCircle,
   FileText, ChevronRight, Check, CheckCircle, Lightbulb, UserCheck, Play, Save, CheckSquare, Droplet
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 import dbClient from '../lib/supabaseClient';
 import { generateAssistantReply } from '../lib/aiService';
 
@@ -566,7 +566,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
       </div>
 
       <div className="mb-6 -mt-2">
-        <SuggestedInquiries screenId="SafetyView" />
+        
       </div>
 
       {/* Primary Category Selector Tabs */}

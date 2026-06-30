@@ -9,7 +9,7 @@ import {
   PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck, Mic,
   Upload, Plus, Edit2, Shield, Volume2, Search, ArrowRight, Share2, HelpCircle
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 
 interface CitizenDashboardProps {
   currentLanguage: LanguageCode;
@@ -287,7 +287,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       </div>
 
       <div className="mb-6 -mt-2">
-        <SuggestedInquiries screenId="CitizenDashboard" />
+        
       </div>
 
       {/* 3. Stats Bento Grid */}

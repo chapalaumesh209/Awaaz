@@ -6,7 +6,7 @@ import {
   Shield, Sparkles, Send, EyeOff, Bot, RefreshCw, FileText, 
   CheckCircle, ShieldAlert, Accessibility, MapPin, Camera, BarChart3, AlertOctagon 
 } from 'lucide-react';
-import { SuggestedInquiries } from './SuggestedInquiries';
+
 
 interface ReportViewProps {
   currentLanguage: LanguageCode;
@@ -166,7 +166,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
       </div>
 
       <div className="mb-6 -mt-2">
-        <SuggestedInquiries screenId="ReportView" />
+        
       </div>
 
       {/* Primary Tabs selection */}
