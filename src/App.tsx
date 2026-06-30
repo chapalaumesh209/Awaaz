@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LanguageCode, UserProfile } from './types';
 import { dbClient } from './lib/supabaseClient';
 import { TRANSLATIONS } from './data/translations';
+import { BrowserRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 
 // Core Subcomponents
 import Header from './components/Header';
@@ -31,10 +32,14 @@ import {
   MapPin, AlertOctagon, Heart, Users, ShieldAlert, Scale, ShieldCheck, HeartPulse, Volume2
 } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
-  const [currentRoute, setCurrentRoute] = useState<string>('landing');
-  const [routeParams, setRouteParams] = useState<Record<string, string>>({});
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentRoute = location.pathname === '/' ? 'landing' : location.pathname.substring(1);
+  const routeParams = Object.fromEntries(new URLSearchParams(location.search).entries());
+
   const [translationsTrigger, setTranslationsTrigger] = useState<number>(0);
 
   // Pre-load all cached translations from Firestore when language changes
@@ -110,8 +115,12 @@ export default function App() {
   };
 
   const handleNavigate = (route: string, params: Record<string, string> = {}) => {
-    setCurrentRoute(route);
-    setRouteParams(params);
+    let path = route === 'landing' ? '/' : `/${route}`;
+    if (Object.keys(params).length > 0) {
+      const search = new URLSearchParams(params).toString();
+      path += `?${search}`;
+    }
+    navigate(path);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -440,5 +449,13 @@ export default function App() {
       )}
 
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }

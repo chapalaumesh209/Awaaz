@@ -45,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onNavigate('landing')}
           id="brand-section"
         >
-          <AwaazLogo size={52} className="hover:scale-105 transition-all duration-300" />
+          <img src="/logo.png" alt="Awaaz Logo" className="h-[52px] w-auto hover:scale-105 transition-all duration-300" />
         </div>
 
         {/* Action Controls */}
