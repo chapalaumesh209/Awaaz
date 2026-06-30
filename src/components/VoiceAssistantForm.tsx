@@ -123,6 +123,48 @@ const VOICE_STATE_COLORS: Record<VoiceState, string> = {
   error_voice_failed: 'bg-red-800 text-red-100'
 };
 
+const TTS_TRANSLATIONS: Record<string, Record<string, string>> = {
+  "English": {
+    greet: "Hello. I will help you fill the form. You only need to speak. First, what is your full name?",
+    q1: "What is your full name?",
+    q2: "Thank you. Now, what is your age in years?",
+    q3: "Got it. What is your gender?",
+    q4: "Which state and district do you live in?",
+    q5: "What is your main job or occupation?",
+    q6: "What is your monthly income in rupees?",
+    q7: "Do you belong to any groups like student, farmer, worker, senior citizen, woman, migrant, or disabled?",
+    q8: "Do you have an Aadhaar card and a bank account?",
+    confirm: "I have filled your form. Is this information correct?",
+    success: "Excellent. Your form is complete and has been saved successfully!"
+  },
+  "Telugu": {
+    greet: "నమస్కారం. నేను మీకు ఫారమ్ నింపడానికి సహాయం చేస్తాను. మీరు మాట్లాడితే సరిపోతుంది. మొదటిగా, మీ పూర్తి పేరు ఏమిటి?",
+    q1: "మీ పూర్తి పేరు ఏమిటి?",
+    q2: "ధన్యవాదాలు. ఇప్పుడు, మీ వయస్సు ఎంత?",
+    q3: "సరే. మీ లింగం ఏమిటి?",
+    q4: "మీరు ఏ రాష్ట్రం మరియు జిల్లాలో నివసిస్తున్నారు?",
+    q5: "మీ ప్రధాన వృత్తి లేదా ఉద్యోగం ఏమిటి?",
+    q6: "మీ నెలవారీ ఆదాయం ఎంత?",
+    q7: "మీరు విద్యార్థి, రైతు, కార్మికుడు, మహిళ, వృద్ధుడు, వలస కూలీ, లేదా వికలాంగుడు వంటి గ్రూపులకు చెందినవారా?",
+    q8: "మీకు ఆధార్ కార్డ్ మరియు బ్యాంక్ ఖాతా ఉన్నాయా?",
+    confirm: "నేను మీ వివరాలను సేకరించాను. ఈ వివరాలు సరైనవేనా?",
+    success: "చాలా సంతోషం. మీ ఫారమ్ విజయవంతంగా పూర్తయింది మరియు సేవ్ చేయబడింది!"
+  },
+  "Hindi": {
+    greet: "नमस्ते। मैं आपको फॉर्म भरने में मदद करूँगा। आपको केवल बोलना है। सबसे पहले, आपका पूरा नाम क्या है?",
+    q1: "आपका पूरा नाम क्या है?",
+    q2: "धन्यवाद। अब, आपकी उम्र कितनी साल है?",
+    q3: "ठीक है। आपका लिंग क्या है?",
+    q4: "आप किस राज्य और जिले में रहते हैं?",
+    q5: "आपका मुख्य काम या पेशा क्या है?",
+    q6: "आपकी मासिक आय कितनी रुपये है?",
+    q7: "क्या आप छात्र, किसान, मजदूर, महिला, वरिष्ठ नागरिक, प्रवासी या विकलांग वर्ग से हैं?",
+    q8: "क्या आपके पास आधार कार्ड और बैंक खाता है?",
+    confirm: "मैंने आपका फॉर्म भर दिया है। क्या यह जानकारी सही है?",
+    success: "बहुत बढ़िया। आपका फॉर्म सफलतापूर्वक पूरा हो गया है और सुरक्षित कर लिया गया है!"
+  }
+};
+
 export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
   currentLanguage,
   onComplete,
@@ -435,55 +477,9 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       setIsSynthesizing(false);
       handleTextToSpeech(text);
     }
-  };
-
-  // Browser speech synthesis fallback
-  const handleTextToSpeech = (text: string) => {
-    if (!('speechSynthesis' in window)) {
-      setVoiceState('ready_to_listen');
-      return;
-    }
-    window.speechSynthesis.cancel();
-    setVoiceState('assistant_speaking');
-
-    const matchedLang = LANGUAGES.find(l => l.code === selectedLanguage);
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = matchedLang ? matchedLang.locale : 'en-IN';
-
-    const voices = window.speechSynthesis.getVoices();
-    const desiredVoice = voices.find(v => v.lang.startsWith(utterance.lang.substring(0, 2)));
-    if (desiredVoice) utterance.voice = desiredVoice;
-    utterance.rate = 0.9;
-    utterance.pitch = 1.05;
-
-    utterance.onstart = () => {
-      setIsSynthesizing(true);
-      setVoiceState('assistant_speaking');
-    };
-    utterance.onend = () => {
-      setIsSynthesizing(false);
-      setVoiceState('ready_to_listen');
-    };
-    utterance.onerror = () => {
-      setIsSynthesizing(false);
-      setVoiceState('ready_to_listen');
-    };
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  // Replay last spoken audio or TTS
-  const speakAgain = () => {
-    if (lastAudioBase64Ref.current && speakText) {
-      playBase64Audio(lastAudioBase64Ref.current, speakText);
-    } else if (displayText) {
-      handleTextToSpeech(displayText);
-    }
-  };
-
-  // Main voice agent turn — STT + Gemini + TTS pipeline
-  const runClientSideSimulator = (transcript: string) => {
-    console.log("Running client-side simulator with user response:", transcript);
+  };  // Main voice agent turn — STT + Gemini + TTS pipeline
+  const runClientSideSimulator = (transcript: string, activeLang: string) => {
+    console.log("Running client-side simulator with user response:", transcript, "language:", activeLang);
     const updatedFormData = { ...completeFormData };
     const lower = transcript.toLowerCase();
 
@@ -521,52 +517,12 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     }
 
     const nextQ = transcript.trim() ? Math.min(currentQuestionNumber + 1, 9) : currentQuestionNumber;
-    
-    const trans: Record<string, any> = {
-      "English": {
-        q1: "What is your full name?",
-        q2: "Thank you. Now, what is your age in years?",
-        q3: "Got it. What is your gender?",
-        q4: "Which state and district do you live in?",
-        q5: "What is your main job or occupation?",
-        q6: "What is your monthly income in rupees?",
-        q7: "Do you belong to any groups like student, farmer, worker, senior citizen, woman, migrant, or disabled?",
-        q8: "Do you have an Aadhaar card and a bank account?",
-        confirm: `I have filled your form. Is this information correct? Name: ${updatedFormData.full_name || 'Lakshmi'}, Age: ${updatedFormData.age || 32}, Gender: ${updatedFormData.gender || 'Female'}.`,
-        success: "Excellent. Your form is complete and has been saved successfully!"
-      },
-      "Telugu": {
-        q1: "మీ పూర్తి పేరు ఏమిటి?",
-        q2: "ధన్యవాదాలు. ఇప్పుడు, మీ వయస్సు ఎంత?",
-        q3: "సరే. మీ లింగం ఏమిటి?",
-        q4: "మీరు ఏ రాష్ట్రం మరియు జిల్లాలో నివసిస్తున్నారు?",
-        q5: "మీ ప్రధాన వృత్తి లేదా ఉద్యోగం ఏమిటి?",
-        q6: "మీ నెలవారీ ఆదాయం ఎంత?",
-        q7: "మీరు విద్యార్థి, రైతు, కార్మికుడు, మహిళ, వృద్ధుడు, వలస కూలీ, లేదా వికలాంగుడు వంటి గ్రూపులకు చెందినవారా?",
-        q8: "మీకు ఆధార్ కార్డ్ మరియు బ్యాంక్ ఖాతా ఉన్నాయా?",
-        confirm: `నేను మీ వివరాలను సేకరించాను. ఈ వివరాలు సరైనవేనా? పేరు: ${updatedFormData.full_name || 'లక్ష్మి'}, వయస్సు: ${updatedFormData.age || 32}, లింగం: ${updatedFormData.gender || 'Female'}.`,
-        success: "చాలా సంతోషం. మీ ఫారమ్ విజయవంతంగా పూర్తయింది మరియు సేవ్ చేయబడింది!"
-      },
-      "Hindi": {
-        q1: "आपका पूरा नाम क्या है?",
-        q2: "धन्यवाद। अब, आपकी उम्र कितनी साल है?",
-        q3: "ठीक है। आपका लिंग क्या है?",
-        q4: "आप किस राज्य और जिले में रहते हैं?",
-        q5: "आपका मुख्य काम या पेशा क्या है?",
-        q6: "आपकी मासिक आय कितनी रुपये है?",
-        q7: "क्या आप छात्र, किसान, मजदूर, महिला, वरिष्ठ नागरिक, प्रवासी या विकलांग वर्ग से हैं?",
-        q8: "क्या आपके पास आधार कार्ड और बैंक खाता है?",
-        confirm: `मैंने आपका फॉर्म भर दिया है। क्या यह जानकारी सही है? नाम: ${updatedFormData.full_name || 'लक्ष्मी'}, उम्र: ${updatedFormData.age || 32}, लिंग: ${updatedFormData.gender || 'Female'}.`,
-        success: "बहुत बढ़िया। आपका फॉर्म सफलतापूर्वक पूरा हो गया है और सुरक्षित कर लिया गया है!"
-      }
-    };
-
-    const t = trans[selectedLanguage] || trans["English"];
+    const t = TTS_TRANSLATIONS[activeLang] || TTS_TRANSLATIONS["English"];
     let speakText = "";
     let actionStr = "ask_question";
 
     if (!transcript.trim()) {
-      speakText = currentQuestionNumber === 1 ? "Hello. I will help you fill the form. First, what is your full name?" : t[`q${currentQuestionNumber}`];
+      speakText = currentQuestionNumber === 1 ? t.greet : t[`q${currentQuestionNumber}`];
     } else if (nextQ === 1) {
       speakText = t.q1;
     } else if (nextQ === 2) {
@@ -594,7 +550,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     }
 
     if (transcript.trim()) {
-      setChatLog(prev => [...prev, { sender: 'user', text: transcript, lang: selectedLanguage }]);
+      setChatLog(prev => [...prev, { sender: 'user', text: transcript, lang: activeLang }]);
     }
 
     const finalQ = Math.min(actionStr === "form_ready" ? 8 : nextQ, 8);
@@ -620,7 +576,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     if (updatedFormData.has_bank_account === null) missing.push("has_bank_account");
     setMissingFields(missing);
 
-    setChatLog(prev => [...prev, { sender: 'assistant', text: speakText, lang: selectedLanguage }]);
+    setChatLog(prev => [...prev, { sender: 'assistant', text: speakText, lang: activeLang }]);
     setUserInputText('');
 
     if (actionStr === "form_ready") {
@@ -632,10 +588,11 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       setVoiceState('ready_to_listen');
     }
 
-    handleTextToSpeech(speakText);
+    handleTextToSpeech(speakText, activeLang);
   };
 
-  const handleVoiceAgentTurn = async (audioBlob: Blob | null, textOverride?: string) => {
+  const handleVoiceAgentTurn = async (audioBlob: Blob | null, textOverride?: string, langOverride?: string) => {
+    const activeLang = langOverride || selectedLanguage;
     const transcript = textOverride !== undefined ? textOverride : userInputText;
     setIsLoading(true);
 
@@ -670,7 +627,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
         audio_base64: audioBase64,
         audio_mime_type: audioMimeType,
         user_voice_transcript: transcript.trim() ? transcript : null,
-        selected_language: selectedLanguage,
+        selected_language: activeLang,
         current_question_number: String(currentQuestionNumber),
         form_state: completeFormData,
         conversation_state: chatLog
@@ -694,7 +651,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       const transcribedText = turnResult.transcript || transcript || '';
 
       if (transcribedText.trim()) {
-        setChatLog(prev => [...prev, { sender: 'user', text: transcribedText, lang: selectedLanguage }]);
+        setChatLog(prev => [...prev, { sender: 'user', text: transcribedText, lang: activeLang }]);
       }
 
       const data = turnResult.data;
@@ -713,7 +670,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
         }
         if (data.missing_fields) setMissingFields(data.missing_fields);
 
-        setChatLog(prev => [...prev, { sender: 'assistant', text: data.speak || '', lang: selectedLanguage }]);
+        setChatLog(prev => [...prev, { sender: 'assistant', text: data.speak || '', lang: activeLang }]);
         setUserInputText('');
 
         // Handle clarification state
@@ -729,7 +686,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
           if (turnResult.audio) {
             playBase64Audio(turnResult.audio, textToSpeak);
           } else {
-            handleTextToSpeech(textToSpeak);
+            handleTextToSpeech(textToSpeak, activeLang);
           }
         } else {
           setVoiceState('ready_to_listen');
@@ -743,7 +700,7 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       }
     } catch (err) {
       console.warn('Voice agent turn error, running offline simulator:', err);
-      runClientSideSimulator(transcript);
+      runClientSideSimulator(transcript, activeLang);
     } finally {
       setIsLoading(false);
     }
@@ -848,8 +805,9 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
                   id="voice-language-dropdown"
                   value={selectedLanguage}
                   onChange={(e) => {
-                    setSelectedLanguage(e.target.value);
-                    setTimeout(() => handleVoiceAgentTurn(null, ''), 200);
+                    const newLang = e.target.value;
+                    setSelectedLanguage(newLang);
+                    setTimeout(() => handleVoiceAgentTurn(null, '', newLang), 100);
                   }}
                   className="bg-white border border-gray-200 rounded-2xl px-3 py-2 text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-500 focus:outline-none"
                 >

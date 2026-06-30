@@ -110,6 +110,13 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
     return matchesSearch && matchesCategory;
   });
 
+  const sortedAndFilteredSchemes = [...filteredSchemes].sort((a, b) => {
+    if (!activeProfile) return 0;
+    const scoreA = evaluateEligibility(a, activeProfile).score;
+    const scoreB = evaluateEligibility(b, activeProfile).score;
+    return scoreB - scoreA;
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10 bg-[#FDFBF7] text-[#1A2E2A]" id="schemes-view">
       
@@ -178,7 +185,7 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
 
       {/* Schemes Grid with high contrast, editorial look */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8" id="schemes-grid">
-        {filteredSchemes.map((scheme) => {
+        {sortedAndFilteredSchemes.map((scheme) => {
           // Calculate eligibility dynamically!
           let eligible = false;
           let score = 0;

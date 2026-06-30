@@ -28,24 +28,14 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
     setDocuments(docs);
   };
 
-  const handleSampleTrigger = async () => {
+  const processDocumentOCR = async (fileName: string) => {
     setIsScanning(true);
     setOcrOutput(null);
+    setSelectedFileName(fileName);
 
     // Get current citizen profile name
     const profile = await dbClient.getProfile();
     const currentName = profile?.name || "";
-
-    // Dynamic mock file name
-    const docLabels: Record<string, string> = {
-      aadhaar: currentName ? `Aadhaar_Card_${currentName.replace(/\s+/g, '_')}.pdf` : 'Aadhaar_Card_Verified.pdf',
-      ration_card: currentName ? `Ration_Card_${currentName.replace(/\s+/g, '_')}.png` : 'Ration_Card_Verified.png',
-      income_cert: 'Income_Certificate_2026.pdf',
-      disability_cert: 'UDID_Disability_MH.png',
-      bank_passbook: currentName ? `SBI_Passbook_${currentName.replace(/\s+/g, '_')}.pdf` : 'SBI_Passbook_Verified.pdf'
-    };
-    const fileName = docLabels[selectedDocType] || 'Govt_Certificate_Ver.pdf';
-    setSelectedFileName(fileName);
 
     try {
       // Calls server-side Express OCR simulation!
@@ -92,6 +82,44 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
     } catch (e) {
       console.error(e);
       setIsScanning(false);
+    }
+  };
+
+  const handleSampleTrigger = async () => {
+    // Get current citizen profile name
+    const profile = await dbClient.getProfile();
+    const currentName = profile?.name || "";
+
+    // Dynamic mock file name
+    const docLabels: Record<string, string> = {
+      aadhaar: currentName ? `Aadhaar_Card_${currentName.replace(/\s+/g, '_')}.pdf` : 'Aadhaar_Card_Verified.pdf',
+      ration_card: currentName ? `Ration_Card_${currentName.replace(/\s+/g, '_')}.png` : 'Ration_Card_Verified.png',
+      income_cert: 'Income_Certificate_2026.pdf',
+      disability_cert: 'UDID_Disability_MH.png',
+      bank_passbook: currentName ? `SBI_Passbook_${currentName.replace(/\s+/g, '_')}.pdf` : 'SBI_Passbook_Verified.pdf'
+    };
+    const fileName = docLabels[selectedDocType] || 'Govt_Certificate_Ver.pdf';
+    processDocumentOCR(fileName);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      processDocumentOCR(file.name);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      processDocumentOCR(file.name);
     }
   };
 
@@ -158,7 +186,18 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
             </div>
 
             {/* Simulated file upload area */}
-            <div className="border-2 border-dashed border-teal-100 bg-teal-50/10 rounded-2xl p-8 text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[180px]">
+            <div 
+              onClick={() => document.getElementById('document-file-input')?.click()}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              className="border-2 border-dashed border-teal-100 bg-teal-50/10 rounded-2xl p-8 text-center relative overflow-hidden flex flex-col items-center justify-center min-h-[180px] cursor-pointer hover:bg-teal-50/20 hover:border-teal-300 transition-all font-serif"
+            >
+              <input
+                id="document-file-input"
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
               {isScanning ? (
                 <div className="flex flex-col items-center space-y-3 animate-pulse">
                   <RefreshCw className="h-8 w-8 text-teal-600 animate-spin" />
