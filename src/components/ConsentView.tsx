@@ -36,7 +36,7 @@ export const ConsentView: React.FC<ConsentViewProps> = ({
         </h2>
         
         <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-          {t.consentDesc || "HaqSetu AI uses local rules to verify your government scheme eligibility and secure access. All data, demographic profiles, and reports are treated with extreme state-level safety safeguards."}
+          {t.consentDesc || "AWAAZ  आवाज़ uses local rules to verify your government scheme eligibility and secure access. All data, demographic profiles, and reports are treated with extreme state-level safety safeguards."}
         </p>
 
         {/* Bullet points of assurance */}

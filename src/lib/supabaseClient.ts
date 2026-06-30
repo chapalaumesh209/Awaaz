@@ -72,7 +72,7 @@ class FullStackClient {
           consentGiven: this.activeUser.consentGiven || true
         };
         this.activeUser = updatedUser;
-        localStorage.setItem('haqsetu_user_profile', JSON.stringify(this.activeUser));
+        localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
         
         // Sync core profile to Firestore
         await this.syncUserProfileToFirestore(updatedUser);
@@ -106,7 +106,7 @@ class FullStackClient {
 
   // Active User Configuration
   getActiveUser(): UserProfile {
-    const saved = localStorage.getItem('haqsetu_user_profile');
+    const saved = localStorage.getItem('awaaz_user_profile');
     if (saved) {
       try {
         this.activeUser = JSON.parse(saved);
@@ -117,7 +117,7 @@ class FullStackClient {
 
   setActiveUser(user: Partial<UserProfile>) {
     this.activeUser = { ...this.activeUser, ...user };
-    localStorage.setItem('haqsetu_user_profile', JSON.stringify(this.activeUser));
+    localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
     
     // Sync to Firestore if signed in
     if (auth.currentUser) {
@@ -140,7 +140,7 @@ class FullStackClient {
         createdAt: new Date().toISOString()
       };
       this.activeUser = updatedUser;
-      localStorage.setItem('haqsetu_user_profile', JSON.stringify(this.activeUser));
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
       
       await setDoc(doc(db, 'users', user.uid), updatedUser);
       return updatedUser;
@@ -153,7 +153,7 @@ class FullStackClient {
   async logout(): Promise<void> {
     try {
       await signOut(auth);
-      localStorage.removeItem('haqsetu_user_profile');
+      localStorage.removeItem('awaaz_user_profile');
       this.activeUser = {
         id: 'user-default',
         name: '',
@@ -170,6 +170,9 @@ class FullStackClient {
   // Profile Management with Firestore
   async getProfile(): Promise<CitizenProfile | null> {
     const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      return this.localProfiles[user.id] || null;
+    }
     try {
       const docRef = doc(db, 'profiles', user.id);
       const docSnap = await getDoc(docRef);
@@ -190,6 +193,12 @@ class FullStackClient {
       createdAt: new Date().toISOString()
     };
 
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localProfiles[user.id] = payload;
+      this.setActiveUser({ name: profile.name });
+      return payload;
+    }
+
     try {
       const docRef = doc(db, 'profiles', user.id);
       await setDoc(docRef, payload);
@@ -208,6 +217,9 @@ class FullStackClient {
   // Scanned Certificates & ID Proofs with Firestore
   async getDocuments(): Promise<UserDocument[]> {
     const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      return this.localDocs.filter(d => d.userId === user.id);
+    }
     try {
       const q = query(collection(db, 'documents'), where('userId', '==', user.id));
       const querySnapshot = await getDocs(q);
@@ -232,6 +244,11 @@ class FullStackClient {
       uploadedAt: new Date().toISOString()
     } as UserDocument;
 
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localDocs.push(payload);
+      return payload;
+    }
+
     try {
       await setDoc(doc(db, 'documents', docId), payload);
       return payload;
@@ -244,6 +261,13 @@ class FullStackClient {
   }
 
   async updateDocumentStatus(docId: string, status: UserDocument['status']): Promise<void> {
+    if (!auth.currentUser) {
+      const idx = this.localDocs.findIndex(d => d.id === docId);
+      if (idx !== -1) {
+        this.localDocs[idx].status = status;
+      }
+      return;
+    }
     try {
       const docRef = doc(db, 'documents', docId);
       await updateDoc(docRef, { status });
@@ -260,6 +284,9 @@ class FullStackClient {
   // Application Tracking Requests with Firestore
   async getRequests(): Promise<ApplicationRequest[]> {
     const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      return this.localRequests.filter(r => r.userId === user.id || r.citizenName === user.name);
+    }
     try {
       const q = query(collection(db, 'requests'), where('userId', '==', user.id));
       const querySnapshot = await getDocs(q);
@@ -289,10 +316,25 @@ class FullStackClient {
         {
           date: new Date().toLocaleDateString(),
           status: 'Submitted',
-          comment: `Application submitted successfully via HaqSetu Gateway.`
+          comment: `Application submitted successfully via AWAAZ Gateway.`
         }
       ]
     } as ApplicationRequest;
+
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localRequests.push(payload);
+      if (request.itemType === 'volunteer_support' || request.itemType === 'grievance') {
+        await this.createVolunteerCase({
+          requestId: payload.id,
+          citizenName: payload.citizenName,
+          primaryLanguage: user.selectedLanguage,
+          category: request.itemType === 'grievance' ? 'legal_aid' : 'scheme_help',
+          priority: request.itemType === 'grievance' ? 'high' : 'medium',
+          notes: `Citizen requested urgent hands-on assistance regarding: "${request.itemName}"`
+        });
+      }
+      return payload;
+    }
 
     try {
       await setDoc(doc(db, 'requests', requestId), payload);
@@ -329,11 +371,16 @@ class FullStackClient {
       chatHistory: [
         {
           sender: 'ai',
-          text: `HaqSetu Volunteer Assist initiated. I am analyzing the case requirements based on the user's submitted documents and eligibility scores.`,
+          text: `AWAAZ Volunteer Assist initiated. I am analyzing the case requirements based on the user's submitted documents and eligibility scores.`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]
     } as VolunteerCase;
+
+    if (!auth.currentUser) {
+      this.localCases.push(payload);
+      return payload;
+    }
 
     try {
       await setDoc(doc(db, 'cases', caseId), payload);
@@ -347,6 +394,9 @@ class FullStackClient {
   }
 
   async getVolunteerCases(): Promise<VolunteerCase[]> {
+    if (!auth.currentUser) {
+      return this.localCases;
+    }
     try {
       const q = query(collection(db, 'cases'));
       const querySnapshot = await getDocs(q);
@@ -362,6 +412,14 @@ class FullStackClient {
   }
 
   async updateCase(caseId: string, updates: Partial<VolunteerCase>): Promise<VolunteerCase> {
+    if (!auth.currentUser) {
+      const idx = this.localCases.findIndex(c => c.id === caseId);
+      if (idx !== -1) {
+        this.localCases[idx] = { ...this.localCases[idx], ...updates, updatedAt: new Date().toISOString() };
+        return this.localCases[idx];
+      }
+      throw new Error("Case not found");
+    }
     try {
       const docRef = doc(db, 'cases', caseId);
       const docSnap = await getDoc(docRef);
@@ -400,6 +458,19 @@ class FullStackClient {
       status: 'submitted'
     } as IncidentReport;
 
+    if (user.id === 'user-default' || !auth.currentUser) {
+      // Auto log request tracker item
+      await this.submitRequest({
+        citizenName: report.isAnonymous ? 'Anonymous' : user.name,
+        itemType: 'grievance',
+        itemId: payload.id,
+        itemName: `Secure Grievance: ${report.title}`
+      });
+
+      this.localReports.push(payload);
+      return payload;
+    }
+
     try {
       await setDoc(doc(db, 'reports', reportId), payload);
       
@@ -421,6 +492,9 @@ class FullStackClient {
   }
 
   async getIncidentReports(): Promise<IncidentReport[]> {
+    if (!auth.currentUser) {
+      return this.localReports;
+    }
     try {
       const q = query(collection(db, 'reports'));
       const querySnapshot = await getDocs(q);
@@ -437,6 +511,9 @@ class FullStackClient {
 
   // Gram Sabhas & Scheduled Camps with Firestore Lookups
   async getGramSabhaMeetings(): Promise<GramSabhaMeeting[]> {
+    if (!auth.currentUser) {
+      return this.localMeetings;
+    }
     try {
       const q = query(collection(db, 'meetings'));
       const querySnapshot = await getDocs(q);
@@ -454,6 +531,9 @@ class FullStackClient {
   }
 
   async getDocumentCamps(): Promise<DocumentCamp[]> {
+    if (!auth.currentUser) {
+      return this.localCamps;
+    }
     try {
       const q = query(collection(db, 'camps'));
       const querySnapshot = await getDocs(q);
@@ -474,6 +554,9 @@ class FullStackClient {
   private localSchemes: Scheme[] = [];
 
   async getSchemes(): Promise<Scheme[]> {
+    if (!auth.currentUser) {
+      return this.localSchemes.length > 0 ? this.localSchemes : (await import('../data/schemes')).SCHEMES;
+    }
     try {
       const q = query(collection(db, 'schemes'));
       const querySnapshot = await getDocs(q);
@@ -494,6 +577,11 @@ class FullStackClient {
       id: schemeId
     } as Scheme;
 
+    if (!auth.currentUser) {
+      this.localSchemes = [payload, ...this.localSchemes];
+      return payload;
+    }
+
     try {
       await setDoc(doc(db, 'schemes', schemeId), payload);
       return payload;
@@ -506,6 +594,10 @@ class FullStackClient {
   }
 
   async deleteScheme(id: string): Promise<void> {
+    if (!auth.currentUser) {
+      this.localSchemes = this.localSchemes.filter(s => s.id !== id);
+      return;
+    }
     try {
       await deleteDoc(doc(db, 'schemes', id));
       return;
@@ -525,6 +617,11 @@ class FullStackClient {
       userId: user.id,
       createdAt: new Date().toISOString()
     };
+
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localFeedbacks.push(payload);
+      return payload;
+    }
 
     try {
       await setDoc(doc(db, 'feedback', feedbackId), payload);

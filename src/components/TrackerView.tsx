@@ -134,7 +134,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                       {/* Submission milestone */}
                       <div className="relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full before:bg-teal-600">
                         <span className="block text-xs font-bold text-gray-800">Application Filed Securely</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Logged in HaqSetu central database repository.</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Logged in AWAAZ central database repository.</p>
                       </div>
 
                       {/* Volunteer verification milestone */}

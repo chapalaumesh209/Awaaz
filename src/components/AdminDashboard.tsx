@@ -375,7 +375,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
               <h3 className="font-sans text-base font-bold text-gray-900">Top Schemes Applied</h3>
             </div>
             <p className="text-[10px] text-gray-400 leading-relaxed">
-              Distribution metrics based on live submitted claims logged through HaqSetu gateways.
+              Distribution metrics based on live submitted claims logged through AWAAZ gateways.
             </p>
           </div>
 

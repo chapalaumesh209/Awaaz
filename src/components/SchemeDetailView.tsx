@@ -260,7 +260,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
                     className="w-full py-3 bg-teal-600 hover:bg-teal-700 font-bold text-xs rounded-xl text-white shadow-xs transition-all active:scale-95 flex items-center justify-center space-x-1"
                   >
                     <UserCheck className="h-4 w-4" />
-                    <span>{isSubmitting ? 'Filing Application...' : 'Apply via HaqSetu'}</span>
+                    <span>{isSubmitting ? 'Filing Application...' : 'Apply via AWAAZ'}</span>
                   </button>
                 )}
 

@@ -168,12 +168,12 @@ function getMockAssistantReply(message: string, language: LanguageCode): string 
     return "I can certainly help you find government schemes! Based on typical criteria: For street vendors, PM SVANidhi offers collateral-free loans. For traditional artisans, PM Vishwakarma provides training and toolkit aids of ₹15,000. For healthcare support, Ayushman Bharat gives cover of up to ₹5 Lakhs per family. Let me know your age, occupation, and household income to refine your matches.";
   }
   if (lowercaseMsg.includes('document') || lowercaseMsg.includes('aadhaar') || lowercaseMsg.includes('ration') || lowercaseMsg.includes('pan')) {
-    return "Identity documents are crucial for accessing government benefits. Common missing requirements are Income Certificates, Caste Certificates, or Local Address Proofs. HaqSetu has a built-in OCR mock uploader in 'Documents' tab to verify details instantly and point out corrections. I can also help you draft formal request letters.";
+    return "Identity documents are crucial for accessing government benefits. Common missing requirements are Income Certificates, Caste Certificates, or Local Address Proofs. Awaaz has a built-in OCR mock uploader in 'Documents' tab to verify details instantly and point out corrections. I can also help you draft formal request letters.";
   }
   if (lowercaseMsg.includes('safety') || lowercaseMsg.includes('emergency') || lowercaseMsg.includes('police')) {
-    return "Your safety is paramount. HaqSetu features a dedicated Women Safety module offering: Safe Route options, legal companion drafts, menstrual health guidance, and a QUICK SOS button that logs simulated alerts. Let me know if you want me to explain any women-focused legal rights or schemes.";
+    return "Your safety is paramount. Awaaz features a dedicated Women Safety module offering: Safe Route options, legal companion drafts, menstrual health guidance, and a QUICK SOS button that logs simulated alerts. Let me know if you want me to explain any women-focused legal rights or schemes.";
   }
-  return "Hello! I am your HaqSetu AI Assistant, supporting Voice, Safety, and Social Access. I can help you translate government rules, explain schemes in simple terms, evaluate your readiness score, scan documents, or draft local grievances. How can I assist you today?";
+  return "Hello! I am your Awaaz AI Assistant, supporting Voice, Safety, and Social Access. I can help you translate government rules, explain schemes in simple terms, evaluate your readiness score, scan documents, or draft local grievances. How can I assist you today?";
 }
 
 function getMockExtractedFields(text: string): ExtractedProfileFields {
@@ -288,7 +288,7 @@ function getMockSchemeExplanation(scheme: Scheme, language: LanguageCode): strin
 - Reduce high-interest debt cycles for families.
 - Empower local communities with standard toolkits and certificates.
 
-**What you need**: A verified identity (${scheme.requiredDocuments.join(', ').toUpperCase()}) and matching occupational/income profiles. HaqSetu AI suggests checking your readiness score before applying!`;
+**What you need**: A verified identity (${scheme.requiredDocuments.join(', ').toUpperCase()}) and matching occupational/income profiles. Awaaz AI suggests checking your readiness score before applying!`;
 }
 
 function getMockNextSteps(scheme: Scheme, profile: CitizenProfile, language: LanguageCode): string[] {
@@ -296,7 +296,7 @@ function getMockNextSteps(scheme: Scheme, profile: CitizenProfile, language: Lan
     "Verify that your Aadhar Name matches exactly with your Bank Passbook.",
     "Visit the local Common Service Centre (CSC) or Panchayat office with physical copies.",
     "Submit a copy of your verified mobile number linked with Aadhaar.",
-    "Track the physical submission reference number using the HaqSetu Tracker."
+    "Track the physical submission reference number using the Awaaz Tracker."
   ];
 
   if (scheme.id === 'pm-svanidhi') {
@@ -390,7 +390,7 @@ Thank you.
 
 Sincerely,
 Citizen of India
-(Drafted securely via HaqSetu AI Gateway - Anonymous Reference ID: HS-${Math.floor(100000 + Math.random() * 900000)})`;
+(Drafted securely via Awaaz AI Gateway - Anonymous Reference ID: AW-${Math.floor(100000 + Math.random() * 900000)})`;
 }
 
 function getMockOcrResult(documentName: string, citizenName?: string): OcrResult {

@@ -55,7 +55,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
         {/* Display Typography */}
         <h1 className="font-serif text-5xl sm:text-7xl font-extrabold tracking-tight text-teal-700 mb-2 leading-tight">
-          {t.brandName || "HaqSetu AI"}
+          {t.brandName || "AWAAZ  आवाज़"}
         </h1>
         
         <p className="font-serif italic text-lg sm:text-2xl font-semibold text-gray-700 tracking-wide mb-6">

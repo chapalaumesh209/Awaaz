@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-teal-100 bg-white/95 backdrop-blur-md shadow-xs" id="haqsetu-header">
+    <header className="sticky top-0 z-50 w-full border-b border-teal-100 bg-white/95 backdrop-blur-md shadow-xs" id="awaaz-header">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         
         {/* Brand Logo & Slogan */}
@@ -48,14 +48,14 @@ export const Header: React.FC<HeaderProps> = ({
           id="brand-section"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600 text-white shadow-xs font-serif font-extrabold text-2xl italic hover:scale-105 transition-all">
-            H
+            A
           </div>
           <div>
             <span className="block font-serif text-lg font-bold tracking-tight text-teal-900 sm:text-xl leading-tight">
-              {t.brandName || "HaqSetu AI"}
+              {t.brandName || "AWAAZ  आवाज़"}
             </span>
             <span className="block text-[10px] font-bold tracking-widest text-teal-600 uppercase">
-              {t.slogan || "Voice • Safety • Social Access"}
+              {t.slogan || "Voice, Safety & Social Access"}
             </span>
           </div>
         </div>

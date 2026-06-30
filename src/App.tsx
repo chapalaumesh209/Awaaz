@@ -176,7 +176,7 @@ export default function App() {
   const showNav = currentRoute !== 'landing' && currentRoute !== 'consent';
 
   return (
-    <div className="min-h-screen bg-warm-white flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900" id="haqsetu-root">
+    <div className="min-h-screen bg-warm-white flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900" id="awaaz-root">
       
       {/* Top Header Row */}
       <Header

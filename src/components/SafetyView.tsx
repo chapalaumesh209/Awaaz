@@ -398,7 +398,7 @@ PRAYER REQUESTS:
 - Direct local Mahila Police / Volunteer ward patrols to perform periodic safety checks.
 - Issue emergency protection orders under Section 18.
 
-Filed securely via HaqSetu Protection Gateway (No physical police visit required).`;
+Filed securely via AWAAZ Protection Gateway (No physical police visit required).`;
       setFiledDraft(draftText);
     }, 1500);
   };
@@ -499,7 +499,7 @@ Filed securely via HaqSetu Protection Gateway (No physical police visit required
       likes: 28,
       date: '28 June 2026',
       replies: [
-        { author: 'HaqSetu Civic Team', text: 'Excellent question. You can use our "Civic Voice" tab to file a grievance to the Ward-4 secretary. We have flagged this toilet to the block development officer today.', date: '29 June 2026' }
+        { author: 'AWAAZ Civic Team', text: 'Excellent question. You can use our "Civic Voice" tab to file a grievance to the Ward-4 secretary. We have flagged this toilet to the block development officer today.', date: '29 June 2026' }
       ]
     }
   ]);
@@ -1229,7 +1229,7 @@ Filed securely via HaqSetu Protection Gateway (No physical police visit required
                     <div className="p-4 bg-[#ECFDF5] border border-emerald-200 text-teal-950 text-xs rounded-xl space-y-2 animate-fade-in font-serif">
                       <span className="font-bold block text-teal-900 text-sm">🟢 Secure Submission Complete</span>
                       <p className="italic">
-                        Your protection appeal has been anonymized and registered inside HaqSetu's legal pipeline under reference id: <strong>HS-COMP-${Math.floor(10000 + Math.random() * 90000)}</strong>. A qualified local NGO legal caseworker has been tagged in the database, and they will coordinate with the block development magistrate's counselor on your behalf. You do not need to take any physical action.
+                        Your protection appeal has been anonymized and registered inside AWAAZ's legal pipeline under reference id: <strong>HS-COMP-${Math.floor(10000 + Math.random() * 90000)}</strong>. A qualified local NGO legal caseworker has been tagged in the database, and they will coordinate with the block development magistrate's counselor on your behalf. You do not need to take any physical action.
                       </p>
                     </div>
                   )}

@@ -99,7 +99,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       if (extracted.householdIncome) setIncome(extracted.householdIncome);
       if (extracted.category) setCategory(extracted.category);
       
-      alert("✨ HaqSetu AI successfully extracted profile fields from your text! Review and click Save Profile.");
+      alert("✨ AWAAZ AI successfully extracted profile fields from your text! Review and click Save Profile.");
     } catch (e) {
       console.error(e);
     } finally {
@@ -139,7 +139,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
     calculateDashboardStats(saved);
     onProfileUpdated();
     
-    alert("✅ Profile updated successfully in HaqSetu database! Schemes matching has been refreshed.");
+    alert("✅ Profile updated successfully in AWAAZ database! Schemes matching has been refreshed.");
   };
 
   // Toggle checklist of documents
@@ -478,7 +478,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
               </div>
               <ChevronRight className="h-4 w-4 text-teal-300 group-hover:translate-x-1 transition-transform" />
             </div>
-            <h4 className="font-sans text-base font-bold">Ask HaqSetu AI Assistant</h4>
+            <h4 className="font-sans text-base font-bold">Ask AWAAZ AI Assistant</h4>
             <p className="text-xs text-teal-100/70 mt-1 leading-relaxed">
               Ask any government rule question, document steps, or get instant voice help in your preferred language!
             </p>
