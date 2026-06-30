@@ -168,15 +168,6 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({ currentLanguag
         </div>
       </div>
 
-      <div className="mb-4">
-        <SuggestedInquiries screenId="AiAssistantView" onQuerySelect={(q, a) => {
-          setMessages(prev => [
-            ...prev,
-            { sender: 'citizen', text: q, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
-            { sender: 'ai', text: a, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-          ]);
-        }} />
-      </div>
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto bg-white rounded-[24px] border border-[#E8E2D6] p-5 space-y-5 mb-5 min-h-[250px] shadow-xs">

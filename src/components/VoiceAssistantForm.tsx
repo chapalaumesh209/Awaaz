@@ -463,25 +463,39 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     cleanupVoiceResources();
 
     try {
-      const formData = new FormData();
+      let audioBase64 = null;
+      let audioMimeType = null;
       if (audioBlob) {
-        const ext = audioBlob.type.includes('webm') ? 'webm' : audioBlob.type.includes('ogg') ? 'ogg' : 'wav';
-        formData.append('audio', audioBlob, `audio.${ext}`);
-      }
-      if (transcript.trim()) {
-        formData.append('user_voice_transcript', transcript);
+        audioMimeType = audioBlob.type;
+        audioBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // get raw base64
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(audioBlob);
+        });
       }
 
-      formData.append('selected_language', selectedLanguage);
-      formData.append('current_question_number', String(currentQuestionNumber));
-      formData.append('form_state', JSON.stringify(completeFormData));
-      formData.append('conversation_state', JSON.stringify(chatLog));
+      const payload = {
+        audio_base64: audioBase64,
+        audio_mime_type: audioMimeType,
+        user_voice_transcript: transcript.trim() ? transcript : null,
+        selected_language: selectedLanguage,
+        current_question_number: String(currentQuestionNumber),
+        form_state: completeFormData,
+        conversation_state: chatLog
+      };
 
       if (audioBlob) setVoiceState('transcribing');
       
       const response = await fetch('/api/ai/voice-agent-turn', {
         method: 'POST',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
 
       setVoiceState('understanding');

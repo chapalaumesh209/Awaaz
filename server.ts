@@ -11,7 +11,7 @@ const app = express();
 const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // ==========================================
 // GEMINI SDK LAZY INITIALIZATION
@@ -2092,7 +2092,7 @@ User voice transcript: "\${user_voice_transcript || ''}"`;
 // ==========================================
 // 10.b End-to-End Voice Agent Turn Endpoint (Sarvam AI + Gemini)
 // ==========================================
-app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], upload.single('audio'), async (req, res) => {
+app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], async (req, res) => {
   const selectedLang = req.body.selected_language || 'English';
   const currentQuestionNumber = Number(req.body.current_question_number) || 1;
   
@@ -2140,15 +2140,17 @@ app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], upload.single('audio
   let transcript = '';
 
   // 1. STT: If an audio file is uploaded, transcribe it using Sarvam AI STT
-  if (req.file) {
+  if (req.body.audio_base64) {
     const sarvamApiKey = process.env.SARVAM_API_KEY;
     if (sarvamApiKey) {
       try {
-        console.log(`Sending audio of size ${req.file.size} bytes to Sarvam STT for language ${selectedLang} (${targetLangCode})...`);
+        console.log(`Sending base64 audio to Sarvam STT for language ${selectedLang} (${targetLangCode})...`);
         const formData = new FormData();
-        const audioBlob = new Blob([req.file.buffer], { type: req.file.mimetype || 'audio/wav' });
         
-        const mime = req.file.mimetype || '';
+        const audioBuffer = Buffer.from(req.body.audio_base64, 'base64');
+        const mime = req.body.audio_mime_type || 'audio/webm';
+        const audioBlob = new Blob([audioBuffer], { type: mime });
+        
         let ext = 'wav';
         if (mime.includes('webm')) ext = 'webm';
         else if (mime.includes('ogg')) ext = 'ogg';
