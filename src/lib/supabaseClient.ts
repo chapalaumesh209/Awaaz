@@ -128,6 +128,18 @@ class FullStackClient {
     });
   }
 
+  private saveLocalCache() {
+    try {
+      localStorage.setItem('awaaz_local_profiles', JSON.stringify(this.localProfiles));
+      localStorage.setItem('awaaz_local_docs', JSON.stringify(this.localDocs));
+      localStorage.setItem('awaaz_local_requests', JSON.stringify(this.localRequests));
+      localStorage.setItem('awaaz_local_cases', JSON.stringify(this.localCases));
+      localStorage.setItem('awaaz_local_reports', JSON.stringify(this.localReports));
+    } catch (e) {
+      console.warn("Could not save local cache to localStorage:", e);
+    }
+  }
+
   private async syncUserProfileToFirestore(user: UserProfile) {
     try {
       const docRef = doc(db, 'users', user.id);
@@ -347,6 +359,7 @@ class FullStackClient {
     if (user.id === 'user-default' || !auth.currentUser) {
       this.localProfiles[user.id] = payload;
       this.setActiveUser({ name: profile.name });
+      this.saveLocalCache();
       return payload;
     }
 
@@ -362,6 +375,7 @@ class FullStackClient {
     }
 
     this.localProfiles[user.id] = payload;
+    this.saveLocalCache();
     return payload;
   }
 
@@ -506,6 +520,7 @@ class FullStackClient {
 
     if (user.id === 'user-default' || !auth.currentUser) {
       this.localDocs.push(payload);
+      this.saveLocalCache();
       return payload;
     }
 
@@ -517,6 +532,7 @@ class FullStackClient {
     }
 
     this.localDocs.push(payload);
+    this.saveLocalCache();
     return payload;
   }
 
@@ -525,6 +541,7 @@ class FullStackClient {
       const idx = this.localDocs.findIndex(d => d.id === docId);
       if (idx !== -1) {
         this.localDocs[idx].status = status;
+        this.saveLocalCache();
       }
       return;
     }
@@ -538,6 +555,7 @@ class FullStackClient {
     const idx = this.localDocs.findIndex(d => d.id === docId);
     if (idx !== -1) {
       this.localDocs[idx].status = status;
+      this.saveLocalCache();
     }
   }
 
@@ -606,6 +624,7 @@ class FullStackClient {
 
     if (user.id === 'user-default' || !auth.currentUser) {
       this.localRequests.push(payload);
+      this.saveLocalCache();
       // Auto-create volunteer case for all requests/applications
       await this.createVolunteerCase({
         requestId: payload.id,
@@ -636,6 +655,7 @@ class FullStackClient {
     }
 
     this.localRequests.push(payload);
+    this.saveLocalCache();
     return payload;
   }
 
@@ -659,6 +679,7 @@ class FullStackClient {
 
     if (!auth.currentUser) {
       this.localCases.push(payload);
+      this.saveLocalCache();
       return payload;
     }
 
@@ -670,6 +691,7 @@ class FullStackClient {
     }
 
     this.localCases.push(payload);
+    this.saveLocalCache();
     return payload;
   }
 
@@ -821,6 +843,7 @@ class FullStackClient {
         const currentCase = this.localCases[idx];
         await applyRequestUpdates(currentCase);
         this.localCases[idx] = { ...this.localCases[idx], ...updates, updatedAt: new Date().toISOString() };
+        this.saveLocalCache();
         return this.localCases[idx];
       }
       throw new Error("Case not found");
@@ -841,6 +864,7 @@ class FullStackClient {
         const idx = this.localCases.findIndex(c => c.id === caseId);
         if (idx !== -1) {
           this.localCases[idx] = updated;
+          this.saveLocalCache();
         }
         return updated;
       }
@@ -853,6 +877,7 @@ class FullStackClient {
       const currentCase = this.localCases[idx];
       await applyRequestUpdates(currentCase);
       this.localCases[idx] = { ...this.localCases[idx], ...updates, updatedAt: new Date().toISOString() };
+      this.saveLocalCache();
       return this.localCases[idx];
     }
     throw new Error("Case not found");
@@ -882,6 +907,7 @@ class FullStackClient {
       });
 
       this.localReports.push(payload);
+      this.saveLocalCache();
       return payload;
     }
 
@@ -902,6 +928,7 @@ class FullStackClient {
     }
 
     this.localReports.push(payload);
+    this.saveLocalCache();
     return payload;
   }
 
@@ -1157,26 +1184,45 @@ class FullStackClient {
 
   // Seeding the Client's Local Memory with Real Demo Personas & States
   private initializeInMemoryFallbacks() {
-    this.localProfiles['user-default'] = {
-      id: 'user-default',
-      name: '',
-      age: 30,
-      gender: 'female',
-      occupation: '',
-      location: '',
-      state: '',
-      primaryLanguage: 'en',
-      householdIncome: 0,
-      category: 'General',
-      disabilityStatus: false,
-      existingDocuments: [],
-      readinessScore: 50,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      const p = localStorage.getItem('awaaz_local_profiles');
+      const d = localStorage.getItem('awaaz_local_docs');
+      const r = localStorage.getItem('awaaz_local_requests');
+      const c = localStorage.getItem('awaaz_local_cases');
+      const rep = localStorage.getItem('awaaz_local_reports');
 
-    this.localDocs = [];
-    this.localRequests = [];
-    this.localCases = [];
+      if (p) this.localProfiles = JSON.parse(p);
+      if (d) this.localDocs = JSON.parse(d);
+      if (r) this.localRequests = JSON.parse(r);
+      if (c) this.localCases = JSON.parse(c);
+      if (rep) this.localReports = JSON.parse(rep);
+    } catch (e) {
+      console.warn("Could not parse local cache from localStorage:", e);
+    }
+
+    if (!this.localProfiles['user-default']) {
+      this.localProfiles['user-default'] = {
+        id: 'user-default',
+        name: '',
+        age: 30,
+        gender: 'female',
+        occupation: '',
+        location: '',
+        state: '',
+        primaryLanguage: 'en',
+        householdIncome: 0,
+        category: 'General',
+        disabilityStatus: false,
+        existingDocuments: [],
+        readinessScore: 50,
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    if (!this.localDocs) this.localDocs = [];
+    if (!this.localRequests) this.localRequests = [];
+    if (!this.localCases) this.localCases = [];
+    if (!this.localReports) this.localReports = [];
 
     this.localMeetings = [
       {

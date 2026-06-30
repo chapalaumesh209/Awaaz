@@ -363,7 +363,7 @@ function AppContent() {
       {/* DESKTOP DESK RAIL INDICATOR (Subtle side float panel on wider screens for easy desktop nav) */}
       {showNav && isCitizenMode && (
         <div 
-          className="hidden sm:flex fixed left-4 top-20 bottom-20 w-16 bg-white/95 border border-teal-100 rounded-3xl shadow-md flex-col items-center py-6 space-y-4 z-40 overflow-y-auto scrollbar-none"
+          className="hidden sm:flex fixed left-4 top-20 w-16 bg-white/95 border border-teal-100 rounded-3xl shadow-md flex-col items-center py-6 space-y-4 z-40"
           id="desktop-side-rail"
         >
           <button

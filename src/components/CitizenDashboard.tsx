@@ -11,6 +11,61 @@ import {
 } from 'lucide-react';
 
 
+const formatLocationToEnglish = (loc: string, stateVal?: string): string => {
+  if (!loc) return '';
+  let cleanLoc = loc.toLowerCase().trim();
+
+  // If it contains local language representations of Telangana / Hyderabad:
+  const isTelangana = cleanLoc.includes("తెలంగాణ") || cleanLoc.includes("तेलंगाना") || cleanLoc.includes("telangana");
+  const isHyderabad = cleanLoc.includes("హైదరాబాద్") || cleanLoc.includes("हैदराबाद") || cleanLoc.includes("hyderabad");
+
+  if (isHyderabad && isTelangana) {
+    return "Hyderabad, Telangana";
+  }
+
+  // Map words
+  const maps: Record<string, string> = {
+    "తెలంగాణ": "Telangana",
+    "तेलंगाना": "Telangana",
+    "హైదరాబాద్": "Hyderabad",
+    "हैदराबाद": "Hyderabad",
+    "రంగారెడ్డి": "Rangareddy",
+    "रंगारेड्डी": "Rangareddy",
+    "రంగారెడ్డి జిల్లా": "Rangareddy",
+    "కరీంనగర్": "Karimnagar",
+    "करीमनगर": "Karimnagar",
+    "మోయినాబాద్": "Moinabad",
+    "मोइनाबाद": "Moinabad",
+    "కొండాపూర్": "Kondapur",
+    "कोंडापुर": "Kondapur"
+  };
+
+  // Replace substrings
+  let output = loc;
+  for (const [key, val] of Object.entries(maps)) {
+    const regex = new RegExp(key, 'gi');
+    output = output.replace(regex, val);
+  }
+
+  // Format nicely: e.g. "Hyderabad, Telangana"
+  let parts = output.split(/[\s,\|•·\-]+/gi).map(p => p.trim()).filter(Boolean);
+  parts = Array.from(new Set(parts));
+
+  if (parts.includes("Telangana") && parts.length > 1) {
+    parts = parts.filter(p => p !== "Telangana");
+    parts.push("Telangana");
+  } else if (stateVal && !parts.includes(stateVal)) {
+    const cleanState = maps[stateVal] || stateVal;
+    if (!parts.includes(cleanState)) {
+      parts.push(cleanState);
+    }
+  }
+
+  parts = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1));
+
+  return parts.join(", ");
+};
+
 interface CitizenDashboardProps {
   currentLanguage: LanguageCode;
   onNavigate: (route: string) => void;
@@ -59,7 +114,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       setAge(profile.age);
       setGender(profile.gender);
       setOccupation(profile.occupation);
-      setLocation(profile.location);
+      setLocation(formatLocationToEnglish(profile.location, profile.state));
       setState(profile.state);
       setIncome(profile.householdIncome);
       setCategory(profile.category);
@@ -98,7 +153,9 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       if (extracted.age) setAge(extracted.age);
       if (extracted.gender) setGender(extracted.gender);
       if (extracted.occupation) setOccupation(extracted.occupation);
-      if (extracted.location) setLocation(extracted.location);
+      if (extracted.location) {
+        setLocation(formatLocationToEnglish(extracted.location, extracted.state || state));
+      }
       if (extracted.state) setState(extracted.state);
       if (extracted.householdIncome) setIncome(extracted.householdIncome);
       if (extracted.category) setCategory(extracted.category);
@@ -118,7 +175,8 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       if (completeData.age) setAge(Number(completeData.age));
       if (completeData.gender) setGender(completeData.gender.toLowerCase());
       if (completeData.occupation) setOccupation(completeData.occupation);
-      if (completeData.district) setLocation(completeData.district);
+      const formattedLoc = formatLocationToEnglish(completeData.district || location, completeData.state || state);
+      if (completeData.district) setLocation(formattedLoc);
       if (completeData.state) setState(completeData.state);
       if (completeData.monthly_income) setIncome(Number(completeData.monthly_income) * 12);
       
@@ -139,7 +197,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
         age: Number(completeData.age) || age,
         gender: completeData.gender ? completeData.gender.toLowerCase() : gender,
         occupation: completeData.occupation || occupation,
-        location: completeData.district || location,
+        location: formatLocationToEnglish(completeData.district || location, completeData.state || state),
         state: completeData.state || state,
         householdIncome: completeData.monthly_income ? Number(completeData.monthly_income) * 12 : income,
         category: category,
@@ -163,7 +221,8 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       if (completeData.age) setAge(Number(completeData.age));
       if (completeData.gender) setGender(completeData.gender.toLowerCase());
       if (completeData.occupation) setOccupation(completeData.occupation);
-      if (completeData.district) setLocation(completeData.district);
+      const formattedLoc = formatLocationToEnglish(completeData.district || location, completeData.state || state);
+      if (completeData.district) setLocation(formattedLoc);
       if (completeData.state) setState(completeData.state);
       if (completeData.monthly_income) setIncome(Number(completeData.monthly_income) * 12);
       
@@ -185,7 +244,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
         age: Number(completeData.age) || age,
         gender: completeData.gender ? completeData.gender.toLowerCase() : gender,
         occupation: completeData.occupation || occupation,
-        location: completeData.district || location,
+        location: formatLocationToEnglish(completeData.district || location, completeData.state || state),
         state: completeData.state || state,
         householdIncome: completeData.monthly_income ? Number(completeData.monthly_income) * 12 : income,
         category: category,
@@ -217,7 +276,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
       age: Number(age),
       gender,
       occupation,
-      location,
+      location: formatLocationToEnglish(location, state),
       state,
       householdIncome: Number(income),
       category,
