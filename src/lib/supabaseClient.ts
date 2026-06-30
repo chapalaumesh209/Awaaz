@@ -18,7 +18,10 @@ import {
   onAuthStateChanged, 
   GoogleAuthProvider, 
   signInWithPopup, 
-  signOut 
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from 'firebase/auth';
 import { 
   collection, 
@@ -29,7 +32,8 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  where 
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 
 // =========================================================================
@@ -46,6 +50,15 @@ class FullStackClient {
   private localCamps: DocumentCamp[] = [];
   private localFeedbacks: FeedbackRecord[] = [];
   
+  // Translation batch queue to prevent 429 rate limit exceptions on simultaneous requests
+  private translationQueue: Array<{
+    text: string;
+    targetLanguageCode: LanguageCode;
+    resolve: (value: string) => void;
+    reject: (reason?: any) => void;
+  }> = [];
+  private translationTimeout: any = null;
+  
   private activeUser: UserProfile = {
     id: 'user-default',
     name: '',
@@ -54,6 +67,17 @@ class FullStackClient {
     role: 'citizen',
     createdAt: new Date().toISOString()
   };
+
+  private sanitizeUserProfile(user: UserProfile): any {
+    return {
+      id: user.id || 'unknown',
+      name: user.name || 'Citizen',
+      selectedLanguage: user.selectedLanguage || 'en',
+      consentGiven: user.consentGiven !== undefined ? user.consentGiven : true,
+      role: user.role || 'citizen',
+      createdAt: user.createdAt || new Date().toISOString()
+    };
+  }
 
   constructor() {
     this.initializeInMemoryFallbacks();
@@ -64,22 +88,41 @@ class FullStackClient {
   private initializeAuthListener() {
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Authenticated user found
+        if (user.isAnonymous) {
+          return;
+        }
+        let name = user.displayName || 'Citizen';
+        let role: 'citizen' | 'volunteer' | 'admin' = 'citizen';
+        let selectedLanguage: LanguageCode = 'en';
+        let consentGiven = true;
+        try {
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (data.name) name = data.name;
+            if (data.role) role = data.role;
+            if (data.selectedLanguage) selectedLanguage = data.selectedLanguage;
+            if (data.consentGiven !== undefined) consentGiven = data.consentGiven;
+          }
+        } catch (e) {
+          console.warn("Could not retrieve user info from Firestore on auth change:", e);
+        }
+
         const updatedUser: UserProfile = {
-          ...this.activeUser,
           id: user.uid,
-          name: user.displayName || this.activeUser.name || 'Citizen Verified',
-          consentGiven: this.activeUser.consentGiven || true
+          name,
+          selectedLanguage,
+          consentGiven,
+          role,
+          createdAt: user.metadata.creationTime || new Date().toISOString()
         };
         this.activeUser = updatedUser;
         localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
-        
-        // Sync core profile to Firestore
-        await this.syncUserProfileToFirestore(updatedUser);
       } else {
         // Automatically sign in anonymously to satisfy security rules constraints
         signInAnonymously(auth).catch((err) => {
-          console.warn("Anonymous registration skipped or failed:", err);
+          console.log("Anonymous authentication is disabled or restricted in this environment (optional feature):", err.message || err);
         });
       }
     });
@@ -90,14 +133,7 @@ class FullStackClient {
       const docRef = doc(db, 'users', user.id);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
-        await setDoc(docRef, {
-          id: user.id,
-          name: user.name || 'Citizen',
-          selectedLanguage: user.selectedLanguage,
-          consentGiven: user.consentGiven,
-          role: user.role,
-          createdAt: user.createdAt || new Date().toISOString()
-        });
+        await setDoc(docRef, this.sanitizeUserProfile(user));
       }
     } catch (e) {
       console.warn("User settings profile synchronization deferred:", e);
@@ -134,19 +170,134 @@ class FullStackClient {
       const updatedUser: UserProfile = {
         id: user.uid,
         name: user.displayName || 'Citizen',
-        selectedLanguage: this.activeUser.selectedLanguage,
+        selectedLanguage: this.activeUser.selectedLanguage || 'en',
         consentGiven: true,
-        role: this.activeUser.role,
-        createdAt: new Date().toISOString()
+        role: 'citizen',
+        createdAt: user.metadata.creationTime || new Date().toISOString()
       };
       this.activeUser = updatedUser;
       localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
       
-      await setDoc(doc(db, 'users', user.uid), updatedUser);
+      try {
+        await setDoc(doc(db, 'users', user.uid), this.sanitizeUserProfile(updatedUser));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.CREATE, `users/${user.uid}`);
+      }
       return updatedUser;
     } catch (e) {
       console.error("Google Authentication failed:", e);
       throw e;
+    }
+  }
+
+  // Real Email Signup for Citizens
+  async signUpWithEmail(email: string, password: string, name: string): Promise<UserProfile> {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      await updateProfile(user, { displayName: name });
+      
+      const updatedUser: UserProfile = {
+        id: user.uid,
+        name: name,
+        selectedLanguage: this.activeUser.selectedLanguage || 'en',
+        consentGiven: true,
+        role: 'citizen',
+        createdAt: user.metadata.creationTime || new Date().toISOString()
+      };
+      
+      this.activeUser = updatedUser;
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
+      
+      try {
+        await setDoc(doc(db, 'users', user.uid), this.sanitizeUserProfile(updatedUser));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.CREATE, `users/${user.uid}`);
+      }
+      return updatedUser;
+    } catch (e) {
+      console.error("Email signup failed:", e);
+      throw e;
+    }
+  }
+
+  // Real Email Sign-in for Citizens
+  async signInWithEmail(email: string, password: string): Promise<UserProfile> {
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      const user = result.user;
+      
+      let name = user.displayName || 'Citizen';
+      let role: 'citizen' | 'volunteer' | 'admin' = 'citizen';
+      let selectedLanguage: LanguageCode = 'en';
+      let consentGiven = true;
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.name) name = data.name;
+          if (data.role) role = data.role;
+          if (data.selectedLanguage) selectedLanguage = data.selectedLanguage;
+          if (data.consentGiven !== undefined) consentGiven = data.consentGiven;
+        }
+      } catch (e) {
+        console.warn("Could not retrieve user info from Firestore on login:", e);
+      }
+
+      const updatedUser: UserProfile = {
+        id: user.uid,
+        name,
+        selectedLanguage,
+        consentGiven,
+        role,
+        createdAt: user.metadata.creationTime || new Date().toISOString()
+      };
+      
+      this.activeUser = updatedUser;
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
+      return updatedUser;
+    } catch (e) {
+      console.error("Email sign-in failed:", e);
+      throw e;
+    }
+  }
+
+  // Dummy Login for Volunteer
+  async signInAsVolunteer(email: string, password: string): Promise<UserProfile> {
+    if (email === 'volunteer@awaaz.org' && password === 'volunteer123') {
+      const updatedUser: UserProfile = {
+        id: 'volunteer-default',
+        name: 'Panchayat Volunteer',
+        selectedLanguage: this.activeUser.selectedLanguage,
+        consentGiven: true,
+        role: 'volunteer',
+        createdAt: new Date().toISOString()
+      };
+      this.activeUser = updatedUser;
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
+      return updatedUser;
+    } else {
+      throw new Error("Invalid Volunteer credentials! Use: volunteer@awaaz.org / volunteer123");
+    }
+  }
+
+  // Dummy Login for Admin
+  async signInAsAdmin(email: string, password: string): Promise<UserProfile> {
+    if (email === 'admin@awaaz.org' && password === 'admin123') {
+      const updatedUser: UserProfile = {
+        id: 'admin-default',
+        name: 'Panchayat Administrator',
+        selectedLanguage: this.activeUser.selectedLanguage,
+        consentGiven: true,
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      };
+      this.activeUser = updatedUser;
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
+      return updatedUser;
+    } else {
+      throw new Error("Invalid Admin credentials! Use: admin@awaaz.org / admin123");
     }
   }
 
@@ -211,6 +362,115 @@ class FullStackClient {
     }
 
     this.localProfiles[user.id] = payload;
+    return payload;
+  }
+
+  // -------------------------------------------------------------
+  // Recordless & Migrant Worker Support (Slots & Evidence Wallet)
+  // -------------------------------------------------------------
+  private localSlots: any[] = [];
+  private localEvidence: any[] = [];
+
+  async getBookedSlots(): Promise<any[]> {
+    const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      return this.localSlots;
+    }
+    try {
+      const q = query(collection(db, 'slots'));
+      const querySnapshot = await getDocs(q);
+      const list: any[] = [];
+      querySnapshot.forEach((doc) => {
+        list.push(doc.data());
+      });
+      return list;
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, 'slots');
+    }
+    return this.localSlots;
+  }
+
+  async saveBookedSlot(slot: any): Promise<any> {
+    const slotId = 'slot-' + Math.floor(100000 + Math.random() * 900000);
+    const payload = {
+      ...slot,
+      id: slotId,
+      createdAt: new Date().toISOString()
+    };
+    const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localSlots.push(payload);
+      return payload;
+    }
+    try {
+      await setDoc(doc(db, 'slots', slotId), payload);
+      return payload;
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, `slots/${slotId}`);
+    }
+    this.localSlots.push(payload);
+    return payload;
+  }
+
+  async updateBookedSlotStatus(slotId: string, status: string, notes?: string): Promise<void> {
+    const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      const slot = this.localSlots.find(s => s.id === slotId);
+      if (slot) {
+        slot.status = status;
+        if (notes) slot.notes = notes;
+      }
+      return;
+    }
+    try {
+      const docRef = doc(db, 'slots', slotId);
+      const updateData: any = { status };
+      if (notes) updateData.notes = notes;
+      await updateDoc(docRef, updateData);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `slots/${slotId}`);
+    }
+  }
+
+  async getEvidenceBlocks(): Promise<any[]> {
+    const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      return this.localEvidence.filter(e => e.userId === user.id);
+    }
+    try {
+      const q = query(collection(db, 'evidence'), where('userId', '==', user.id));
+      const querySnapshot = await getDocs(q);
+      const list: any[] = [];
+      querySnapshot.forEach((doc) => {
+        list.push(doc.data());
+      });
+      return list;
+    } catch (e) {
+      handleFirestoreError(e, OperationType.LIST, 'evidence');
+    }
+    return this.localEvidence.filter(e => e.userId === user.id);
+  }
+
+  async saveEvidenceBlock(evidence: any): Promise<any> {
+    const user = this.getActiveUser();
+    const evidenceId = 'ev-' + Math.floor(100000 + Math.random() * 900000);
+    const payload = {
+      ...evidence,
+      id: evidenceId,
+      userId: user.id,
+      createdAt: new Date().toISOString()
+    };
+    if (user.id === 'user-default' || !auth.currentUser) {
+      this.localEvidence.push(payload);
+      return payload;
+    }
+    try {
+      await setDoc(doc(db, 'evidence', evidenceId), payload);
+      return payload;
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, `evidence/${evidenceId}`);
+    }
+    this.localEvidence.push(payload);
     return payload;
   }
 
@@ -299,6 +559,29 @@ class FullStackClient {
       handleFirestoreError(e, OperationType.LIST, 'requests');
     }
     return this.localRequests.filter(r => r.userId === user.id || r.citizenName === user.name);
+  }
+
+  subscribeToRequests(callback: (requests: ApplicationRequest[]) => void): () => void {
+    const user = this.getActiveUser();
+    if (user.id === 'user-default' || !auth.currentUser) {
+      const interval = setInterval(() => {
+        callback(this.localRequests.filter(r => r.userId === user.id || r.citizenName === user.name));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+
+    const q = query(collection(db, 'requests'), where('userId', '==', user.id));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reqs: ApplicationRequest[] = [];
+      snapshot.forEach((doc) => {
+        reqs.push(doc.data() as ApplicationRequest);
+      });
+      callback(reqs);
+    }, (error) => {
+      console.error("Error listening to real-time requests:", error);
+    });
+
+    return unsubscribe;
   }
 
   async submitRequest(request: Omit<ApplicationRequest, 'id' | 'userId' | 'submittedAt' | 'status' | 'trackingId' | 'updates'>): Promise<ApplicationRequest> {
@@ -412,9 +695,134 @@ class FullStackClient {
   }
 
   async updateCase(caseId: string, updates: Partial<VolunteerCase>): Promise<VolunteerCase> {
+    const applyRequestUpdates = async (currentCase: VolunteerCase) => {
+      if (!currentCase.requestId) return;
+
+      if (!auth.currentUser) {
+        const reqIdx = this.localRequests.findIndex(r => r.id === currentCase.requestId);
+        if (reqIdx !== -1) {
+          const currentReq = this.localRequests[reqIdx];
+          let newReqStatus = currentReq.status;
+          const newReqUpdates = [...(currentReq.updates || [])];
+
+          if (updates.status && updates.status !== currentCase.status) {
+            if (updates.status === 'assigned') {
+              newReqStatus = 'in_progress';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Assigned',
+                comment: `Assigned to Panchayat Volunteer caseworker.`
+              });
+            } else if (updates.status === 'in_investigation') {
+              newReqStatus = 'in_progress';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'In Progress',
+                comment: `Caseworker is auditing credentials and eligibility criteria.`
+              });
+            } else if (updates.status === 'resolved') {
+              newReqStatus = 'approved';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Resolved',
+                comment: `Case verified and approved! Official benefits cleared for disbursal.`
+              });
+            } else if (updates.status === 'closed') {
+              newReqStatus = 'approved';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Closed',
+                comment: `Case completed and closed.`
+              });
+            }
+          }
+
+          if (updates.chatHistory && updates.chatHistory.length > currentCase.chatHistory.length) {
+            const lastMsg = updates.chatHistory[updates.chatHistory.length - 1];
+            if (lastMsg.sender === 'volunteer') {
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Caseworker Update',
+                comment: lastMsg.text
+              });
+            }
+          }
+
+          this.localRequests[reqIdx] = {
+            ...currentReq,
+            status: newReqStatus,
+            updates: newReqUpdates
+          };
+        }
+        return;
+      }
+
+      try {
+        const reqRef = doc(db, 'requests', currentCase.requestId);
+        const reqSnap = await getDoc(reqRef);
+        if (reqSnap.exists()) {
+          const currentReq = reqSnap.data() as ApplicationRequest;
+          let newReqStatus = currentReq.status;
+          const newReqUpdates = [...(currentReq.updates || [])];
+
+          if (updates.status && updates.status !== currentCase.status) {
+            if (updates.status === 'assigned') {
+              newReqStatus = 'in_progress';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Assigned',
+                comment: `Assigned to Panchayat Volunteer caseworker.`
+              });
+            } else if (updates.status === 'in_investigation') {
+              newReqStatus = 'in_progress';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'In Progress',
+                comment: `Caseworker is auditing credentials and eligibility criteria.`
+              });
+            } else if (updates.status === 'resolved') {
+              newReqStatus = 'approved';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Resolved',
+                comment: `Case verified and approved! Official benefits cleared for disbursal.`
+              });
+            } else if (updates.status === 'closed') {
+              newReqStatus = 'approved';
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Closed',
+                comment: `Case completed and closed.`
+              });
+            }
+          }
+
+          if (updates.chatHistory && updates.chatHistory.length > currentCase.chatHistory.length) {
+            const lastMsg = updates.chatHistory[updates.chatHistory.length - 1];
+            if (lastMsg.sender === 'volunteer') {
+              newReqUpdates.push({
+                date: new Date().toLocaleDateString(),
+                status: 'Caseworker Update',
+                comment: lastMsg.text
+              });
+            }
+          }
+
+          await updateDoc(reqRef, {
+            status: newReqStatus,
+            updates: newReqUpdates
+          });
+        }
+      } catch (e) {
+        console.warn("Could not sync case updates to corresponding application request in Firestore:", e);
+      }
+    };
+
     if (!auth.currentUser) {
       const idx = this.localCases.findIndex(c => c.id === caseId);
       if (idx !== -1) {
+        const currentCase = this.localCases[idx];
+        await applyRequestUpdates(currentCase);
         this.localCases[idx] = { ...this.localCases[idx], ...updates, updatedAt: new Date().toISOString() };
         return this.localCases[idx];
       }
@@ -424,12 +832,19 @@ class FullStackClient {
       const docRef = doc(db, 'cases', caseId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        const currentCase = docSnap.data() as VolunteerCase;
+        await applyRequestUpdates(currentCase);
         const updated = { 
-          ...docSnap.data(), 
+          ...currentCase, 
           ...updates, 
           updatedAt: new Date().toISOString() 
         } as VolunteerCase;
         await setDoc(docRef, updated);
+        
+        const idx = this.localCases.findIndex(c => c.id === caseId);
+        if (idx !== -1) {
+          this.localCases[idx] = updated;
+        }
         return updated;
       }
     } catch (e) {
@@ -438,6 +853,8 @@ class FullStackClient {
 
     const idx = this.localCases.findIndex(c => c.id === caseId);
     if (idx !== -1) {
+      const currentCase = this.localCases[idx];
+      await applyRequestUpdates(currentCase);
       this.localCases[idx] = { ...this.localCases[idx], ...updates, updatedAt: new Date().toISOString() };
       return this.localCases[idx];
     }
@@ -632,6 +1049,113 @@ class FullStackClient {
 
     this.localFeedbacks.push(payload);
     return payload;
+  }
+
+  // Real Firestore translation dictionary loading/saving
+  async getTranslationsForLanguage(langCode: LanguageCode, defaultTranslations: Record<string, string>): Promise<Record<string, string>> {
+    try {
+      const docRef = doc(db, 'translations', langCode);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data() as Record<string, string>;
+        // Safely merge with defaults - only override if stored value is non-empty and not equal to key/english unless specified
+        const merged = { ...defaultTranslations };
+        for (const [key, val] of Object.entries(data)) {
+          if (val && typeof val === 'string' && val.trim() !== '') {
+            merged[key] = val;
+          }
+        }
+        return merged;
+      } else {
+        // Seed Firestore with localTranslations for this language
+        await setDoc(docRef, defaultTranslations);
+        return defaultTranslations;
+      }
+    } catch (e) {
+      console.warn(`Firestore getTranslations failed for ${langCode}, using local fallback:`, e);
+      return defaultTranslations;
+    }
+  }
+
+  async saveTranslationsForLanguage(langCode: LanguageCode, translations: Record<string, string>): Promise<void> {
+    try {
+      const docRef = doc(db, 'translations', langCode);
+      await setDoc(docRef, translations, { merge: true });
+    } catch (e) {
+      console.warn(`Firestore saveTranslations failed for ${langCode}:`, e);
+    }
+  }
+
+  // Translate dynamically using Gemini API on server, then persist to Firestore!
+  // Utilizes a debounced batching mechanism to gather all simultaneous requests and translate them in a single batch.
+  async translateTextDynamically(text: string, targetLanguageCode: LanguageCode): Promise<string> {
+    if (!text || text.trim() === '' || targetLanguageCode === 'en') {
+      return text;
+    }
+
+    return new Promise<string>((resolve, reject) => {
+      this.translationQueue.push({ text, targetLanguageCode, resolve, reject });
+      this.scheduleBatchTranslation();
+    });
+  }
+
+  private scheduleBatchTranslation() {
+    if (this.translationTimeout) {
+      clearTimeout(this.translationTimeout);
+    }
+    this.translationTimeout = setTimeout(() => {
+      this.processBatchTranslation();
+    }, 150);
+  }
+
+  private async processBatchTranslation() {
+    const queue = [...this.translationQueue];
+    this.translationQueue = [];
+    if (queue.length === 0) return;
+
+    // Group items by target language
+    const groups: Record<string, typeof queue> = {};
+    for (const item of queue) {
+      const lang = item.targetLanguageCode;
+      if (!groups[lang]) {
+        groups[lang] = [];
+      }
+      groups[lang].push(item);
+    }
+
+    for (const [lang, items] of Object.entries(groups)) {
+      try {
+        // Collect unique texts to translate
+        const uniqueTexts = Array.from(new Set(items.map(item => item.text)));
+
+        const response = await fetch('/api/ai/translate-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texts: uniqueTexts, targetLanguage: lang }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const translations = data.translations || {};
+
+          // Resolve all promises for this language group with their translations
+          for (const item of items) {
+            const translated = translations[item.text] || item.text;
+            item.resolve(translated);
+          }
+        } else {
+          // If the batch endpoint failed, resolve with original texts
+          for (const item of items) {
+            item.resolve(item.text);
+          }
+        }
+      } catch (err) {
+        console.error(`Batch translation failed for ${lang}:`, err);
+        for (const item of items) {
+          item.resolve(item.text);
+        }
+      }
+    }
   }
 
   // Seeding the Client's Local Memory with Real Demo Personas & States

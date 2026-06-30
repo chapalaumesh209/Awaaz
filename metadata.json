@@ -1,5 +1,5 @@
 {
-  "name": "AWAAZ  आवाज़",
+  "name": "AWAAZ आवाज",
   "description": "Voice, Safety & Social Access. A multilingual voice-first civic assistant for India to help people access government schemes, document guidance, and social safety.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

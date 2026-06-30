@@ -14,7 +14,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({ currentLanguag
   const [messages, setMessages] = useState<{ sender: 'citizen' | 'ai'; text: string; timestamp: string }[]>([
     {
       sender: 'ai',
-      text: t.botWelcome || "Namaste! I am AWAAZ  आवाज़, your universal multilingual voice companion. I can help explain complex scheme details, guide your missing documents checklist, or draft official panchayat grievance petitions. Ask me anything!",
+      text: t.botWelcome || "Namaste! I am AWAAZ आवाज, your universal multilingual voice companion. I can help explain complex scheme details, guide your missing documents checklist, or draft official panchayat grievance petitions. Ask me anything!",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -33,7 +33,7 @@ export const AiAssistantView: React.FC<AiAssistantViewProps> = ({ currentLanguag
 
   useEffect(() => {
     // Update or initialize the welcome message in the chosen language
-    const welcomeText = t.botWelcome || "Namaste! I am AWAAZ  आवाज़, your universal multilingual companion. Ask me anything!";
+    const welcomeText = t.botWelcome || "Namaste! I am AWAAZ आवाज, your universal multilingual companion. Ask me anything!";
     setMessages(prev => {
       if (prev.length === 0) {
         return [{

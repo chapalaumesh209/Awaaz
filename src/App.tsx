@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LanguageCode, UserProfile } from './types';
 import { dbClient } from './lib/supabaseClient';
+import { TRANSLATIONS } from './data/translations';
 
 // Core Subcomponents
 import Header from './components/Header';
@@ -15,22 +16,44 @@ import ReadinessView from './components/ReadinessView';
 import TrackerView from './components/TrackerView';
 import SupportView from './components/SupportView';
 import SafetyView from './components/SafetyView';
+import RecordlessView from './components/RecordlessView';
 import ReportView from './components/ReportView';
 import CivicVoiceView from './components/CivicVoiceView';
 import VolunteerDashboard from './components/VolunteerDashboard';
 import VolunteerCaseDetailView from './components/VolunteerCaseDetailView';
 import AdminDashboard from './components/AdminDashboard';
+import AuthView from './components/AuthView';
 
 // Bottom Nav Icons for Mobile Citizen Flow
 import { 
   Home, Award, Bot, FileText, ClipboardList, 
-  MapPin, AlertOctagon, Heart, Users, ShieldAlert, Scale 
+  MapPin, AlertOctagon, Heart, Users, ShieldAlert, Scale, ShieldCheck, HeartPulse, Volume2
 } from 'lucide-react';
 
 export default function App() {
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
   const [currentRoute, setCurrentRoute] = useState<string>('landing');
   const [routeParams, setRouteParams] = useState<Record<string, string>>({});
+  const [translationsTrigger, setTranslationsTrigger] = useState<number>(0);
+
+  // Pre-load all cached translations from Firestore when language changes
+  useEffect(() => {
+    if (currentLanguage === 'en') return;
+
+    dbClient.getTranslationsForLanguage(currentLanguage, TRANSLATIONS[currentLanguage] || {})
+      .then((existingTranslations) => {
+        if (existingTranslations) {
+          TRANSLATIONS[currentLanguage] = {
+            ...TRANSLATIONS[currentLanguage],
+            ...existingTranslations
+          };
+          setTranslationsTrigger(prev => prev + 1);
+        }
+      })
+      .catch((err) => {
+        console.warn("App.tsx translation preload error:", err);
+      });
+  }, [currentLanguage]);
   
   const [activeUser, setActiveUser] = useState<UserProfile>({
     id: 'user-default',
@@ -91,6 +114,18 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleLogout = async () => {
+    await dbClient.logout();
+    setActiveUser({
+      id: 'user-default',
+      name: '',
+      role: 'citizen',
+      selectedLanguage: currentLanguage,
+      consentGiven: false
+    });
+    handleNavigate('landing');
+  };
+
   // Render main screen component based on current state
   const renderView = () => {
     switch (currentRoute) {
@@ -110,6 +145,31 @@ export default function App() {
             currentLanguage={currentLanguage}
             onAgree={handleConsentAgree}
             onCancel={() => handleNavigate('landing')}
+          />
+        );
+      case 'auth':
+        return (
+          <AuthView
+            currentLanguage={currentLanguage}
+            initialRole={(routeParams.role as UserProfile['role']) || 'citizen'}
+            onAuthSuccess={(user) => {
+              setActiveUser(user);
+              if (user.selectedLanguage) {
+                setCurrentLanguage(user.selectedLanguage);
+              }
+              if (user.role === 'citizen') {
+                if (!user.consentGiven) {
+                  handleNavigate('consent');
+                } else {
+                  handleNavigate('home');
+                }
+              } else if (user.role === 'volunteer') {
+                handleNavigate('volunteer');
+              } else if (user.role === 'admin') {
+                handleNavigate('admin');
+              }
+            }}
+            onNavigateBack={() => handleNavigate('landing')}
           />
         );
       case 'home':
@@ -142,6 +202,8 @@ export default function App() {
         return <SupportView currentLanguage={currentLanguage} />;
       case 'safety':
         return <SafetyView currentLanguage={currentLanguage} />;
+      case 'recordless':
+        return <RecordlessView currentLanguage={currentLanguage} />;
       case 'report':
         return <ReportView currentLanguage={currentLanguage} />;
       case 'civic':
@@ -173,7 +235,7 @@ export default function App() {
   };
 
   const isCitizenMode = activeUser.role === 'citizen';
-  const showNav = currentRoute !== 'landing' && currentRoute !== 'consent';
+  const showNav = currentRoute !== 'landing' && currentRoute !== 'consent' && currentRoute !== 'auth';
 
   return (
     <div className="min-h-screen bg-warm-white flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900" id="awaaz-root">
@@ -186,6 +248,7 @@ export default function App() {
         setRole={handleRoleChange}
         onNavigate={handleNavigate}
         currentRoute={currentRoute}
+        onLogout={handleLogout}
       />
 
       {/* Main Viewport Container */}
@@ -199,11 +262,11 @@ export default function App() {
           className="fixed bottom-0 left-0 right-0 z-50 border-t border-teal-100/40 bg-white/95 backdrop-blur-md shadow-lg sm:hidden"
           id="mobile-nav-bar"
         >
-          <div className="flex h-16 items-center justify-around px-2">
+          <div className="flex h-16 items-center justify-start px-4 overflow-x-auto flex-nowrap scrollbar-none space-x-4">
             
             <button
               onClick={() => handleNavigate('home')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-center transition-colors ${
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
                 currentRoute === 'home' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
@@ -213,17 +276,17 @@ export default function App() {
 
             <button
               onClick={() => handleNavigate('assistant')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-center transition-colors ${
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
                 currentRoute === 'assistant' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <Bot className="h-5 w-5 animate-pulse" />
+              <Bot className="h-5 w-5" />
               <span className="text-[9px] mt-1 font-bold">AI Help</span>
             </button>
 
             <button
               onClick={() => handleNavigate('schemes')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-center transition-colors ${
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
                 currentRoute === 'schemes' || currentRoute === 'scheme-detail' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
@@ -232,8 +295,28 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => handleNavigate('documents')}
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
+                currentRoute === 'documents' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <FileText className="h-5 w-5" />
+              <span className="text-[9px] mt-1 font-bold">Documents</span>
+            </button>
+
+            <button
+              onClick={() => handleNavigate('recordless')}
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
+                currentRoute === 'recordless' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <ShieldCheck className="h-5 w-5" />
+              <span className="text-[9px] mt-1 font-bold">Identity</span>
+            </button>
+
+            <button
               onClick={() => handleNavigate('tracker')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-center transition-colors ${
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
                 currentRoute === 'tracker' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
@@ -243,12 +326,22 @@ export default function App() {
 
             <button
               onClick={() => handleNavigate('safety')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 text-center transition-colors ${
-                currentRoute === 'safety' ? 'text-rose-600 font-extrabold' : 'text-gray-400 hover:text-gray-600'
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
+                currentRoute === 'safety' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              <Heart className="h-5 w-5" />
+              <HeartPulse className="h-5 w-5 text-teal-600" />
               <span className="text-[9px] mt-1 font-bold">Safety</span>
+            </button>
+
+            <button
+              onClick={() => handleNavigate('civic')}
+              className={`flex flex-col items-center justify-center flex-none py-1 text-center transition-colors min-w-[56px] ${
+                currentRoute === 'civic' ? 'text-teal-700 font-extrabold' : 'text-gray-400 hover:text-gray-600'
+              }`}
+            >
+              <Volume2 className="h-5 w-5" />
+              <span className="text-[9px] mt-1 font-bold">Civic</span>
             </button>
 
           </div>
@@ -258,7 +351,7 @@ export default function App() {
       {/* DESKTOP DESK RAIL INDICATOR (Subtle side float panel on wider screens for easy desktop nav) */}
       {showNav && isCitizenMode && (
         <div 
-          className="hidden sm:flex fixed left-4 top-24 bottom-24 w-16 bg-white/95 border border-teal-100 rounded-3xl shadow-md flex-col items-center py-6 space-y-6 z-40"
+          className="hidden sm:flex fixed left-4 top-20 bottom-20 w-16 bg-white/95 border border-teal-100 rounded-3xl shadow-md flex-col items-center py-6 space-y-4 z-40 overflow-y-auto scrollbar-none"
           id="desktop-side-rail"
         >
           <button
@@ -292,6 +385,26 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => handleNavigate('documents')}
+            className={`p-3 rounded-2xl hover:bg-teal-50 hover:text-teal-700 transition-colors ${
+              currentRoute === 'documents' ? 'bg-teal-50 text-teal-700' : 'text-gray-400'
+            }`}
+            title="Documents Cabinet"
+          >
+            <FileText className="h-5 w-5" />
+          </button>
+
+          <button
+            onClick={() => handleNavigate('recordless')}
+            className={`p-3 rounded-2xl hover:bg-teal-50 hover:text-teal-700 transition-colors ${
+              currentRoute === 'recordless' ? 'bg-teal-50 text-teal-700' : 'text-gray-400'
+            }`}
+            title="Identity Wallet & Affidavits"
+          >
+            <ShieldCheck className="h-5 w-5" />
+          </button>
+
+          <button
             onClick={() => handleNavigate('tracker')}
             className={`p-3 rounded-2xl hover:bg-teal-50 hover:text-teal-700 transition-colors ${
               currentRoute === 'tracker' ? 'bg-teal-50 text-teal-700' : 'text-gray-400'
@@ -303,12 +416,22 @@ export default function App() {
 
           <button
             onClick={() => handleNavigate('safety')}
-            className={`p-3 rounded-2xl hover:bg-rose-50 hover:text-rose-600 transition-colors ${
-              currentRoute === 'safety' ? 'bg-rose-50 text-rose-600' : 'text-gray-400'
+            className={`p-3 rounded-2xl hover:bg-teal-50 hover:text-teal-700 transition-colors ${
+              currentRoute === 'safety' ? 'bg-teal-50 text-teal-700' : 'text-gray-400'
             }`}
-            title="Safety"
+            title="Safety & SOS support"
           >
-            <Heart className="h-5 w-5" />
+            <HeartPulse className="h-5 w-5" />
+          </button>
+
+          <button
+            onClick={() => handleNavigate('civic')}
+            className={`p-3 rounded-2xl hover:bg-teal-50 hover:text-teal-700 transition-colors ${
+              currentRoute === 'civic' ? 'bg-teal-50 text-teal-700' : 'text-gray-400'
+            }`}
+            title="Civic Voice & Gram Sabha Hub"
+          >
+            <Volume2 className="h-5 w-5" />
           </button>
         </div>
       )}

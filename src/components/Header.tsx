@@ -9,8 +9,9 @@ interface HeaderProps {
   setLanguage: (lang: LanguageCode) => void;
   activeUser: UserProfile;
   setRole: (role: UserProfile['role']) => void;
-  onNavigate: (route: string) => void;
+  onNavigate: (route: string, params?: Record<string, string>) => void;
   currentRoute: string;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeUser,
   setRole,
   onNavigate,
-  currentRoute
+  currentRoute,
+  onLogout
 }) => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [sosActive, setSosActive] = useState(false);
@@ -30,11 +32,6 @@ export const Header: React.FC<HeaderProps> = ({
     // Simulate loud panic siren or safety logging
     alert("⚠️ QUICK SOS TRIGGERED! \n\n1. Simulating silent notification to local Panchayat Volunteers...\n2. Simulating SMS alert to trusted contacts with current mock GPS coordinates...\n3. Safety log hs-sos-493 registered.");
     setTimeout(() => setSosActive(false), 5000);
-  };
-
-  const triggerQuickExit = () => {
-    // Instantly navigate to a neutral, safe page like Google search or weather
-    window.location.href = "https://www.google.com/search?q=india+weather";
   };
 
   return (
@@ -52,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <span className="block font-serif text-lg font-bold tracking-tight text-teal-900 sm:text-xl leading-tight">
-              {t.brandName || "AWAAZ  आवाज़"}
+              {t.brandName || "AWAAZ आवाज"}
             </span>
             <span className="block text-[10px] font-bold tracking-widest text-teal-600 uppercase">
               {t.slogan || "Voice, Safety & Social Access"}
@@ -75,17 +72,6 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <AlertTriangle className="h-4 w-4" />
             <span className="hidden xs:inline">{t.quickSOS || "QUICK SOS"}</span>
-          </button>
-
-          {/* Quick Exit Trigger */}
-          <button
-            onClick={triggerQuickExit}
-            className="flex items-center space-x-1 rounded-xl bg-gray-50 border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-100 active:scale-95 sm:px-4 sm:py-2"
-            id="quick-exit-btn"
-            title="Instantly exit to a safe tab"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden md:inline">{t.quickExit || "QUICK EXIT"}</span>
           </button>
 
           {/* Language Selector Dropdown */}
@@ -119,17 +105,27 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Role Switcher Button */}
-          <div className="relative" id="role-switcher">
+          <div className="relative flex items-center space-x-2" id="role-switcher-container">
             <button
               onClick={() => {
                 const nextRole = activeUser.role === 'citizen' ? 'volunteer' : activeUser.role === 'volunteer' ? 'admin' : 'citizen';
-                setRole(nextRole);
                 if (nextRole === 'citizen') {
+                  setRole('citizen');
                   onNavigate('home');
                 } else if (nextRole === 'volunteer') {
-                  onNavigate('volunteer');
-                } else {
-                  onNavigate('admin');
+                  if (activeUser.id !== 'user-default' && activeUser.role === 'volunteer') {
+                    setRole('volunteer');
+                    onNavigate('volunteer');
+                  } else {
+                    onNavigate('auth', { role: 'volunteer' });
+                  }
+                } else if (nextRole === 'admin') {
+                  if (activeUser.id !== 'user-default' && activeUser.role === 'admin') {
+                    setRole('admin');
+                    onNavigate('admin');
+                  } else {
+                    onNavigate('auth', { role: 'admin' });
+                  }
                 }
               }}
               className="flex h-9 items-center space-x-1.5 rounded-xl bg-teal-800 px-3 text-xs font-semibold text-white hover:bg-teal-950 active:scale-95"
@@ -139,6 +135,18 @@ export const Header: React.FC<HeaderProps> = ({
                 {activeUser.role === 'citizen' ? 'Citizen' : activeUser.role === 'volunteer' ? 'Volunteer' : 'Admin'}
               </span>
             </button>
+
+            {/* Logout button for authenticated sessions */}
+            {activeUser.id !== 'user-default' && (
+              <button
+                onClick={onLogout}
+                className="flex h-9 items-center justify-center rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 text-red-600 px-3 text-xs font-bold active:scale-95 transition-all"
+                title="Sign Out Session"
+              >
+                <LogOut className="h-4 w-4 mr-1 sm:mr-0 md:mr-1" />
+                <span className="hidden md:inline">Sign Out</span>
+              </button>
+            )}
           </div>
 
         </div>

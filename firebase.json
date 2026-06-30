@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-haqsetuai-14232758-6721-4927-b26f-a4ffc27fd3be",
+      "rules": "firestore.rules"
+    }
+  ]
+}

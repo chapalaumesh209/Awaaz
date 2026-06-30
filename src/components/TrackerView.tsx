@@ -16,7 +16,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadRequests();
+    setLoading(true);
+    const unsubscribe = dbClient.subscribeToRequests((list) => {
+      setRequests(list);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   const loadRequests = async () => {
@@ -34,12 +39,14 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'submitted':
+      case 'pending':
         return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'in_progress':
         return 'bg-blue-50 text-blue-700 border-blue-100';
       case 'referred':
         return 'bg-purple-50 text-purple-700 border-purple-100';
       case 'resolved':
+      case 'approved':
         return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-100';
@@ -48,10 +55,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
 
   const getStatusLabel = (status: string) => {
     switch (status) {
+      case 'pending':
       case 'submitted': return 'Submitted';
       case 'in_progress': return 'In Progress';
       case 'referred': return 'Referred';
-      case 'resolved': return 'Resolved';
+      case 'resolved':
+      case 'approved': return 'Resolved';
       default: return status;
     }
   };
@@ -139,7 +148,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
 
                       {/* Volunteer verification milestone */}
                       <div className={`relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full ${
-                        req.status !== 'submitted' ? 'before:bg-teal-600' : 'before:bg-gray-200'
+                        (req.status !== 'submitted' && req.status !== 'pending') ? 'before:bg-teal-600' : 'before:bg-gray-200'
                       }`}>
                         <span className="block text-xs font-bold text-gray-800">Assigned to Local Panchayat Volunteer</span>
                         <p className="text-[10px] text-gray-400 mt-0.5">Assigned to nearby volunteer Anjali to review income certificate criteria.</p>
@@ -147,7 +156,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
 
                       {/* Final milestone */}
                       <div className={`relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full ${
-                        req.status === 'resolved' ? 'before:bg-emerald-600' : 'before:bg-gray-200'
+                        (req.status === 'resolved' || req.status === 'approved') ? 'before:bg-emerald-600' : 'before:bg-gray-200'
                       }`}>
                         <span className="block text-xs font-bold text-gray-800">Verification & Disbursal Cleared</span>
                         <p className="text-[10px] text-gray-400 mt-0.5">Official sanction letter uploaded to your digital wallet.</p>

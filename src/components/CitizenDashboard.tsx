@@ -5,7 +5,7 @@ import { dbClient } from '../lib/supabaseClient';
 import { extractProfileFields } from '../lib/aiService';
 import { 
   Bot, Award, FileText, Activity, ShieldAlert, AlertCircle, Sparkles, UserCheck, CheckCircle2,
-  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare
+  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck
 } from 'lucide-react';
 
 interface CitizenDashboardProps {
@@ -521,16 +521,16 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
           {/* Women Safety advisor */}
           <div 
             onClick={() => onNavigate('safety')}
-            className="cursor-pointer bg-rose-50 border border-rose-100 rounded-3xl p-5 shadow-xs hover:translate-y-[-2px] transition-transform group"
+            className="cursor-pointer bg-white border border-teal-100 rounded-3xl p-5 shadow-xs hover:translate-y-[-2px] transition-transform group"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="bg-rose-100 text-rose-700 p-2.5 rounded-xl">
+              <div className="bg-teal-50 text-teal-600 p-2.5 rounded-xl">
                 <HeartPulse className="h-5 w-5" />
               </div>
-              <ChevronRight className="h-4 w-4 text-rose-600 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="h-4 w-4 text-teal-600 group-hover:translate-x-1 transition-transform" />
             </div>
-            <h4 className="font-sans text-base font-bold text-rose-950">{t.womenSafety || "Women Safety & Support"}</h4>
-            <p className="text-xs text-rose-800/80 mt-1 leading-relaxed">
+            <h4 className="font-sans text-base font-bold text-gray-900">{t.womenSafety || "Women Safety & Support"}</h4>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
               Explore safety safe-route advisors, AI legal rights companion, and menstrual welfare help desks.
             </p>
           </div>
@@ -566,6 +566,23 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
             <h4 className="font-sans text-base font-bold text-gray-900">{t.civicVoice || "Civic Voice & Gram Sabha"}</h4>
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">
               Review local budget allocations, track meetings, or play the fun Panchayat learning board game!
+            </p>
+          </div>
+
+          {/* Identity & Recordless Support */}
+          <div 
+            onClick={() => onNavigate('recordless')}
+            className="cursor-pointer bg-teal-50 border border-teal-100 rounded-3xl p-5 shadow-xs hover:translate-y-[-2px] transition-transform group"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="bg-teal-600 text-white p-2.5 rounded-xl">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <ChevronRight className="h-4 w-4 text-teal-600 group-hover:translate-x-1 transition-transform" />
+            </div>
+            <h4 className="font-sans text-base font-bold text-teal-950">Identity & Notary Support</h4>
+            <p className="text-xs text-teal-900/80 mt-1 leading-relaxed">
+              NGO pre-registration portals, biometric wallet trust scores, and AI court-grade legal affidavit builders for migrant and stateless families.
             </p>
           </div>
 

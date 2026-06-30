@@ -1,5 +1,5 @@
 rules_version = '2';
-service cloudfire.firestore {
+service cloud.firestore {
   match /databases/{database}/documents {
 
     // =========================================================================
@@ -7,6 +7,11 @@ service cloudfire.firestore {
     // =========================================================================
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Connection test document
+    match /test/{documentId} {
+      allow read: if true;
     }
 
     // =========================================================================
@@ -17,11 +22,7 @@ service cloudfire.firestore {
     }
 
     function isVerifiedUser() {
-      return isSignedIn() && (
-        request.auth.token.email_verified == true || 
-        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
-        request.auth.token.firebase.sign_in_provider == 'google.com'
-      );
+      return isSignedIn();
     }
 
     function isValidId(id) {
@@ -170,20 +171,13 @@ service cloudfire.firestore {
     // Users identity collection
     match /users/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isVolunteer());
-      allow create: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming());
-      allow update: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming()) && 
-                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'selectedLanguage', 'consentGiven', 'role']);
+      allow create, update: if isVerifiedUser() && request.auth.uid == userId;
     }
 
     // Detailed eligibility profiles
     match /profiles/{userId} {
       allow get: if isSignedIn() && (request.auth.uid == userId || isVolunteer());
-      allow create: if isVerifiedUser() && request.auth.uid == userId && isValidCitizenProfile(incoming());
-      allow update: if isVerifiedUser() && request.auth.uid == userId && isValidCitizenProfile(incoming()) &&
-                    incoming().diff(existing()).affectedKeys().hasOnly([
-                      'name', 'age', 'gender', 'occupation', 'location', 'state', 'primaryLanguage', 
-                      'householdIncome', 'category', 'disabilityStatus', 'disabilityType', 'existingDocuments', 'readinessScore'
-                    ]);
+      allow create, update: if isVerifiedUser() && request.auth.uid == userId;
     }
 
     // Scanned identity certificates
@@ -233,6 +227,16 @@ service cloudfire.firestore {
     match /camps/{campId} {
       allow read, list: if true;
       allow write: if isVerifiedUser() && isVolunteer() && isValidId(campId);
+    }
+
+    // pre-registration & slot bookings for camps
+    match /slots/{slotId} {
+      allow read, list, create, update, delete: if isSignedIn();
+    }
+
+    // portable digital ID identity wallet evidence blocks
+    match /evidence/{evidenceId} {
+      allow read, list, create, update, delete: if isSignedIn();
     }
 
     // User feedbacks

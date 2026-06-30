@@ -503,12 +503,158 @@ The letter should be polite, structured, and compliant with standard Indian loca
   res.json({ text: getIntelligentGrievanceDraft(type, description, location, targetAuthority, language) });
 });
 
+// 5.5. AI Evidence Legal Affidavit Builder
+app.post('/api/ai/affidavit-draft', async (req, res) => {
+  const { name, age, occupation, homeState, currentAddress, purpose, testimonies, utilities, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are an expert Indian notary and human rights lawyer assisting undocumented residents and migrant workers.
+Draft a legally structured, formal Solemn Affirmation / Affidavit for:
+Name: ${name}
+Age: ${age} years old
+Occupation: ${occupation}
+Current Address: ${currentAddress}
+Home State: ${homeState}
+Purpose: ${purpose || 'Establishing local proof of identity and residence'}
+Supporting Witness Testimonies: ${testimonies ? testimonies.join(', ') : 'None provided'}
+Supporting Documents/Utilities: ${utilities ? utilities.join(', ') : 'None provided'}
+
+The output MUST be a high-quality, professional legal affidavit text in English or ${language}. It should include:
+- A prominent stamp paper banner: 'BEFORE THE NOTARY / EXECUTION COMMISSIONER, GOVERNMENT OF INDIA'
+- A standard legal preamble detailing the deponent's identity (I, ${name}, son/daughter/wife of, aged ${age}...).
+- Sworn numbered statements/paragraphs establishing:
+  1. That the deponent belongs to the state of ${homeState} and currently resides at ${currentAddress}.
+  2. That they are employed as a ${occupation} and have been working/living here for a sustainable period.
+  3. Detail of witness testimonies verifying their character and residence.
+  4. Listing other supplementary items: ${utilities ? utilities.join(', ') : 'None'}.
+- A standard Verification clause at the bottom ('Sworn and verified on this date...').
+- Placeholders for Deponent Signature, Witness 1 Signature, Witness 2 Signature, and Notary Seal/Stamp.
+Format in markdown with clean fonts, double line breaks, and clear sections. Make it look exactly like an official court-admissible Indian Non-Judicial Affidavit.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+      if (response.text) {
+        return res.json({ text: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini failed, fallback to offline affidavit:", e);
+    }
+  }
+
+  res.json({ text: getIntelligentAffidavitDraft(name, age, occupation, homeState, currentAddress, purpose, testimonies, utilities) });
+});
+
 // 6. Intelligent Document OCR Simulator
 app.post('/api/ai/ocr-mock', (req, res) => {
   const { documentName, citizenName } = req.body;
   const result = getIntelligentOcrResult(documentName, citizenName);
   res.json({ result });
 });
+
+// 7. Dynamic Gemini Translation Assistant
+app.post('/api/ai/translate', async (req, res) => {
+  const { text, targetLanguage } = req.body;
+  const ai = getAiClient();
+
+  if (ai && targetLanguage && targetLanguage !== 'en') {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `You are a high-quality translator for Indian public administration portals. Translate the following interface text or governmental content from English to the Indian regional language specified by code or name: "${targetLanguage}".
+Keep the tone formal, polite, and completely clear for rural citizens. Do not explain the translation, do not include markdown, and do not add quotes. Return ONLY the final translated text.
+
+Text to translate: "${text}"`,
+      });
+      if (response.text) {
+        const translated = response.text.trim().replace(/^"|"$/g, '');
+        return res.json({ translatedText: translated });
+      }
+    } catch (e) {
+      console.error("Gemini Translation failed, using fallback:", e);
+    }
+  }
+
+  // Simple local dictionary fallbacks for offline testing
+  const fallback = getLocalFallbackTranslation(text, targetLanguage);
+  res.json({ translatedText: fallback });
+});
+
+// 7.5 Batch Translation Endpoint to prevent rate-limiting (429 Resource Exhausted) on multi-render triggers
+app.post('/api/ai/translate-batch', async (req, res) => {
+  const { texts, targetLanguage } = req.body;
+  if (!Array.isArray(texts) || texts.length === 0) {
+    return res.json({ translations: {} });
+  }
+
+  const ai = getAiClient();
+  const translations: Record<string, string> = {};
+
+  // Prepopulate with default local fallbacks in case Gemini fails or is throttled
+  for (const text of texts) {
+    translations[text] = getLocalFallbackTranslation(text, targetLanguage);
+  }
+
+  if (ai && targetLanguage && targetLanguage !== 'en') {
+    try {
+      const prompt = `You are a high-quality translator for Indian public administration portals. Translate the following list of interface texts or governmental contents from English to the Indian regional language specified by code or name: "${targetLanguage}".
+
+Text list to translate:
+${JSON.stringify(texts, null, 2)}
+
+Return your response strictly as a JSON object where the keys are the EXACT original English texts and the values are their translations in "${targetLanguage}".
+Do not include any explanation, do not include markdown code blocks, do not wrap in any formatting. Return ONLY valid JSON.
+Example format:
+{
+  "Hello": "translation_here"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+
+      if (response.text) {
+        try {
+          const parsed = JSON.parse(response.text.trim());
+          for (const key of Object.keys(parsed)) {
+            if (parsed[key] && typeof parsed[key] === 'string' && parsed[key].trim() !== '') {
+              translations[key] = parsed[key];
+            }
+          }
+        } catch (jsonErr) {
+          console.warn("Failed to parse Gemini batch translation response JSON:", jsonErr, response.text);
+        }
+      }
+    } catch (e) {
+      console.error("Gemini Batch Translation failed, using local fallbacks:", e);
+    }
+  }
+
+  res.json({ translations });
+});
+
+function getLocalFallbackTranslation(text: string, lang: string): string {
+  const lower = text.toLowerCase();
+  if (lang === 'te') {
+    if (lower.includes('volunteer portal')) return 'వాలంటీర్ పోర్టల్';
+    if (lower.includes('admin hub')) return 'అడ్మిన్ హబ్';
+    if (lower.includes('select your language')) return 'మీ భాషను ఎంచుకోండి';
+    if (lower.includes('get started')) return 'ప్రారంభించండి';
+    if (lower.includes('application overview')) return 'అప్లికేషన్ అవలోకనం, ప్రధాన ఫీచర్లు & అభిప్రాయాల కేంద్రం';
+  }
+  if (lang === 'hi') {
+    if (lower.includes('volunteer portal')) return 'स्वयंसेवक पोर्टल';
+    if (lower.includes('admin hub')) return 'व्यवस्थापक केंद्र';
+  }
+  return text;
+}
 
 
 // ==========================================
@@ -665,6 +811,75 @@ function getIntelligentOcrResult(documentName: string, citizenName?: string): an
     },
     confidence: 90
   };
+}
+
+function getIntelligentAffidavitDraft(
+  name: string,
+  age: string | number,
+  occupation: string,
+  homeState: string,
+  currentAddress: string,
+  purpose: string,
+  testimonies: string[],
+  utilities: string[]
+): string {
+  const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const witnessSection = testimonies && testimonies.length > 0
+    ? testimonies.map((t, idx) => `   *Witness ${idx + 1} Testimony:* "${t}"`).join('\n')
+    : '   *Witness Declaration:* Neighbors and local co-workers confirm the continuous residence and peaceful occupation of the deponent.';
+
+  const utilitySection = utilities && utilities.length > 0
+    ? `The following supplementary documents have been uploaded and annexed as secondary corroborative proofs:\n` + utilities.map(u => `   - ${u}`).join('\n')
+    : 'No formal public records or utility bills are available at this time due to transient migratory working conditions.';
+
+  return `======================================================================
+                  GOVERNMENT OF INDIA (BHARAT SARKAR)
+                     NOTARIAL STAMP PAPER - IND-983021
+======================================================================
+
+          BEFORE THE EXECUTIVE MAGISTRATE / NOTARY PUBLIC COMMISSIONER
+                        AT MUNICIPAL WARD OF HYDERABAD
+
+                               AFFIDAVIT
+
+I, **${name || 'Citizen'}**, aged **${age || '32'}** years, by profession working as a **${occupation || 'Construction Worker'}**, presently residing at **${currentAddress || 'Plot No. 44, Gachibowli Labor Camp, Hyderabad'}**, originally belonging to the State of **${homeState || 'Bihar'}**, do hereby solemnly affirm and declare on oath as under:
+
+1. That I am a citizen of India and a permanent resident of India, and currently operating as a migrant worker at the address specified above.
+
+2. That due to seasonal work opportunities and lack of structural shelter in my home village, I have migrated for livelihood. I do not possess formal proof of local address like gas connections, municipal registration, or voter lists.
+
+3. That for the purpose of: **${purpose || 'Establishing local proof of identity and residence'}**, I am presenting this consolidated affidavit of residence and occupational standing.
+
+4. That my continuous physical residency and peaceful occupational presence are fully verified and sworn to by neighboring residents and co-workers:
+${witnessSection}
+
+5. That I corroborate my identity and continuous local employment with the following auxiliary proof points:
+${utilitySection}
+
+6. That I have never been involved in any unlawful activity or anti-social behavior, and that this declaration is executed in absolute good faith to facilitate necessary documentation access (such as Aadhaar, ration, or birth registrations).
+
+                                                          ________________________
+                                                             (DEPONENT SIGNATURE)
+
+                                  VERIFICATION
+
+I, the deponent above-named, do hereby verify and declare that the contents of paragraphs 1 to 6 are true and correct to the best of my knowledge, and nothing material has been concealed therefrom.
+
+Verified at Hyderabad on this **${dateStr}**.
+
+                                                          ________________________
+                                                             (DEPONENT SIGNATURE)
+
+----------------------------------------------------------------------
+                           ATTESTATION RECORD
+----------------------------------------------------------------------
+The deponent is identified by the undersigning local ward representative and has solemnly verified their signature in our presence.
+
+Witness 1: ________________________ (Name: Local Ward Elder)
+Witness 2: ________________________ (Name: Site Contractor)
+
+NOTARY PUBLIC SEAL & REGISTRATION NO. IND-NOT-894021
+Signed and Attested. [NOTARY PUBLIC STAMP]`;
 }
 
 // ==========================================
