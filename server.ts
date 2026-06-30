@@ -2093,54 +2093,55 @@ User voice transcript: "\${user_voice_transcript || ''}"`;
 // 10.b End-to-End Voice Agent Turn Endpoint (Sarvam AI + Gemini)
 // ==========================================
 app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], async (req, res) => {
-  const selectedLang = req.body.selected_language || 'English';
-  const currentQuestionNumber = Number(req.body.current_question_number) || 1;
-  
-  // Parse formState
-  let formState = {};
-  if (req.body.form_state) {
-    try {
-      formState = typeof req.body.form_state === 'string' 
-        ? JSON.parse(req.body.form_state) 
-        : req.body.form_state;
-    } catch (e) {
-      console.error("Error parsing form_state inside voice-agent-turn:", e);
+  try {
+    const selectedLang = req.body.selected_language || 'English';
+    const currentQuestionNumber = Number(req.body.current_question_number) || 1;
+    
+    // Parse formState
+    let formState = {};
+    if (req.body.form_state) {
+      try {
+        formState = typeof req.body.form_state === 'string' 
+          ? JSON.parse(req.body.form_state) 
+          : req.body.form_state;
+      } catch (e) {
+        console.error("Error parsing form_state inside voice-agent-turn:", e);
+      }
     }
-  }
 
-  // Parse conversationState
-  let conversationState = [];
-  if (req.body.conversation_state) {
-    try {
-      conversationState = typeof req.body.conversation_state === 'string' 
-        ? JSON.parse(req.body.conversation_state) 
-        : req.body.conversation_state;
-    } catch (e) {
-      console.error("Error parsing conversation_state inside voice-agent-turn:", e);
+    // Parse conversationState
+    let conversationState = [];
+    if (req.body.conversation_state) {
+      try {
+        conversationState = typeof req.body.conversation_state === 'string' 
+          ? JSON.parse(req.body.conversation_state) 
+          : req.body.conversation_state;
+      } catch (e) {
+        console.error("Error parsing conversation_state inside voice-agent-turn:", e);
+      }
     }
-  }
 
-  const languageMap: Record<string, string> = {
-    "English": "en-IN",
-    "Hindi": "hi-IN",
-    "Telugu": "te-IN",
-    "Tamil": "ta-IN",
-    "Kannada": "kn-IN",
-    "Malayalam": "ml-IN",
-    "Marathi": "mr-IN",
-    "Bengali": "bn-IN",
-    "Gujarati": "gu-IN",
-    "Punjabi": "pa-IN",
-    "Odia": "or-IN",
-    "Urdu": "ur-IN"
-  };
+    const languageMap: Record<string, string> = {
+      "English": "en-IN",
+      "Hindi": "hi-IN",
+      "Telugu": "te-IN",
+      "Tamil": "ta-IN",
+      "Kannada": "kn-IN",
+      "Malayalam": "ml-IN",
+      "Marathi": "mr-IN",
+      "Bengali": "bn-IN",
+      "Gujarati": "gu-IN",
+      "Punjabi": "pa-IN",
+      "Odia": "or-IN",
+      "Urdu": "ur-IN"
+    };
 
-  const targetLangCode = languageMap[selectedLang] || 'en-IN';
+    const targetLangCode = languageMap[selectedLang] || 'en-IN';
 
-  let transcript = req.body.user_voice_transcript || '';
+    let transcript = req.body.user_voice_transcript || '';
 
-  // 2. Gemini Turn Processing (Normalize & Decide next question)
-  const systemInstruction = `You are a multilingual voice-first assistant. Your main job is to help citizens fill an application form through voice conversation only.
+    // 2. Gemini Turn Processing (Normalize & Decide next question)
+    const systemInstruction = `You are a multilingual voice-first assistant. Your main job is to help citizens fill an application form through voice conversation only.
 The user should not need to type anything.
 The user may be illiterate, low-literacy, elderly, rural, a migrant worker, a daily wage worker, a woman, a farmer, a student, or someone who is not comfortable using digital apps.
 You must guide the user like a human helper.
@@ -2281,48 +2282,48 @@ Your output must conform exactly to this JSON schema:
   "confidence": 0.0
 }`;
 
-  const prompt = `Selected language: ${selectedLang}
+    const prompt = `Selected language: ${selectedLang}
 Current Question Number: ${currentQuestionNumber}
 Current form state: ${JSON.stringify(formState)}
 Previous conversation state: ${JSON.stringify(conversationState)}
 User voice transcript: "${transcript}"
 If you received an audio input file alongside this prompt, listen to it, transcribe it, and perform the conversation turn using the spoken response.`;
 
-  let geminiResult: any = null;
-  const ai = getAiClient();
+    let geminiResult: any = null;
+    const ai = getAiClient();
 
-  if (ai) {
-    try {
-      const contents: any[] = [];
-      if (req.body.audio_base64) {
-        contents.push({
-          inlineData: {
-            mimeType: req.body.audio_mime_type || 'audio/webm',
-            data: req.body.audio_base64
+    if (ai) {
+      try {
+        const contents: any[] = [];
+        if (req.body.audio_base64) {
+          contents.push({
+            inlineData: {
+              mimeType: req.body.audio_mime_type || 'audio/webm',
+              data: req.body.audio_base64
+            }
+          });
+        }
+        contents.push(prompt);
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.5-flash",
+          contents: contents,
+          config: {
+            systemInstruction: systemInstruction,
+            responseMimeType: "application/json",
           }
         });
-      }
-      contents.push(prompt);
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: contents,
-        config: {
-          systemInstruction: systemInstruction,
-          responseMimeType: "application/json",
+        if (response.text) {
+          geminiResult = JSON.parse(response.text.trim());
+          if (geminiResult && geminiResult.user_transcript) {
+            transcript = geminiResult.user_transcript;
+          }
         }
-      });
-
-      if (response.text) {
-        geminiResult = JSON.parse(response.text.trim());
-        if (geminiResult && geminiResult.user_transcript) {
-          transcript = geminiResult.user_transcript;
-        }
+      } catch (e) {
+        console.error("Gemini failed inside voice-agent-turn, running offline simulator:", e);
       }
-    } catch (e) {
-      console.error("Gemini failed inside voice-agent-turn, running offline simulator:", e);
     }
-  }
 
   // Fallback Simulator matching exact rules if Gemini fails
   if (!geminiResult) {
@@ -2503,6 +2504,10 @@ If you received an audio input file alongside this prompt, listen to it, transcr
     audio: null,
     data: geminiResult
   });
+  } catch (err: any) {
+    console.error("Error in voice-agent-turn endpoint:", err);
+    res.status(500).json({ error: err.message || String(err) });
+  }
 });
 
 // ==========================================
