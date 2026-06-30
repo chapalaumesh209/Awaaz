@@ -477,7 +477,51 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
       setIsSynthesizing(false);
       handleTextToSpeech(text);
     }
-  };  // Main voice agent turn — STT + Gemini + TTS pipeline
+  };
+
+  // Browser speech synthesis fallback
+  const handleTextToSpeech = (text: string, langOverride?: string) => {
+    if (!('speechSynthesis' in window)) {
+      setVoiceState('ready_to_listen');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    setVoiceState('assistant_speaking');
+
+    const activeLang = langOverride || selectedLanguage;
+    const matchedLang = LANGUAGES.find(l => l.code === activeLang);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = matchedLang ? matchedLang.locale : 'en-IN';
+
+    const voices = window.speechSynthesis.getVoices();
+    const desiredVoice = voices.find(v => v.lang.startsWith(utterance.lang.substring(0, 2)));
+    if (desiredVoice) utterance.voice = desiredVoice;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.05;
+
+    utterance.onstart = () => {
+      setIsSynthesizing(true);
+      setVoiceState('assistant_speaking');
+    };
+    utterance.onend = () => {
+      setIsSynthesizing(false);
+      setVoiceState('ready_to_listen');
+    };
+    utterance.onerror = () => {
+      setIsSynthesizing(false);
+      setVoiceState('ready_to_listen');
+    };
+
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn("speechSynthesis.speak failed synchronously:", e);
+      setIsSynthesizing(false);
+      setVoiceState('ready_to_listen');
+    }
+  };
+
+  // Main voice agent turn — STT + Gemini + TTS pipeline
   const runClientSideSimulator = (transcript: string, activeLang: string) => {
     console.log("Running client-side simulator with user response:", transcript, "language:", activeLang);
     const updatedFormData = { ...completeFormData };
