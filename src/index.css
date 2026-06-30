@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", "Georgia", ui-serif, serif;
+  --font-display: "Lora", "Georgia", ui-serif, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Editorial Palette overrides */
+  --color-warm-white: #FDFBF7;
+  --color-teal-50: #ECFDF5;
+  --color-teal-100: #E8E2D6;
+  --color-teal-600: #065F46;
+  --color-teal-700: #064E3B;
+  --color-teal-800: #043e2f;
+  --color-teal-900: #1A2E2A;
+  --color-teal-950: #022c22;
+
+  --color-gray-900: #1A2E2A;
+  --color-gray-800: #1C332F;
+  --color-gray-700: #4A5D59;
+  --color-gray-600: #4A5D59;
+  --color-gray-500: #6B7C77;
+  --color-gray-400: #96A6A1;
+  --color-gray-300: #DED9CE;
+  --color-gray-200: #E8E2D6;
+  --color-gray-100: #F3F0E9;
+  --color-gray-50: #FDFBF7;
+}
+
+/* Custom Animation classes for loaders */
+@keyframes infinite-loading {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-infinite-loading {
+  animation: infinite-loading 1.5s infinite linear;
+}
+
+body {
+  background-color: var(--color-warm-white);
+  color: var(--color-gray-900);
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+

@@ -1,0 +1,244 @@
+rules_version = '2';
+service cloudfire.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================================
+    // GLOBAL CATCH-ALL DEFAULT DENY NET
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // REUSABLE GLOBAL SECURITY HELPERS
+    // =========================================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true || 
+        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
+        request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isEmailAdmin() {
+      return request.auth.token.email == 'chapalaumesh209@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isEmailAdmin() || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isVolunteer() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'volunteer')
+      );
+    }
+
+    function isCaseOwner(caseData) {
+      return caseData.citizenName == request.auth.token.name || 
+             (exists(/databases/$(database)/documents/requests/$(caseData.requestId)) && 
+              get(/databases/$(database)/documents/requests/$(caseData.requestId)).data.userId == request.auth.uid);
+    }
+
+    // =========================================================================
+    // SCHEMA VALIDATION BLUEPRINTS
+    // =========================================================================
+    
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['id', 'name', 'selectedLanguage', 'consentGiven', 'role', 'createdAt']) &&
+             data.keys().size() <= 8 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.selectedLanguage is string && data.selectedLanguage.size() <= 10 &&
+             data.consentGiven is bool &&
+             data.role in ['citizen', 'volunteer', 'admin'] &&
+             data.createdAt is string;
+    }
+
+    function isValidCitizenProfile(data) {
+      return data.keys().hasAll(['id', 'name', 'age', 'gender', 'occupation', 'location', 'state', 'primaryLanguage', 'householdIncome', 'category', 'disabilityStatus', 'existingDocuments', 'readinessScore', 'createdAt']) &&
+             data.keys().size() <= 16 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.age is int && data.age >= 0 && data.age <= 150 &&
+             data.gender is string && data.gender.size() <= 20 &&
+             data.occupation is string && data.occupation.size() <= 100 &&
+             data.location is string && data.location.size() <= 200 &&
+             data.state is string && data.state.size() <= 100 &&
+             data.primaryLanguage is string && data.primaryLanguage.size() <= 10 &&
+             data.householdIncome is int && data.householdIncome >= 0 &&
+             data.category is string && data.category.size() <= 50 &&
+             data.disabilityStatus is bool &&
+             data.existingDocuments is list && data.existingDocuments.size() <= 20 &&
+             data.readinessScore is int && data.readinessScore >= 0 && data.readinessScore <= 100 &&
+             data.createdAt is string;
+    }
+
+    function isValidUserDocument(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'type', 'status']) &&
+             data.keys().size() <= 10 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() <= 256 &&
+             data.type is string && data.type.size() <= 100 &&
+             data.status in ['verified', 'pending', 'missing', 'rejected'];
+    }
+
+    function isValidApplicationRequest(data) {
+      return data.keys().hasAll(['id', 'userId', 'citizenName', 'itemType', 'itemId', 'itemName', 'submittedAt', 'status', 'trackingId', 'updates']) &&
+             data.keys().size() <= 11 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.citizenName is string && data.citizenName.size() <= 200 &&
+             data.itemType in ['scheme', 'document', 'grievance', 'safety', 'volunteer_support'] &&
+             data.itemId is string && data.itemId.size() <= 128 &&
+             data.itemName is string && data.itemName.size() <= 256 &&
+             data.status in ['pending', 'in_progress', 'approved', 'rejected'] &&
+             data.trackingId is string && data.trackingId.size() <= 64 &&
+             data.updates is list && data.updates.size() <= 100;
+    }
+
+    function isValidVolunteerCase(data) {
+      return data.keys().hasAll(['id', 'requestId', 'citizenName', 'primaryLanguage', 'category', 'priority', 'status', 'createdAt', 'updatedAt', 'notes', 'chatHistory']) &&
+             data.keys().size() <= 12 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.requestId is string && data.requestId.size() <= 128 &&
+             data.citizenName is string && data.citizenName.size() <= 200 &&
+             data.primaryLanguage is string && data.primaryLanguage.size() <= 10 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.priority in ['low', 'medium', 'high', 'urgent'] &&
+             data.status in ['new', 'assigned', 'in_investigation', 'resolved', 'closed'] &&
+             data.notes is string && data.notes.size() <= 2000 &&
+             data.chatHistory is list && data.chatHistory.size() <= 1000;
+    }
+
+    function isValidIncidentReport(data) {
+      return data.keys().hasAll(['id', 'userId', 'type', 'title', 'description', 'location', 'date', 'status', 'witnessCount', 'evidenceUrls', 'isAnonymous', 'targetAuthority', 'submittedAt']) &&
+             data.keys().size() <= 15 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.type in ['harassment', 'discrimination', 'civic_grievance', 'scam'] &&
+             data.title is string && data.title.size() <= 256 &&
+             data.description is string && data.description.size() <= 4000 &&
+             data.location is string && data.location.size() <= 500 &&
+             data.date is string &&
+             data.status in ['submitted', 'under_review', 'referred', 'resolved'] &&
+             data.witnessCount is int && data.witnessCount >= 0 &&
+             data.evidenceUrls is list && data.evidenceUrls.size() <= 10 &&
+             data.isAnonymous is bool &&
+             data.targetAuthority is string && data.targetAuthority.size() <= 256 &&
+             data.submittedAt is string;
+    }
+
+    function isValidFeedbackRecord(data) {
+      return data.keys().hasAll(['id', 'userId', 'rating', 'feedbackText', 'module', 'createdAt']) &&
+             data.keys().size() <= 7 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+             data.feedbackText is string && data.feedbackText.size() <= 2000 &&
+             data.module is string && data.module.size() <= 100 &&
+             data.createdAt is string;
+    }
+
+    // =========================================================================
+    // SECURE COLLECTION RULES MATCH BLOCKS
+    // =========================================================================
+
+    // Users identity collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isVolunteer());
+      allow create: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming());
+      allow update: if isVerifiedUser() && request.auth.uid == userId && isValidUserProfile(incoming()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'selectedLanguage', 'consentGiven', 'role']);
+    }
+
+    // Detailed eligibility profiles
+    match /profiles/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isVolunteer());
+      allow create: if isVerifiedUser() && request.auth.uid == userId && isValidCitizenProfile(incoming());
+      allow update: if isVerifiedUser() && request.auth.uid == userId && isValidCitizenProfile(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly([
+                      'name', 'age', 'gender', 'occupation', 'location', 'state', 'primaryLanguage', 
+                      'householdIncome', 'category', 'disabilityStatus', 'disabilityType', 'existingDocuments', 'readinessScore'
+                    ]);
+    }
+
+    // Scanned identity certificates
+    match /documents/{docId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer());
+      allow create: if isVerifiedUser() && incoming().userId == request.auth.uid && isValidId(docId) && isValidUserDocument(incoming());
+      allow update: if isVerifiedUser() && (resource.data.userId == request.auth.uid || isVolunteer()) && isValidUserDocument(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'ocrText', 'ocrConfidence', 'notes']);
+      allow delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    }
+
+    // Citizen Application Requests
+    match /requests/{requestId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer());
+      allow create: if isVerifiedUser() && incoming().userId == request.auth.uid && isValidId(requestId) && isValidApplicationRequest(incoming());
+      allow update: if isVerifiedUser() && (resource.data.userId == request.auth.uid || isVolunteer()) && isValidApplicationRequest(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updates']);
+    }
+
+    // Volunteer Case Tracker
+    match /cases/{caseId} {
+      allow get: if isSignedIn() && (isVolunteer() || isCaseOwner(resource.data));
+      allow list: if isSignedIn() && isVolunteer();
+      allow create: if isVerifiedUser() && isValidId(caseId) && isValidVolunteerCase(incoming());
+      allow update: if isVerifiedUser() && (isVolunteer() || isCaseOwner(existing())) && isValidVolunteerCase(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status', 'assignedTo', 'notes', 'chatHistory', 'updatedAt']);
+    }
+
+    // Grievances & Incident Reports
+    match /reports/{reportId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer() || resource.data.isAnonymous == true);
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isVolunteer());
+      allow create: if (isVerifiedUser() || incoming().isAnonymous == true) && isValidId(reportId) && isValidIncidentReport(incoming());
+      allow update: if isVerifiedUser() && isVolunteer() && isValidIncidentReport(incoming()) &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+    }
+
+    // public meetings
+    match /meetings/{meetingId} {
+      allow read, list: if true;
+      allow write: if isVerifiedUser() && isVolunteer() && isValidId(meetingId);
+    }
+
+    // public camps
+    match /camps/{campId} {
+      allow read, list: if true;
+      allow write: if isVerifiedUser() && isVolunteer() && isValidId(campId);
+    }
+
+    // User feedbacks
+    match /feedback/{feedbackId} {
+      allow read, list: if isSignedIn() && isVolunteer();
+      allow create: if isVerifiedUser() && incoming().userId == request.auth.uid && isValidId(feedbackId) && isValidFeedbackRecord(incoming());
+    }
+  }
+}

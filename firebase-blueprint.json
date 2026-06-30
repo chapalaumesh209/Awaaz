@@ -1,0 +1,200 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Core identity and settings of the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "selectedLanguage": { "type": "string" },
+        "consentGiven": { "type": "boolean" },
+        "role": { "type": "string", "enum": ["citizen", "volunteer", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "selectedLanguage", "consentGiven", "role", "createdAt"]
+    },
+    "CitizenProfile": {
+      "title": "CitizenProfile",
+      "description": "Socio-economic parameters of a citizen for scheme eligibility evaluation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "age": { "type": "integer" },
+        "gender": { "type": "string" },
+        "occupation": { "type": "string" },
+        "location": { "type": "string" },
+        "state": { "type": "string" },
+        "primaryLanguage": { "type": "string" },
+        "householdIncome": { "type": "integer" },
+        "category": { "type": "string" },
+        "disabilityStatus": { "type": "boolean" },
+        "disabilityType": { "type": "string" },
+        "existingDocuments": { "type": "array" },
+        "readinessScore": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "age", "gender", "occupation", "location", "state", "primaryLanguage", "householdIncome", "category", "disabilityStatus", "existingDocuments", "readinessScore", "createdAt"]
+    },
+    "UserDocument": {
+      "title": "UserDocument",
+      "description": "A scanned/uploaded document or identity slip",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string", "enum": ["verified", "pending", "missing", "rejected"] },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "ocrText": { "type": "string" },
+        "ocrConfidence": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "userId", "name", "type", "status"]
+    },
+    "ApplicationRequest": {
+      "title": "ApplicationRequest",
+      "description": "An application or support ticket submitted by a citizen",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "citizenName": { "type": "string" },
+        "itemType": { "type": "string", "enum": ["scheme", "document", "grievance", "safety", "volunteer_support"] },
+        "itemId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "in_progress", "approved", "rejected"] },
+        "trackingId": { "type": "string" },
+        "updates": { "type": "array" }
+      },
+      "required": ["id", "userId", "citizenName", "itemType", "itemId", "itemName", "submittedAt", "status", "trackingId", "updates"]
+    },
+    "VolunteerCase": {
+      "title": "VolunteerCase",
+      "description": "Active support ticket assigned to volunteers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "requestId": { "type": "string" },
+        "citizenName": { "type": "string" },
+        "primaryLanguage": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+        "status": { "type": "string", "enum": ["new", "assigned", "in_investigation", "resolved", "closed"] },
+        "assignedTo": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "chatHistory": { "type": "array" }
+      },
+      "required": ["id", "requestId", "citizenName", "primaryLanguage", "category", "priority", "status", "createdAt", "updatedAt", "notes", "chatHistory"]
+    },
+    "IncidentReport": {
+      "title": "IncidentReport",
+      "description": "Grievance or safety report logged by a citizen",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["harassment", "discrimination", "civic_grievance", "scam"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["submitted", "under_review", "referred", "resolved"] },
+        "witnessCount": { "type": "integer" },
+        "evidenceUrls": { "type": "array" },
+        "isAnonymous": { "type": "boolean" },
+        "targetAuthority": { "type": "string" },
+        "anonymousId": { "type": "string" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "type", "title", "description", "location", "date", "status", "witnessCount", "evidenceUrls", "isAnonymous", "targetAuthority", "submittedAt"]
+    },
+    "GramSabhaMeeting": {
+      "title": "GramSabhaMeeting",
+      "description": "A scheduled local meeting of the Gram Sabha",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "agenda": { "type": "string" },
+        "budgetAllocated": { "type": "string" },
+        "panchayatName": { "type": "string" }
+      },
+      "required": ["id", "title", "date", "location", "agenda", "budgetAllocated", "panchayatName"]
+    },
+    "DocumentCamp": {
+      "title": "DocumentCamp",
+      "description": "An upcoming offline document camp",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "officers": { "type": "string" },
+        "schemesTargeted": { "type": "string" }
+      },
+      "required": ["id", "title", "date", "location", "officers", "schemesTargeted"]
+    },
+    "FeedbackRecord": {
+      "title": "FeedbackRecord",
+      "description": "Feedback submitted on a module",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "rating": { "type": "integer" },
+        "feedbackText": { "type": "string" },
+        "module": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "rating", "feedbackText", "module", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Collection of all user settings"
+    },
+    "/profiles/{userId}": {
+      "schema": "CitizenProfile",
+      "description": "Collection of all detailed eligibility profiles"
+    },
+    "/documents/{docId}": {
+      "schema": "UserDocument",
+      "description": "Collection of scanned or uploaded identity proofs"
+    },
+    "/requests/{requestId}": {
+      "schema": "ApplicationRequest",
+      "description": "Collection of citizen application requests"
+    },
+    "/cases/{caseId}": {
+      "schema": "VolunteerCase",
+      "description": "Collection of support/assistance tickets assigned to volunteers"
+    },
+    "/reports/{reportId}": {
+      "schema": "IncidentReport",
+      "description": "Collection of logged grievances and incident reports"
+    },
+    "/meetings/{meetingId}": {
+      "schema": "GramSabhaMeeting",
+      "description": "Collection of scheduled local panchayat meetings"
+    },
+    "/camps/{campId}": {
+      "schema": "DocumentCamp",
+      "description": "Collection of upcoming document verification camps"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "FeedbackRecord",
+      "description": "Collection of user feedback entries"
+    }
+  }
+}
