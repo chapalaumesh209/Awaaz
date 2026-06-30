@@ -18,6 +18,7 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [appliedSchemeIds, setAppliedSchemeIds] = useState<string[]>([]);
 
   // Voice checker states
   const [showVoiceCheck, setShowVoiceCheck] = useState(false);
@@ -57,6 +58,16 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
   const loadProfile = async () => {
     const profile = await dbClient.getProfile();
     setActiveProfile(profile);
+
+    try {
+      const requests = await dbClient.getRequests();
+      const appliedIds = requests
+        .filter(r => r.itemType === 'scheme')
+        .map(r => r.itemId);
+      setAppliedSchemeIds(appliedIds);
+    } catch (e) {
+      console.error("Error loading requests in SchemesView:", e);
+    }
   };
 
   const handleStartVoiceCheck = () => {
@@ -217,6 +228,11 @@ export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNav
                     <span className="flex items-center space-x-1 text-xs font-bold text-gray-500 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
                       <HelpCircle className="h-3.5 w-3.5" />
                       <span>Set Profile</span>
+                    </span>
+                  ) : appliedSchemeIds.includes(scheme.id) ? (
+                    <span className="flex items-center space-x-1 text-xs font-bold text-teal-850 bg-teal-50 border border-teal-200 px-3 py-1 rounded-full animate-pulse">
+                      <CheckCircle className="h-3.5 w-3.5 text-teal-600" />
+                      <span>Applied</span>
                     </span>
                   ) : eligible ? (
                     <span className="flex items-center space-x-1 text-xs font-bold text-emerald-800 bg-[#ECFDF5] border border-emerald-200 px-3 py-1 rounded-full">

@@ -34,6 +34,7 @@ export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
   // Application submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isVolunteerRequested, setIsVolunteerRequested] = useState(false);
 
   // Form filling assistant states
   const [showFormAssistant, setShowFormAssistant] = useState(false);
@@ -77,6 +78,21 @@ export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
       // Load next steps
       const steps = await generateNextSteps(s, profile, currentLanguage);
       setNextSteps(steps);
+
+      // Check if already applied or requested volunteer support
+      try {
+        const requests = await dbClient.getRequests();
+        const hasApplied = requests.some(r => r.itemId === s.id && r.itemType === 'scheme');
+        const hasRequestedVolunteer = requests.some(r => r.itemId === s.id && r.itemType === 'volunteer_support');
+        if (hasApplied) {
+          setIsSubmitted(true);
+        }
+        if (hasRequestedVolunteer) {
+          setIsVolunteerRequested(true);
+        }
+      } catch (err) {
+        console.error("Error loading user requests in SchemeDetailView:", err);
+      }
     }
 
     // Load simple AI explanation
@@ -139,6 +155,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
         itemId: scheme.id,
         itemName: `Help with ${scheme.name}`
       });
+      setIsVolunteerRequested(true);
       alert(`🙋 Support request logged! \n\nA local Panchayat volunteer has been assigned and will schedule a home visit to help you finish paperwork for ${scheme.name}. Check your Tracker tab.`);
     } catch (e) {
       console.error(e);
@@ -291,31 +308,40 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
           {/* Eligibility Indicator Box */}
           {eligibility && (
             <div className={`p-5 rounded-3xl border shadow-xs ${
-              eligibility.matched 
-                ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' 
-                : 'bg-amber-50/40 border-amber-100 text-amber-900'
+              isSubmitted
+                ? 'bg-teal-50/50 border-teal-100 text-teal-900'
+                : eligibility.matched 
+                  ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' 
+                  : 'bg-amber-50/40 border-amber-100 text-amber-900'
             }`}>
               <div className="flex items-center space-x-2 mb-3">
-                {eligibility.matched ? (
+                {isSubmitted ? (
+                  <CheckCircle2 className="h-5 w-5 text-teal-600" />
+                ) : eligibility.matched ? (
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
                 )}
                 <span className="font-sans text-sm font-bold uppercase tracking-wider">
-                  {eligibility.matched ? "All Guidelines Met" : "Requires Attention"}
+                  {isSubmitted ? "Applied" : eligibility.matched ? "All Guidelines Met" : "Requires Attention"}
                 </span>
               </div>
               <p className="text-xs leading-relaxed font-semibold">
-                {eligibility.reasoning}
+                {isSubmitted 
+                  ? "Your application has been filed successfully via the AWAAZ gateway. You can track its progress in the Tracker tab."
+                  : eligibility.reasoning}
               </p>
 
               {/* Action Trigger Toggles */}
               <div className="mt-5 space-y-2 border-t border-gray-100 pt-4">
                 {isSubmitted ? (
-                  <div className="bg-emerald-600 text-white p-3.5 rounded-xl text-xs font-bold text-center flex items-center justify-center space-x-2">
-                    <ShieldCheck className="h-4 w-4" />
-                    <span>Application Filed Securely</span>
-                  </div>
+                  <button
+                    disabled={true}
+                    className="w-full py-3 bg-gray-100 border border-gray-200 text-gray-400 font-bold text-xs rounded-xl cursor-not-allowed flex items-center justify-center space-x-1"
+                  >
+                    <UserCheck className="h-4 w-4 text-gray-400" />
+                    <span>Applied</span>
+                  </button>
                 ) : (
                   <button
                     onClick={handleApplyNow}
@@ -329,9 +355,14 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
 
                 <button
                   onClick={handleRequestSupport}
-                  className="w-full py-3 bg-white border border-teal-200 text-teal-800 font-bold text-xs rounded-xl hover:bg-teal-50/30 transition-all active:scale-95"
+                  disabled={isSubmitted || isVolunteerRequested}
+                  className={`w-full py-3 font-bold text-xs rounded-xl transition-all ${
+                    isSubmitted || isVolunteerRequested
+                      ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-teal-200 text-teal-800 hover:bg-teal-50/30 active:scale-95'
+                  }`}
                 >
-                  Request Volunteer Handholding
+                  {isVolunteerRequested ? 'Volunteer Requested' : 'Request Volunteer Handholding'}
                 </button>
               </div>
             </div>
