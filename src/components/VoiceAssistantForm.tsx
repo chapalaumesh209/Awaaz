@@ -521,6 +521,15 @@ export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
     }
   };
 
+  // Replay last spoken audio or TTS
+  const speakAgain = () => {
+    if (lastAudioBase64Ref.current && speakText) {
+      playBase64Audio(lastAudioBase64Ref.current, speakText);
+    } else if (displayText) {
+      handleTextToSpeech(displayText);
+    }
+  };
+
   // Main voice agent turn — STT + Gemini + TTS pipeline
   const runClientSideSimulator = (transcript: string, activeLang: string) => {
     console.log("Running client-side simulator with user response:", transcript, "language:", activeLang);
