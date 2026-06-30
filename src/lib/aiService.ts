@@ -272,6 +272,72 @@ export async function generateGrievanceFollowUp(
   return `Offline Fallback: RTI and WhatsApp follow-up logs could not be compiled dynamically.`;
 }
 
+export async function generateWhatsAppAgendaSummary(
+  meetingTitle: string,
+  agenda: string,
+  date: string,
+  location: string,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/whatsapp-agenda-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meetingTitle, agenda, date, location, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.summary;
+    }
+  } catch (e) {
+    console.error("WhatsApp agenda summary AI error:", e);
+  }
+  return `Offline Fallback: Failed to fetch summary.`;
+}
+
+export async function generateSarpanchBudgetResponse(
+  category: string,
+  concern: string,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/sarpanch-budget-response', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, concern, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.response;
+    }
+  } catch (e) {
+    console.error("Sarpanch budget response AI error:", e);
+  }
+  return `Offline Fallback: Failed to fetch Sarpanch response.`;
+}
+
+export async function generateCivicStoryOutcome(
+  characterName: string,
+  choiceText: string,
+  previousStory: string,
+  language: LanguageCode
+): Promise<string> {
+  try {
+    const response = await fetch('/api/ai/civic-story-outcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ characterName, choiceText, previousStory, language }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      return data.outcome;
+    }
+  } catch (e) {
+    console.error("Civic story outcome AI error:", e);
+  }
+  return `Offline Fallback: Failed to fetch story outcome.`;
+}
+
 // ==========================================
 // STATIC FRONTEND MOCK FALLBACKS (MANDATORY)
 // ==========================================

@@ -89,11 +89,8 @@ export const AuthView: React.FC<AuthViewProps> = ({
         
         {/* Brand/Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-600 text-white shadow-md font-serif font-extrabold text-3xl italic mb-3">
-            A
-          </div>
           <h2 className="font-serif text-2xl font-extrabold text-teal-800">
-            {t.brandName || "AWAAZ आवाज"}
+            AWAAZ
           </h2>
           <p className="text-xs text-gray-500 font-medium mt-1">
             Secure Role-Based Authentication Gateway

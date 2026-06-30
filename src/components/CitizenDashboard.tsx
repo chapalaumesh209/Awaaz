@@ -3,9 +3,10 @@ import { TRANSLATIONS } from '../data/translations';
 import { CitizenProfile, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
 import { extractProfileFields } from '../lib/aiService';
+import { VoiceAssistantForm } from './VoiceAssistantForm';
 import { 
   Bot, Award, FileText, Activity, ShieldAlert, AlertCircle, Sparkles, UserCheck, CheckCircle2,
-  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck
+  PhoneCall, HeartPulse, Scale, Check, User, CheckCircle, ChevronRight, MessageSquare, ShieldCheck, Mic
 } from 'lucide-react';
 
 interface CitizenDashboardProps {
@@ -20,6 +21,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   onProfileUpdated
 }) => {
   const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS['en'];
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   
   // Local states for the profile form
   const [name, setName] = useState('');
@@ -105,6 +107,99 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
     } finally {
       setAiExtracting(false);
     }
+  };
+
+  // Handle incremental updates from the multilingual voice form filling assistant
+  const handleVoiceFormUpdate = async (completeData: any) => {
+    if (completeData) {
+      if (completeData.full_name) setName(completeData.full_name);
+      if (completeData.age) setAge(Number(completeData.age));
+      if (completeData.gender) setGender(completeData.gender.toLowerCase());
+      if (completeData.occupation) setOccupation(completeData.occupation);
+      if (completeData.district) setLocation(completeData.district);
+      if (completeData.state) setState(completeData.state);
+      if (completeData.monthly_income) setIncome(Number(completeData.monthly_income) * 12);
+      
+      const matchedDocs = [];
+      if (completeData.has_aadhaar) matchedDocs.push('aadhaar');
+      if (completeData.has_bank_account) matchedDocs.push('bankPassbook');
+      if (matchedDocs.length > 0) {
+        setExistingDocs(matchedDocs);
+      }
+
+      const existing = await dbClient.getProfile();
+
+      const updatedProfile: CitizenProfile = {
+        id: existing?.id || 'demo-citizen-id',
+        primaryLanguage: existing?.primaryLanguage || currentLanguage,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        name: completeData.full_name || name,
+        age: Number(completeData.age) || age,
+        gender: completeData.gender ? completeData.gender.toLowerCase() : gender,
+        occupation: completeData.occupation || occupation,
+        location: completeData.district || location,
+        state: completeData.state || state,
+        householdIncome: completeData.monthly_income ? Number(completeData.monthly_income) * 12 : income,
+        category: category,
+        disabilityStatus: disability,
+        disabilityType: disabilityType,
+        existingDocuments: matchedDocs.length > 0 ? matchedDocs : existingDocs,
+        readinessScore: 95
+      };
+
+      await dbClient.saveProfile(updatedProfile);
+      setReadinessScore(95);
+      calculateDashboardStats(updatedProfile);
+      onProfileUpdated();
+    }
+  };
+
+  // Handle completion from the multilingual voice form filling assistant
+  const handleVoiceFormComplete = async (completeData: any) => {
+    if (completeData) {
+      if (completeData.full_name) setName(completeData.full_name);
+      if (completeData.age) setAge(Number(completeData.age));
+      if (completeData.gender) setGender(completeData.gender.toLowerCase());
+      if (completeData.occupation) setOccupation(completeData.occupation);
+      if (completeData.district) setLocation(completeData.district);
+      if (completeData.state) setState(completeData.state);
+      if (completeData.monthly_income) setIncome(Number(completeData.monthly_income) * 12);
+      
+      const matchedDocs = [];
+      if (completeData.has_aadhaar) matchedDocs.push('aadhaar');
+      if (completeData.has_bank_account) matchedDocs.push('bankPassbook');
+      if (matchedDocs.length > 0) {
+        setExistingDocs(matchedDocs);
+      }
+
+      const existing = await dbClient.getProfile();
+
+      // Automatically construct and save the profile
+      const updatedProfile: CitizenProfile = {
+        id: existing?.id || 'demo-citizen-id',
+        primaryLanguage: existing?.primaryLanguage || currentLanguage,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        name: completeData.full_name || name,
+        age: Number(completeData.age) || age,
+        gender: completeData.gender ? completeData.gender.toLowerCase() : gender,
+        occupation: completeData.occupation || occupation,
+        location: completeData.district || location,
+        state: completeData.state || state,
+        householdIncome: completeData.monthly_income ? Number(completeData.monthly_income) * 12 : income,
+        category: category,
+        disabilityStatus: disability,
+        disabilityType: disabilityType,
+        existingDocuments: matchedDocs.length > 0 ? matchedDocs : existingDocs,
+        readinessScore: 95
+      };
+
+      await dbClient.saveProfile(updatedProfile);
+      setReadinessScore(95);
+      calculateDashboardStats(updatedProfile);
+      onProfileUpdated();
+      alert("🎉 Multilingual Voice Assistant successfully completed and saved your application form details!");
+    }
+    setIsVoiceAssistantOpen(false);
   };
 
   // Save manually modified profile details
@@ -258,6 +353,38 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
           <div className="flex items-center space-x-2 mb-6">
             <User className="h-5 w-5 text-teal-700" />
             <h3 className="font-sans text-lg font-bold text-gray-900">{t.yourProfile || "Your Eligibility Profile Credentials"}</h3>
+          </div>
+
+          {/* Voice-First Interactive Form-Filling Assistant Banner */}
+          <div className="mb-6 bg-gradient-to-r from-teal-900 to-teal-950 p-5 rounded-2xl border border-teal-800 text-white shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-800/20 rounded-full blur-2xl transform translate-x-12 -translate-y-12"></div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+              <div className="flex items-center space-x-3.5">
+                <div className="bg-teal-800 p-3 rounded-xl text-teal-300 animate-pulse shrink-0">
+                  <Mic className="h-5.5 w-5.5" />
+                </div>
+                <div>
+                  <h4 className="font-serif text-base font-bold tracking-tight text-white flex items-center gap-1.5 flex-wrap">
+                    {t.voiceAssistantTitle || "AWAAZ Multi-lingual Voice Assistant"}
+                    <span className="bg-amber-400 text-teal-950 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      {t.voiceAssistantBadge || "VOICE FIRST"}
+                    </span>
+                  </h4>
+                  <p className="text-xs text-teal-100 mt-1 leading-relaxed max-w-md">
+                    {t.voiceAssistantDesc || "Don't want to type? Tap the button to fill your entire form in seconds simply by talking in any of the 12 regional languages!"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsVoiceAssistantOpen(true)}
+                className="w-full sm:w-auto bg-amber-400 hover:bg-amber-300 active:scale-95 text-teal-950 px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer shrink-0"
+                id="start-voice-assistant-btn"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-teal-950" />
+                <span>{t.voiceAssistantBtn || "Start Voice Assistant"}</span>
+              </button>
+            </div>
           </div>
 
           {/* AI Autofill Prompt Assist */}
@@ -589,6 +716,15 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
         </div>
 
       </div>
+
+      {isVoiceAssistantOpen && (
+        <VoiceAssistantForm
+          currentLanguage={currentLanguage}
+          onUpdate={handleVoiceFormUpdate}
+          onComplete={handleVoiceFormComplete}
+          onClose={() => setIsVoiceAssistantOpen(false)}
+        />
+      )}
 
     </div>
   );

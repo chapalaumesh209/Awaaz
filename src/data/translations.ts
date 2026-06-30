@@ -114,7 +114,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     feedbackTextPlaceholder: "Enter details regarding corruption-free delivery, usability or feature suggestions...",
     feedbackBtnText: "Step 4: Register Citizen Feedback",
     feedbackSuccessMsg: "Thank you! Your feedback has been registered and audited securely.",
-    activeFeedbacksTitle: "Registered Panchayat Audits & Citizen Feedback Reviews"
+    activeFeedbacksTitle: "Registered Panchayat Audits & Citizen Feedback Reviews",
+    voiceAssistantTitle: "AWAAZ Multi-lingual Voice Assistant",
+    voiceAssistantBadge: "VOICE FIRST",
+    voiceAssistantDesc: "Don't want to type? Tap the button to fill your entire form in seconds simply by talking in any of the 12 regional languages!",
+    voiceAssistantBtn: "Start Voice Assistant"
   },
   hi: {
     brandName: "AWAAZ आवाज",
@@ -229,9 +233,17 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     feedbackTextPlaceholder: "भ्रष्टाचार मुक्त वितरण, उपयोगिता या सुविधा सुझावों के बारे में विवरण दर्ज करें...",
     feedbackBtnText: "चरण 4: नागरिक प्रतिक्रिया पंजीकृत करें",
     feedbackSuccessMsg: "धन्यवाद! आपकी प्रतिक्रिया पंजीकृत और सुरक्षित रूप से ऑडिट कर ली गई है।",
-    activeFeedbacksTitle: "पंजीकृत पंचायत ऑडिट और नागरिक प्रतिक्रिया समीक्षा"
+    activeFeedbacksTitle: "पंजीकृत पंचायत ऑडिट और नागरिक प्रतिक्रिया समीक्षा",
+    voiceAssistantTitle: "आवाज़ बहुभाषी वॉयस सहायक",
+    voiceAssistantBadge: "केवल बोलकर",
+    voiceAssistantDesc: "टाइप नहीं करना चाहते? 12 क्षेत्रीय भाषाओं में से किसी में भी बोलकर अपना पूरा फॉर्म कुछ ही सेकंड में भरने के लिए बटन दबाएं!",
+    voiceAssistantBtn: "वॉयस असिस्टेंट शुरू करें"
   },
   te: {
+    voiceAssistantTitle: "అవాజ్ బహుభాషా వాయిస్ అసిస్టెంట్",
+    voiceAssistantBadge: "వాయిస్ ఫస్ట్",
+    voiceAssistantDesc: "టైప్ చేయడం ఇష్టం లేదా? బటన్‌ను నొక్కి, 12 ప్రాంతీయ భాషలలో దేనినైనా మాట్లాడడం ద్వారా మీ దరఖాస్తును కొన్ని సెకన్లలోనే పూర్తిగా నింపండి!",
+    voiceAssistantBtn: "వాయిస్ అసిస్టెంట్ ప్రారంభించండి",
     brandName: "AWAAZ అవాజ్",
     slogan: "స్వరం, భద్రత & సామాజిక ప్రాప్యత",
     tagline: "భారతీయ పౌరులకు ప్రభుత్వ పథకాలు, దస్తావేజుల మద్దతు మరియు భద్రతా సేవలను అందించడం.",
@@ -386,7 +398,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "நிலையைக் கண்காணி",
     eligibilityScore: "தகுதி மதிப்பெண்",
     readinessScore: "தயார்நிலை மதிப்பெண்",
-    apiPlaceholder: "AI பதில் (Gemini மூலம்)"
+    apiPlaceholder: "AI பதில் (Gemini மூலம்)",
+    voiceAssistantTitle: "அவாஸ் பன்மொழி குரல் உதவியாளர்",
+    voiceAssistantBadge: "குரல் வழி",
+    voiceAssistantDesc: "தட்டச்சு செய்ய வேண்டாமா? 12 வட்டார மொழிகளில் ஒன்றில் பேசுவதன் மூலம் சில நொடிகளில் உங்கள் படிவத்தை முழுமையாக நிரப்ப பொத்தானைத் தட்டவும்!",
+    voiceAssistantBtn: "குரல் உதவியாளரைத் தொடங்கு"
   },
   kn: {
     brandName: "AWAAZ ಅವಾಜ್",
@@ -428,7 +444,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "ಸ್ಥಿತಿ ತಿಳಿಯಿರಿ",
     eligibilityScore: "ಅರ್ಹತಾ ಅಂಕಗಳು",
     readinessScore: "ಸಿದ್ಧತಾ ಅಂಕಗಳು",
-    apiPlaceholder: "AI ಉತ್ತರ (Gemini ಮೂಲಕ)"
+    apiPlaceholder: "AI ಉತ್ತರ (Gemini ಮೂಲಕ)",
+    voiceAssistantTitle: "ಅವಾಜ್ ಬಹುಭಾಷಾ ಧ್ವನಿ ಸಹಾಯಕ",
+    voiceAssistantBadge: "ಧ್ವನಿ ಮಾತ್ರ",
+    voiceAssistantDesc: "ಟೈಪ್ ಮಾಡಲು ಇಷ್ಟವಿಲ್ಲವೇ? 12 ಪ್ರಾದೇಶಿಕ ಭಾಷೆಗಳಲ್ಲಿ ಯಾವುದಾದರೊಂದರಲ್ಲಿ ಮಾತನಾಡುವ ಮೂಲಕ ನಿಮ್ಮ ಅರ್ಜಿಯನ್ನು ಕೆಲವೇ ಸೆಕೆಂಡುಗಳಲ್ಲಿ ತುಂಬಲು ಬಟನ್ ಒತ್ತಿ!",
+    voiceAssistantBtn: "ಧ್ವನಿ ಸಹಾಯಕರನ್ನು ಪ್ರಾರಂಭಿಸಿ"
   },
   ml: {
     brandName: "AWAAZ അവാസ്",
@@ -470,7 +490,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "നില പരിശോധിക്കുക",
     eligibilityScore: "യോഗ്യത സ്കോർ",
     readinessScore: "സന്നദ്ധത സ്കോർ",
-    apiPlaceholder: "AI മറുപടി (Gemini വഴി)"
+    apiPlaceholder: "AI മറുപടി (Gemini വഴി)",
+    voiceAssistantTitle: "അവാസ് ബഹുഭാഷാ വോയ്‌സ് അസിസ്റ്റന്റ്",
+    voiceAssistantBadge: "ആദ്യം ശബ്ദം",
+    voiceAssistantDesc: "ടൈപ്പ് ചെയ്യാൻ ആഗ്രഹിക്കുന്നില്ലേ? 12 പ്രാദേശിക ഭാഷകളിൽ ഒന്നിൽ സംസാരിച്ച് നിമിഷങ്ങൾക്കുള്ളിൽ നിങ്ങളുടെ ഫോം പൂരിപ്പിക്കാൻ ബട്ടൺ ടാപ്പ് ചെയ്യുക!",
+    voiceAssistantBtn: "വോയ്‌സ് അസിസ്റ്റന്റ് ആരംഭിക്കുക"
   },
   mr: {
     brandName: "AWAAZ आवाज",
@@ -512,7 +536,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "स्थितीचा मागोवा घ्या",
     eligibilityScore: "पात्रता धावसंख्या",
     readinessScore: "तयारी धावसंख्या",
-    apiPlaceholder: "AI उत्तर (Gemini द्वारे)"
+    apiPlaceholder: "AI उत्तर (Gemini द्वारे)",
+    voiceAssistantTitle: "आवाज बहुभाषी वॉयस असिस्टंट",
+    voiceAssistantBadge: "केवळ बोलून",
+    voiceAssistantDesc: "टाइप करू इच्छित नाही? १२ प्रादेशिक भाषांपैकी कोणत्याही भाषेत बोलून आपला फॉर्म काही सेकंदात भरण्यासाठी बटणावर टॅप करा!",
+    voiceAssistantBtn: "वॉयस असिस्टंट सुरू करा"
   },
   bn: {
     brandName: "AWAAZ আওয়াজ",
@@ -554,7 +582,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "স্ট্যাটাস ট্র্যাক করুন",
     eligibilityScore: "যোগ্যতার স্কোর",
     readinessScore: "প্রস্তুতির স্কোর",
-    apiPlaceholder: "AI উত্তর (Gemini দ্বারা)"
+    apiPlaceholder: "AI উত্তর (Gemini দ্বারা)",
+    voiceAssistantTitle: "আওয়াজ বহুভাষী ভয়েস সহকারী",
+    voiceAssistantBadge: "ভয়েস ফার্স্ট",
+    voiceAssistantDesc: "টাইপ করতে চান না? ১২টি আঞ্চলিক ভাষার যেকোনো একটিতে কথা বলে কয়েক সেকেন্ডের মধ্যে আপনার পুরো ফর্মটি পূরণ করতে বোতামটি টিপুন!",
+    voiceAssistantBtn: "ভয়েস অ্যাসিস্ট্যান্ট শুরু করুন"
   },
   gu: {
     brandName: "AWAAZ આવાઝ",
@@ -596,7 +628,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "સ્થિતિ ટ્રેક કરો",
     eligibilityScore: "પાત્રતા સ્કોર",
     readinessScore: "તૈયારી સ્કોર",
-    apiPlaceholder: "AI ઉત્તર (Gemini દ્વારા)"
+    apiPlaceholder: "AI ઉત્તર (Gemini દ્વારા)",
+    voiceAssistantTitle: "અવાઝ બહુભાષી વૉઇસ આસિસ્ટન્ટ",
+    voiceAssistantBadge: "માત્ર બોલીને",
+    voiceAssistantDesc: "ટાઇપ કરવા નથી માંગતા? ૧૨ પ્રાદેશિક ભાષાઓમાંથી કોઈ પણ ભાષામાં બોલીને સેકન્ડોમાં તમારો આખો ફોર્મ ભરવા માટે બટન દબાવો!",
+    voiceAssistantBtn: "વૉઇસ આસિસ્ટન્ટ શરૂ કરો"
   },
   pa: {
     brandName: "AWAAZ ਅਵਾਜ਼",
@@ -638,7 +674,11 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "ਸਟੇਟਸ ਟ੍ਰੈਕ ਕਰੋ",
     eligibilityScore: "ਯੋਗਤਾ ਸਕੋਰ",
     readinessScore: "ਤਿਆਰੀ ਸਕੋਰ",
-    apiPlaceholder: "AI ਜਵਾਬ (Gemini ਦੁਆਰਾ)"
+    apiPlaceholder: "AI ਜਵਾਬ (Gemini ਦੁਆਰਾ)",
+    voiceAssistantTitle: "ਅਵਾਜ਼ ਬਹੁ-ਭਾਸ਼ਾਈ ਵੌਇਸ ਸਹਾਇਕ",
+    voiceAssistantBadge: "ਸਿਰਫ਼ ਬੋਲ ਕੇ",
+    voiceAssistantDesc: "ਟਾਈਪ ਨਹੀਂ ਕਰਨਾ ਚਾਹੁੰਦੇ? 12 ਖੇਤਰੀ ਭਾਸ਼ਾਵਾਂ ਵਿੱਚੋਂ ਕਿਸੇ ਵਿੱਚ ਵੀ ਬੋਲ ਕੇ ਆਪਣਾ ਫਾਰਮ ਕੁਝ ਹੀ ਸੈਕਿੰਡਾਂ ਵਿੱਚ ਭਰਨ ਲਈ ਬਟਨ ਦਬਾਓ!",
+    voiceAssistantBtn: "ਵੌਇਸ ਸਹਾਇਕ ਸ਼ੁਰੂ ਕਰੋ"
   },
   or: {
     brandName: "AWAAZ ଆୱାଜ",
@@ -680,9 +720,17 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     trackStatus: "ଟ୍ରାକ୍ କରନ୍ତु",
     eligibilityScore: "ଯୋଗ୍ୟତା ସ୍କୋର",
     readinessScore: "ପ୍ରସ୍ତୁତି ସ୍କୋਰ",
-    apiPlaceholder: "AI ଉତ୍ତର (Gemini ଦ୍ୱାରା)"
+    apiPlaceholder: "AI ଉତ୍ତର (Gemini ଦ୍ୱାରା)",
+    voiceAssistantTitle: "ଆୱାଜ ବହୁଭାଷୀ ଭଏସ ସହାୟକ",
+    voiceAssistantBadge: "ଭଏସ ଫାଷ୍ଟ",
+    voiceAssistantDesc: "ଟାଇପ୍ କରିବାକୁ ଚାହୁଁନାହାଁନ୍ତି କି? ୧୨ଟି ଆଞ୍ଚଳିକ ଭାଷା ମଧ୍ୟରୁ ଯେକୌଣସି ଭାଷାରେ କହି ସେକେଣ୍ଡ ମଧ୍ୟରେ ଆପଣଙ୍କ ଫର୍ମ ପୂରଣ କରିବାକୁ ବଟନ୍ ଦବାନ୍ତୁ!",
+    voiceAssistantBtn: "ଭଏସ ସହାୟକ ଆରମ୍ଭ କରନ୍ତୁ"
   },
   ur: {
+    voiceAssistantTitle: "آواز کثیر اللسانی صوتی اسسٹنٹ",
+    voiceAssistantBadge: "پہلے آواز",
+    voiceAssistantDesc: "ٹائپ نہیں کرنا چاہتے؟ 12 علاقائی زبانوں میں سے کسی میں بھی بول کر سیکنڈوں میں اپنا فارم بھرنے کے لیے بٹن دبائیں!",
+    voiceAssistantBtn: "صوتی اسسٹنٹ شروع کریں",
     brandName: "AWAAZ آواز",
     slogan: "آواز، حفاظت اور سماجی رسائی",
     tagline: "ہندوستانی شہریوں کو سرکاری اسکیموں، دستاویزات کی مدد اور محفوظ رپورٹنگ تک رسائی فراہم کرنا۔",

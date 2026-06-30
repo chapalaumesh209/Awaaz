@@ -3,6 +3,7 @@ import { LANGUAGES } from '../data/languages';
 import { TRANSLATIONS } from '../data/translations';
 import { LanguageCode, UserProfile } from '../types';
 import { Shield, Languages, UserCheck, AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
+import { AwaazLogo } from './AwaazLogo';
 
 interface HeaderProps {
   currentLanguage: LanguageCode;
@@ -40,21 +41,11 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand Logo & Slogan */}
         <div 
-          className="flex cursor-pointer items-center space-x-3" 
+          className="flex cursor-pointer items-center py-1" 
           onClick={() => onNavigate('landing')}
           id="brand-section"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600 text-white shadow-xs font-serif font-extrabold text-2xl italic hover:scale-105 transition-all">
-            A
-          </div>
-          <div>
-            <span className="block font-serif text-lg font-bold tracking-tight text-teal-900 sm:text-xl leading-tight">
-              {t.brandName || "AWAAZ आवाज"}
-            </span>
-            <span className="block text-[10px] font-bold tracking-widest text-teal-600 uppercase">
-              {t.slogan || "Voice, Safety & Social Access"}
-            </span>
-          </div>
+          <AwaazLogo size={52} className="hover:scale-105 transition-all duration-300" />
         </div>
 
         {/* Action Controls */}

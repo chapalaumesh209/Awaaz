@@ -1,0 +1,723 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Mic, MicOff, Volume2, RefreshCw, Check, CheckCircle2, AlertCircle, 
+  Sparkles, StopCircle, Trash2, Play, Square, ArrowRight, User, Globe, Bot, X
+} from 'lucide-react';
+import { LanguageCode } from '../types';
+
+interface VoiceAssistantFormProps {
+  currentLanguage: LanguageCode;
+  onComplete: (completeData: any) => void;
+  onClose: () => void;
+  onUpdate?: (completeData: any) => void;
+}
+
+const LANGUAGES = [
+  { code: 'English', label: 'English', locale: 'en-IN' },
+  { code: 'Hindi', label: 'Hindi (हिन्दी)', locale: 'hi-IN' },
+  { code: 'Telugu', label: 'Telugu (తెలుగు)', locale: 'te-IN' },
+  { code: 'Tamil', label: 'Tamil (தமிழ்)', locale: 'ta-IN' },
+  { code: 'Kannada', label: 'Kannada (ಕನ್ನಡ)', locale: 'kn-IN' },
+  { code: 'Malayalam', label: 'Malayalam (മലയാളം)', locale: 'ml-IN' },
+  { code: 'Marathi', label: 'Marathi (मराठी)', locale: 'mr-IN' },
+  { code: 'Bengali', label: 'Bengali (বাংলা)', locale: 'bn-IN' },
+  { code: 'Gujarati', label: 'Gujarati (ગુજરાતી)', locale: 'gu-IN' },
+  { code: 'Punjabi', label: 'Punjabi (ਪੰਜਾਬੀ)', locale: 'pa-IN' },
+  { code: 'Odia', label: 'Odia (ଓଡ଼ିଆ)', locale: 'or-IN' },
+  { code: 'Urdu', label: 'Urdu (اردو)', locale: 'ur-PK' }
+];
+
+const SUGGESTED_RESPONSES: Record<string, Record<number, string[]>> = {
+  "English": {
+    1: ["My name is Lakshmi", "I am Ramesh Kumar", "Priya Sharma"],
+    2: ["I am 32 years old", "Forty five years", "My age is 28"],
+    3: ["Female", "I am a male", "Prefer not to say"],
+    4: ["Telangana state Hyderabad district", "Moinabad block Rangareddy", "Karimnagar district Telangana"],
+    5: ["Domestic worker", "I am a farmer", "Daily wage construction labor"],
+    6: ["Ten thousand rupees per month", "My monthly income is twelve thousand", "Eight thousand only"],
+    7: ["I am a woman and worker", "Student", "Senior citizen and farmer", "No groups"],
+    8: ["Yes, I have both Aadhaar and bank account", "Yes, yes", "No, I do not have a bank account"]
+  },
+  "Telugu": {
+    1: ["నా పేరు లక్ష్మి", "నా పేరు రమేష్ కుమార్", "ప్రియా శర్మ అని పిలుస్తారు"],
+    2: ["ముప్పై రెండు సంవత్సరాలు", "నా వయస్సు నలభై ఐదు", "ఇరవై ఎనిమిది ఏళ్ళు"],
+    3: ["మహిళ", "పురుషుడు", "చెప్పడానికి ఇష్టపడను"],
+    4: ["తెలంగాణ రాష్ట్రం హైదరాబాద్ జిల్లా", "మోయినాబాద్ రంగారెడ్డి", "కరీంనగర్ జిల్లా తెలంగాణ"],
+    5: ["ఇంటి పని చేస్తాను", "నేను ఒక రైతును", "భవన నిర్మాణ కూలీ పని"],
+    6: ["నెలకి పది వేల రూపాయలు", "నా నెలసరి ఆదాయం పన్నెండు వేలు", "ఎనిమిది వేల రూపాయలు"],
+    7: ["నేను ఒక మహిళను మరియు కార్మికురాలిని", "విద్యార్థిని", "నేను వృద్ధుడు మరియు రైతు", "ఏ గ్రూపు లేదు"],
+    8: ["అవును, నాకు ఆధార్ మరియు బ్యాంక్ ఖాతా రెండు ఉన్నాయి", "అవును, ఉన్నాయి", "ఆధార్ ఉంది కానీ బ్యాంక్ ఖాతా లేదు"]
+  },
+  "Hindi": {
+    1: ["मेरा नाम लक्ष्मी है", "मैं रमेश कुमार हूँ", "प्रिया शर्मा"],
+    2: ["मेरी उम्र बत्तीस साल है", "पैंतालीस वर्ष", "अट्ठाइस साल का हूँ"],
+    3: ["महिला", "पुरुष", "बताना नहीं चाहता"],
+    4: ["तेलंगाना राज्य और हैदराबाद जिला", "मोइनाबाद रंगारेड्डी जिला", "करीमनगर तेलंगाना"],
+    5: ["घर का काम करती हूँ", "मैं एक किसान हूँ", "दैनिक मजदूरी निर्माण कार्य"],
+    6: ["दस हजार रुपये प्रति महीना", "मेरी मासिक आय बारह हजार है", "आठ हजार रुपये"],
+    7: ["मैं एक महिला और मजदूर हूँ", "छात्र हूँ", "वरिष्ठ नागरिक और किसान", "किसी भी वर्ग से नहीं हूँ"],
+    8: ["हाँ, मेरे पास आधार कार्ड और बैंक खाता दोनों हैं", "हाँ, बिल्कुल", "आधार है लेकिन बैंक खाता नहीं है"]
+  }
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  full_name: "Full Name",
+  age: "Age",
+  gender: "Gender",
+  state: "State",
+  district: "District",
+  occupation: "Occupation",
+  monthly_income: "Monthly Income",
+  is_student: "Is Student",
+  is_farmer: "Is Farmer",
+  is_worker: "Is Worker",
+  is_woman: "Is Woman",
+  is_senior_citizen: "Is Senior Citizen",
+  is_migrant: "Is Migrant",
+  is_disabled: "Is Person with Disability",
+  has_aadhaar: "Has Aadhaar Card",
+  has_bank_account: "Has Bank Account"
+};
+
+export const VoiceAssistantForm: React.FC<VoiceAssistantFormProps> = ({
+  currentLanguage,
+  onComplete,
+  onClose,
+  onUpdate
+}) => {
+  // Map initial language code to our 12 assistant languages
+  const getInitialLanguage = (): string => {
+    if (currentLanguage === 'te') return 'Telugu';
+    if (currentLanguage === 'hi') return 'Hindi';
+    return 'English';
+  };
+
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(getInitialLanguage());
+  const [currentQuestionNumber, setCurrentQuestionNumber] = useState<number>(1);
+  const [action, setAction] = useState<string>('ask_question');
+  const [speakText, setSpeakText] = useState<string>('');
+  const [displayText, setDisplayText] = useState<string>('');
+  const [userInputText, setUserInputText] = useState<string>('');
+  const [needsClarification, setNeedsClarification] = useState<boolean>(false);
+  
+  // Stored form states
+  const [completeFormData, setCompleteFormData] = useState<any>({
+    full_name: null,
+    age: null,
+    gender: null,
+    state: null,
+    district: null,
+    occupation: null,
+    monthly_income: null,
+    is_student: false,
+    is_farmer: false,
+    is_worker: false,
+    is_woman: false,
+    is_senior_citizen: false,
+    is_migrant: false,
+    is_disabled: false,
+    has_aadhaar: null,
+    has_bank_account: null
+  });
+
+  const [missingFields, setMissingFields] = useState<string[]>([
+    "full_name", "age", "gender", "state", "district", "occupation", "monthly_income", "has_aadhaar", "has_bank_account"
+  ]);
+
+  // Audio wave and recording states
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [chatLog, setChatLog] = useState<Array<{ sender: 'assistant' | 'user'; text: string; lang: string }>>([]);
+
+  // Voice recording refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timeoutIdRef = useRef<any>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize and welcome on mount
+  useEffect(() => {
+    handleVoiceAgentTurn(null, '');
+    
+    return () => {
+      // Cleanup on unmount
+      cleanupVoiceResources();
+    };
+  }, []);
+
+  const cleanupVoiceResources = () => {
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
+    }
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(e => console.error("Error closing audio context:", e));
+      audioContextRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    window.speechSynthesis.cancel();
+  };
+
+  // Real voice recording via browser MediaRecorder API
+  const startRealRecording = async () => {
+    // Prevent multiple parallel sessions
+    if (isRecording) {
+      stopRealRecording();
+      return;
+    }
+
+    // Cancel any current assistant speech
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
+    }
+    window.speechSynthesis.cancel();
+    setIsSynthesizing(false);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+
+      let options = {};
+      if (MediaRecorder.isTypeSupported('audio/webm')) {
+        options = { mimeType: 'audio/webm' };
+      } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        options = { mimeType: 'audio/ogg' };
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType || 'audio/wav' });
+        
+        // Release hardware resources immediately
+        stream.getTracks().forEach(track => track.stop());
+
+        // Process recorded audio blob
+        handleVoiceAgentTurn(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+
+      // Web Audio API Silence Detection setup
+      setupSilenceDetection(stream);
+
+      // Keep recordings under 30 seconds for sync STT
+      timeoutIdRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 30000);
+
+    } catch (err) {
+      console.error("Microphone permission denied or hardware error:", err);
+      alert("Microphone access is required to use the real voice assistant. Please allow mic permission and try again.");
+      setIsRecording(false);
+    }
+  };
+
+  const stopRealRecording = () => {
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+    }
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  // Automatic silence detection (stops recording when speaker finishes speaking)
+  const setupSilenceDetection = (stream: MediaStream) => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const audioContext = new AudioContextClass();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      let lastActiveTime = Date.now();
+      let hasSpoken = false;
+
+      audioContextRef.current = audioContext;
+
+      const checkSilence = () => {
+        if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') {
+          return;
+        }
+
+        analyser.getByteFrequencyData(dataArray);
+
+        // Compute peak amplitude level
+        let maxVal = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          if (dataArray[i] > maxVal) maxVal = dataArray[i];
+        }
+
+        // Standard silence trigger threshold (above threshold is human speech)
+        const speechThreshold = 35;
+        const now = Date.now();
+
+        if (maxVal > speechThreshold) {
+          lastActiveTime = now;
+          hasSpoken = true;
+        } else {
+          const silentDuration = now - lastActiveTime;
+          // If speech is recognized, and silent for more than 2.0 seconds, auto-submit
+          if (hasSpoken && silentDuration > 2000) {
+            console.log("Silence detected: automatically stopping and submitting turn.");
+            stopRealRecording();
+            return;
+          }
+        }
+
+        animationFrameRef.current = requestAnimationFrame(checkSilence);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(checkSilence);
+    } catch (e) {
+      console.error("Failed to setup real-time silence detection:", e);
+    }
+  };
+
+  // Play audio base64 payload from Sarvam AI TTS
+  const playBase64Audio = (base64String: string, speakText: string, nextAction?: string) => {
+    try {
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
+      }
+
+      const audioUrl = `data:audio/wav;base64,${base64String}`;
+      const audio = new Audio(audioUrl);
+      activeAudioRef.current = audio;
+
+      audio.onplay = () => {
+        setIsSynthesizing(true);
+      };
+
+      audio.onended = () => {
+        setIsSynthesizing(false);
+      };
+
+      audio.onerror = (e) => {
+        console.error("Audio playback failed, falling back to Web Speech API:", e);
+        setIsSynthesizing(false);
+        handleTextToSpeech(speakText, nextAction);
+      };
+
+      audio.play().catch(playErr => {
+        console.warn("Autoplay was prevented by browser. Falling back to native synthesis...", playErr);
+        setIsSynthesizing(false);
+        handleTextToSpeech(speakText, nextAction);
+      });
+    } catch (e) {
+      console.error("Error setting up audio player:", e);
+      setIsSynthesizing(false);
+      handleTextToSpeech(speakText, nextAction);
+    }
+  };
+
+  // Browser offline text-to-speech fallback
+  const handleTextToSpeech = (text: string, nextAction?: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+
+    const matchedLang = LANGUAGES.find(l => l.code === selectedLanguage);
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = matchedLang ? matchedLang.locale : 'en-IN';
+
+    const voices = window.speechSynthesis.getVoices();
+    const desiredVoice = voices.find(v => v.lang.startsWith(utterance.lang));
+    if (desiredVoice) {
+      utterance.voice = desiredVoice;
+    }
+
+    utterance.onstart = () => setIsSynthesizing(true);
+    utterance.onend = () => {
+      setIsSynthesizing(false);
+    };
+    utterance.onerror = () => setIsSynthesizing(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // End-to-end multi-lingual pipeline call: STT -> Gemini -> TTS
+  const handleVoiceAgentTurn = async (audioBlob: Blob | null, textOverride?: string) => {
+    const transcript = textOverride !== undefined ? textOverride : userInputText;
+    setIsLoading(true);
+
+    // Cancel current playbacks
+    cleanupVoiceResources();
+
+    try {
+      const formData = new FormData();
+      if (audioBlob) {
+        formData.append('audio', audioBlob, 'audio.wav');
+      }
+      
+      // Send text override if suggestions or manual text was input
+      if (transcript.trim()) {
+        formData.append('user_voice_transcript', transcript);
+      }
+
+      formData.append('selected_language', selectedLanguage);
+      formData.append('current_question_number', String(currentQuestionNumber));
+      formData.append('form_state', JSON.stringify(completeFormData));
+      formData.append('conversation_state', JSON.stringify(chatLog));
+
+      const response = await fetch('/voice-agent-turn', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to communicate with voice agent endpoint");
+      }
+
+      const turnResult = await response.json();
+      const transcribedText = turnResult.transcript || transcript || '';
+
+      if (transcribedText.trim()) {
+        setChatLog(prev => [...prev, { sender: 'user', text: transcribedText, lang: selectedLanguage }]);
+      }
+
+      const data = turnResult.data;
+      if (data) {
+        setCurrentQuestionNumber(data.current_question_number);
+        setAction(data.action);
+        setSpeakText(data.speak);
+        setDisplayText(data.display_text);
+        setNeedsClarification(data.needs_clarification || false);
+
+        if (data.complete_form_data) {
+          setCompleteFormData(data.complete_form_data);
+          if (onUpdate) {
+            onUpdate(data.complete_form_data);
+          }
+        }
+        if (data.missing_fields) {
+          setMissingFields(data.missing_fields);
+        }
+
+        setChatLog(prev => [...prev, { sender: 'assistant', text: data.speak, lang: selectedLanguage }]);
+        setUserInputText('');
+
+        // Play returned Sarvam TTS audio or invoke client fallback synthesis
+        if (turnResult.audio) {
+          playBase64Audio(turnResult.audio, data.speak, data.action);
+        } else {
+          handleTextToSpeech(data.speak, data.action);
+        }
+
+        if (data.form_ready) {
+          setTimeout(() => {
+            onComplete(data.complete_form_data);
+          }, 1500);
+        }
+      }
+    } catch (err) {
+      console.error("E2E voice agent turn error:", err);
+      alert("Error contacting the voice-agent. Using browser-side fallback helper...");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRestart = () => {
+    setCompleteFormData({
+      full_name: null,
+      age: null,
+      gender: null,
+      state: null,
+      district: null,
+      occupation: null,
+      monthly_income: null,
+      is_student: false,
+      is_farmer: false,
+      is_worker: false,
+      is_woman: false,
+      is_senior_citizen: false,
+      is_migrant: false,
+      is_disabled: false,
+      has_aadhaar: null,
+      has_bank_account: null
+    });
+    setCurrentQuestionNumber(1);
+    setAction('ask_question');
+    setChatLog([]);
+    setUserInputText('');
+    setSpeakText('');
+    setDisplayText('');
+    setTimeout(() => {
+      handleVoiceAgentTurn(null, '');
+    }, 100);
+  };
+
+  const suggestions = SUGGESTED_RESPONSES[selectedLanguage]?.[currentQuestionNumber] || SUGGESTED_RESPONSES["English"]?.[currentQuestionNumber] || [];
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-teal-950/80 backdrop-blur-sm flex items-center justify-center p-4" id="voice-assistant-modal">
+      <div className="bg-[#FDFBF7] text-[#1A2E2A] w-full max-w-4xl rounded-[32px] border border-teal-800 shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[80vh]">
+        
+        {/* Left Interactive Assistant panel */}
+        <div className="flex-1 p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
+          
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <div className="flex items-center space-x-2.5">
+              <div className="bg-teal-900 p-2.5 rounded-2xl text-teal-300">
+                <Bot className="h-5.5 w-5.5 animate-bounce" />
+              </div>
+              <div>
+                <h4 className="font-serif text-lg font-bold text-teal-900">AWAAZ Voice Assistant</h4>
+                <p className="text-[10px] text-gray-400 font-mono">12 LANGUAGES • AUDIO TRANSCRIPTION</p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-teal-900 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Assistant Bubble display */}
+          <div className="my-6 flex-1 flex flex-col justify-center space-y-4">
+            <div className="bg-teal-50/50 border border-teal-100 rounded-3xl p-6 relative">
+              <span className="absolute -top-2.5 left-6 bg-teal-800 text-teal-100 text-[9px] font-bold px-2 py-0.5 rounded-full">
+                ASSISTANT SPEAKING
+              </span>
+              
+              <p className="font-serif text-xl md:text-2xl font-bold leading-relaxed text-teal-950 italic">
+                "{displayText || "Loading your helper assistant..."}"
+              </p>
+
+              {/* Speech control */}
+              <div className="mt-4 flex items-center space-x-2">
+                <button
+                  id="voice-speak-question-button"
+                  onClick={() => handleTextToSpeech(displayText)}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-teal-200 hover:bg-teal-50 rounded-xl text-xs font-bold text-teal-800 transition-colors"
+                >
+                  <Volume2 className={`h-4 w-4 ${isSynthesizing ? 'text-teal-600 animate-pulse' : 'text-teal-800'}`} />
+                  <span>{isSynthesizing ? "Speaking..." : "Speak Question"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Input & Record controls */}
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {/* Language Picker */}
+                <select
+                  id="voice-language-dropdown"
+                  value={selectedLanguage}
+                  onChange={(e) => {
+                    setSelectedLanguage(e.target.value);
+                    // trigger refresh
+                    setTimeout(() => handleVoiceAgentTurn(null, ''), 200);
+                  }}
+                  className="bg-white border border-gray-200 rounded-2xl px-3 py-2 text-xs font-bold text-teal-900 focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                >
+                  {LANGUAGES.map(lang => (
+                    <option key={lang.code} value={lang.code}>{lang.label}</option>
+                  ))}
+                </select>
+
+                <input
+                  id="voice-input-text"
+                  type="text"
+                  value={userInputText}
+                  onChange={(e) => setUserInputText(e.target.value)}
+                  placeholder="Spoken transcript will appear here..."
+                  className="flex-1 bg-white border border-gray-200 rounded-2xl px-4 py-2.5 text-xs text-teal-950 font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                />
+
+                <button
+                  id="voice-submit-text-button"
+                  type="button"
+                  onClick={() => handleVoiceAgentTurn(null)}
+                  disabled={isLoading}
+                  className="bg-teal-700 hover:bg-teal-800 text-white p-3 rounded-2xl flex items-center justify-center shadow-md transition-all active:scale-95 disabled:opacity-50"
+                >
+                  <ArrowRight className="h-4.5 w-4.5" />
+                </button>
+              </div>
+
+              {/* Simulated / Real record toggle */}
+              <div className="flex items-center justify-between">
+                <button
+                  id="voice-recording-button"
+                  onClick={startRealRecording}
+                  disabled={isLoading}
+                  className={`w-full py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs font-bold transition-all shadow-md active:scale-95 ${
+                    isRecording 
+                      ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
+                      : 'bg-teal-900 hover:bg-teal-950 text-white'
+                  }`}
+                >
+                  {isRecording ? (
+                    <>
+                      <StopCircle className="h-4 w-4 fill-white" />
+                      <span>Recording... Tap to Finish</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4 text-teal-300" />
+                      <span>Tap to Speak (Voice Input)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Audio Wave Visualizer representation */}
+              {(isRecording || isSynthesizing) && (
+                <div className="flex items-center justify-center space-x-1.5 py-2">
+                  <span className="w-1.5 h-6 bg-teal-600 rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1.5 h-10 bg-teal-700 rounded-full animate-bounce delay-150"></span>
+                  <span className="w-1.5 h-8 bg-teal-800 rounded-full animate-bounce delay-300"></span>
+                  <span className="w-1.5 h-12 bg-teal-900 rounded-full animate-bounce delay-75"></span>
+                  <span className="w-1.5 h-5 bg-teal-700 rounded-full animate-bounce delay-200"></span>
+                </div>
+              )}
+            </div>
+
+            {/* Tap suggested responses to simulate spoken text */}
+            {suggestions.length > 0 && (
+              <div className="space-y-1.5 mt-2 bg-gray-50 border border-gray-100 p-3 rounded-2xl">
+                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider">
+                  Tap to simulate spoken answer ({selectedLanguage}):
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestions.map((sug, sIdx) => (
+                    <button
+                      id={`voice-suggestion-btn-${sIdx}`}
+                      key={sIdx}
+                      onClick={() => {
+                        setUserInputText(sug);
+                        handleVoiceAgentTurn(null, sug);
+                      }}
+                      className="px-2.5 py-1.5 bg-white hover:bg-teal-50 border border-gray-200 rounded-xl text-[11px] font-semibold text-gray-700 hover:text-teal-900 transition-all text-left truncate max-w-xs"
+                    >
+                      🗣️ "{sug}"
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Reset / Status footer */}
+          <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
+            <button
+              id="voice-reset-assistant-button"
+              onClick={handleRestart}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-xl text-xs font-bold border border-red-100 transition-colors"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Reset Assistant</span>
+            </button>
+            
+            <div className="text-[10px] text-gray-400 font-mono">
+              STAGE: {action.toUpperCase()} • Q: {currentQuestionNumber}/8
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right English Form representation panel */}
+        <div className="w-full md:w-[320px] bg-white p-6 overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center space-x-1.5 mb-4 pb-2 border-b border-gray-100">
+              <CheckCircle2 className="h-4.5 w-4.5 text-teal-700" />
+              <h5 className="font-serif text-sm font-bold text-teal-950">English Normalized Profile</h5>
+            </div>
+
+            <p className="text-[10px] text-gray-400 leading-normal mb-4">
+              All spoken inputs are automatically translated and normalized into English for standard government system storage.
+            </p>
+
+            <div className="space-y-3">
+              {Object.entries(completeFormData).map(([key, val]) => {
+                if (key.startsWith('is_') || key.startsWith('has_')) {
+                  // Boolean flag representation
+                  return (
+                    <div key={key} className="flex items-center justify-between bg-gray-50/50 p-2 rounded-xl border border-gray-100">
+                      <span className="text-[10px] font-semibold text-gray-500">{FIELD_LABELS[key] || key}</span>
+                      <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded-sm ${
+                        val === true 
+                          ? 'bg-emerald-50 text-emerald-800' 
+                          : val === false 
+                            ? 'bg-red-50 text-red-800' 
+                            : 'bg-gray-100 text-gray-400'
+                      }`}>
+                        {val === true ? 'YES' : val === false ? 'NO' : 'PENDING'}
+                      </span>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div key={key} className="space-y-0.5">
+                    <label className="text-[10px] font-bold text-gray-400 block uppercase tracking-wide">
+                      {FIELD_LABELS[key] || key}
+                    </label>
+                    <div className="bg-gray-50/50 border border-gray-100 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-800 flex items-center justify-between min-h-[32px]">
+                      <span>{val !== null && val !== undefined ? String(val) : '—'}</span>
+                      {val !== null && val !== undefined && (
+                        <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="pt-4 mt-6 border-t border-gray-100">
+            <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+              <div 
+                className="bg-teal-600 h-1.5 rounded-full transition-all duration-300" 
+                style={{ width: `${Math.round(((9 - missingFields.length) / 9) * 100)}%` }} 
+              />
+            </div>
+            <div className="flex justify-between items-center mt-1.5">
+              <span className="text-[10px] text-gray-400 font-bold">PROFILE COMPLETENESS</span>
+              <span className="text-[10px] text-teal-800 font-extrabold">{Math.round(((9 - missingFields.length) / 9) * 100)}%</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+};

@@ -3,11 +3,13 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import multer from 'multer';
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(express.json());
 
@@ -20,7 +22,7 @@ function getAiClient(): GoogleGenAI | null {
   if (!aiClient) {
     const key = process.env.GEMINI_API_KEY;
     if (key && key !== 'MY_GEMINI_API_KEY') {
-      aiClient = new GoogleGenAI({
+      const client = new GoogleGenAI({
         apiKey: key,
         httpOptions: {
           headers: {
@@ -28,7 +30,38 @@ function getAiClient(): GoogleGenAI | null {
           }
         }
       });
-      console.log("Gemini API Client successfully initialized.");
+
+      // Patch generateContent to handle automatic fallback from gemini-3.5-flash to gemini-3.1-flash-lite on quota limits or errors
+      const originalGenerateContent = client.models.generateContent.bind(client.models);
+      (client.models as any).generateContent = async function(params: any) {
+        const primaryModel = params?.model || "gemini-3.5-flash";
+        try {
+          return await originalGenerateContent({
+            ...params,
+            model: primaryModel
+          });
+        } catch (error: any) {
+          const errorStr = String(error.message || error || "");
+          console.warn(`[Gemini Autopatch] Primary model call failed (${errorStr}). Checking for fallback...`);
+          
+          if (primaryModel === "gemini-3.5-flash") {
+            console.log("[Gemini Autopatch] Attempting automatic fallback to gemini-3.1-flash-lite...");
+            try {
+              return await originalGenerateContent({
+                ...params,
+                model: "gemini-3.1-flash-lite"
+              });
+            } catch (fallbackError: any) {
+              console.error("[Gemini Autopatch] Fallback model gemini-3.1-flash-lite also failed:", fallbackError.message || fallbackError);
+              throw fallbackError;
+            }
+          }
+          throw error;
+        }
+      };
+
+      aiClient = client;
+      console.log("Gemini API Client successfully initialized with automatic fallback resilience patching.");
     } else {
       console.log("No valid GEMINI_API_KEY found. Falling back to intelligent mock engine.");
     }
@@ -1149,6 +1182,287 @@ Thank you,
   res.json({ rtiDraft: fallbackRti });
 });
 
+// 7. Gram Sabha Agenda Simplified WhatsApp Summary API
+app.post('/api/ai/whatsapp-agenda-summary', async (req, res) => {
+  const { meetingTitle, agenda, date, location, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are an expert rural community engagement and public communications coordinator in India.
+Your task is to take a formal Gram Sabha meeting's agenda and details, and translate/re-write it into a simplified, clear, friendly, and highly engaging announcement suitable for a WhatsApp message to villagers.
+The announcement should:
+1. Explain the purpose of the meeting in simple, everyday language (avoid heavy administrative jargon).
+2. Use bullet points, bold text, and relevant emojis (like 📢, 🏡, 🗓️, 💬, 💰) to make it highly scannable.
+3. List the Date, Time, Location, and allocated Budget clearly.
+4. Encourage women, youth, and marginalized community members to attend, highlighting that their voice is critical.
+5. End with a polite invite: "Your Gram Panchayat, Moinabad" or similar.
+
+Meeting details:
+- Title: ${meetingTitle}
+- Agenda: ${agenda}
+- Date: ${date}
+- Location: ${location}
+
+Output Language: ${language} (Please write the entire WhatsApp announcement in this language!).`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ summary: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini WhatsApp agenda summary failed:", e);
+    }
+  }
+
+  // Fallbacks
+  let fallback = '';
+  if (language === 'hi') {
+    fallback = `📢 *ग्राम सभा आमंत्रण: कल्याणकारी योजनाओं एवं विकास कार्यों की समीक्षा* 📢
+
+प्रिय ग्रामवासियों,
+
+हमारी ग्राम पंचायत में आगामी बैठक होने जा रही है। आप सभी का आना अत्यंत महत्वपूर्ण है! विशेष रूप से युवा, महिलाएं और वंचित वर्ग अवश्य पधारें ताकि आपकी आवाज़ सुनी जा सके।
+
+📝 *बैठक के मुख्य विषय (एजेंडा):*
+• ${agenda}
+
+🗓 *तारीख:* ${date}
+📍 *स्थान:* ${location}
+💰 *बजट:* ${meetingTitle.includes('Budget') || meetingTitle.includes('Allocations') ? '₹12,45,000' : '₹4,50,000'}
+
+🏡 *आपकी उपस्थिति - आपका अधिकार!*
+आइए मिलकर हमारे गाँव के विकास का निर्णय लें।
+
+*शुभकामनाओं सहित,*
+*आपकी ग्राम पंचायत*`;
+  } else if (language === 'te') {
+    fallback = `📢 *గ్రామ సభ ఆహ్వానం: అభివృద్ధి పనులు మరియు గ్రామ ప్రణాళిక సమీక్ష* 📢
+
+గౌరవనీయులైన గ్రామ ప్రజలకు నమస్కారం,
+
+మన గ్రామ పంచాయతీ పరిధిలో త్వరలో అత్యంత ముఖ్యమైన గ్రామ సభ జరగబోతోంది. యువత, మహిళలు మరియు వెనుకబడిన వర్గాల వారు తప్పక పాల్గొనవలసిందిగా మనవి.
+
+📝 *సభ ముఖ్య ఉద్దేశం (ఎజెండా):*
+• ${agenda}
+
+🗓 *తేదీ:* ${date}
+📍 *వేదిక:* ${location}
+💰 *బడ్జెట్:* ${meetingTitle.includes('Budget') || meetingTitle.includes('Allocations') ? '₹12,45,000' : '₹4,50,000'}
+
+🏡 *మీ భాగస్వామ్యం - మన గ్రామాభివృద్ధి!*
+కలిసికట్టుగా మన గ్రామ భవిష్యత్తును నిర్ణయిద్దాం.
+
+*ఇట్లు,*
+*మీ గ్రామ పంచాయతీ*`;
+  } else {
+    fallback = `📢 *GRAM SABHA INVITATION: DEVELOPMENT WORKS & SCHEMES AUDIT* 📢
+
+Dear Villagers,
+
+An important Gram Sabha assembly is scheduled in our village. Your active presence is highly essential! We especially request our youth, women, and marginalized community members to join and speak up.
+
+📝 *Key Agenda Items:*
+• ${agenda}
+
+🗓 *Date & Time:* ${date}
+📍 *Location:* ${location}
+💰 *Allocated Budget:* ${meetingTitle.includes('Budget') || meetingTitle.includes('Allocations') ? '₹12,45,000' : '₹4,50,000'}
+
+🏡 *Your Voice, Your Village, Your Right!*
+Let's participate together in deciding our village's progress.
+
+*Warm regards,*
+*Your Gram Panchayat*`;
+  }
+
+  res.json({ summary: fallback });
+});
+
+// 8. Participatory Budget Sarpanch Response API
+app.post('/api/ai/sarpanch-budget-response', async (req, res) => {
+  const { category, concern, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are the Sarpanch (elected village head) of Gram Panchayat in India.
+A local citizen has raised a specific concern or flagged an issue regarding the budget allocation or expenditure on a village project:
+- Project/Category: ${category}
+- Citizen Concern: "${concern}"
+
+Write a humble, responsible, transparent, and encouraging response as the Sarpanch.
+The response should:
+1. Sincerely thank the citizen for exercising their right to public accountability and social audit.
+2. Acknowledge the concern specifically and detail a realistic, immediate step the Panchayat will take (e.g., dispatching an assistant engineer, auditing the subcontractor's bills, holding an open site inspection, or calling a ward meeting).
+3. Ensure that the progress will be published on the digital notice board and discussed at the upcoming Gram Sabha.
+4. Keep a very respectful, community-minded, and non-defensive tone.
+
+Output Language: ${language} (Write the entire letter/response in this language).`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ response: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Sarpanch response failed:", e);
+    }
+  }
+
+  // Fallback
+  let fallback = '';
+  if (language === 'hi') {
+    fallback = `**प्रिय नागरिक,**
+
+आपके द्वारा **"${category}"** के अंतर्गत उठाए गए इस महत्वपूर्ण मुद्दे के लिए मैं आपका हृदय से धन्यवाद करता हूँ।
+
+आपकी चिंता: *"${concern}"*
+
+एक जागरूक नागरिक के रूप में सामाजिक ऑडिट (Social Audit) और सार्वजनिक जवाबदेही की दिशा में आपका यह कदम अत्यंत सराहनीय है। 
+
+**पंचायत की त्वरित कार्रवाई:**
+हम इस मामले की गंभीरता को समझते हुए निम्नलिखित कदम तुरंत उठा रहे हैं:
+1. हमारी पंचायत की विकास समिति के सहायक अभियंता (Assistant Engineer) आगामी ४८ घंटों में कार्यस्थल का प्रत्यक्ष निरीक्षण करेंगे।
+2. ठेकेदार के काम की गुणवत्ता और बिलों का मिलान बजट दस्तावेजों के साथ किया जाएगा।
+3. इस जांच की पूरी रिपोर्ट ग्राम पंचायत कार्यालय के सूचना बोर्ड पर सार्वजनिक की जाएगी।
+
+हम आपको आगामी ग्राम सभा में भी इस पर चर्चा के लिए सादर आमंत्रित करते हैं।
+
+**सादर,**
+**सरपंच (ग्राम पंचायत)**`;
+  } else if (language === 'te') {
+    fallback = `**గౌరవనీయులైన గ్రామస్తులకు,**
+
+మన గ్రామంలో **"${category}"** అభివృద్ధి పనుల నిధుల వినియోగంపై మీరు లేవనెత్తిన ఈ అంశానికి నా హృదయపూర్వక ధన్యవాదాలు.
+
+మీ ఆందోళన: *"${concern}"*
+
+ఒక బాధ్యతాయుతమైన పౌరుడిగా సామాజిక ఆడిట్ (Social Audit) మరియు పారదర్శకత కోసం మీరు చూపిన చొరవ అభినందనీయం.
+
+**పంచాయతీ తక్షణ చర్యలు:**
+ఈ సమస్య పరిష్కారానికి మేము ఈ క్రింది చర్యలను చేపడుతున్నాము:
+1. రాబోయే 48 గంటల్లో మా పంచాయతీ సహాయక ఇంజనీర్ (Assistant Engineer) స్వయంగా పనుల నాణ్యతను పరిశీలిస్తారు.
+2. సదరు కాంట్రాక్టర్ సమర్పించిన బిల్లులను మరియు వాస్తవ పనులను బడ్జెట్ ప్రణాళికతో సరిపోలుస్తాము.
+3. ఈ తనిఖీ నివేదికను పంచాయతీ కార్యాలయం నోటీసు బోర్డులో అందరికీ అందుబాటులో ఉంచుతాము.
+
+రాబోయే గ్రామ సభలో కూడా దీనిపై ప్రత్యక్ష చర్చ జరుపుదాము. దయచేసి పాల్గొనండి.
+
+**భవదీయుడు/భవదీయురాలు,**
+**సర్పంచ్ (గ్రామ పంచాయతీ)**`;
+  } else {
+    fallback = `**Dear Citizen,**
+
+I sincerely thank you for raising this critical issue regarding our developmental expenditures under **"${category}"**.
+
+Your Concern: *"${concern}"*
+
+Your proactive stance on social audits and public accountability is exactly what strengthens our local democracy.
+
+**Our Immediate Actions:**
+Taking your feedback seriously, the Gram Panchayat has resolved to:
+1. Dispatch our Assistant Engineer to conduct a physical site inspection within the next 48 hours.
+2. Audit the subcontractor's measurement books against the approved budget estimations.
+3. Publish the detailed audit findings openly on the village notice board.
+
+We warmly invite you to attend the upcoming Gram Sabha to discuss this firsthand.
+
+**Warm regards,**
+**Sarpanch (Gram Panchayat)**`;
+  }
+
+  res.json({ response: fallback });
+});
+
+// 9. Interactive Story Game Civic Outcome API
+app.post('/api/ai/civic-story-outcome', async (req, res) => {
+  const { characterName, choiceText, previousStory, language } = req.body;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const prompt = `You are the narrator of "Civic Hero" - an interactive, educational, story-based RPG game about local governance, RTI, and civic rights in India.
+The player is a young rural youth named ${characterName} who is facing a civic challenge.
+In the previous step:
+- Story State: ${previousStory}
+- The user chose: "${choiceText}"
+
+Provide the narrative outcome for this choice and the next part of the story in the requested language '${language}'.
+The response should:
+1. React specifically to the player's choice. Highlight the educational/civic consequence (e.g., if they chose to file an RTI, explain that RTI requires a Rs. 10 fee and a 30-day response window, teaching them the actual law).
+2. Continue the storyline in an exciting, high-stakes way (e.g., finding the corrupt contractor, or presenting their case in front of a crowded Gram Sabha assembly, or convincing skeptical elders).
+3. Present 3 new interactive, highly contrasting choices (Option A, Option B, Option C) that the player can choose next, with clear civic and moral dilemmas.
+4. Keep the tone motivational, educational, and fun. Use emojis to represent characters and moods.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+      });
+
+      if (response.text) {
+        return res.json({ outcome: response.text });
+      }
+    } catch (e) {
+      console.error("Gemini Civic Story failed:", e);
+    }
+  }
+
+  // Pre-coded interactive offline story branch based on language
+  let fallback = '';
+  if (language === 'hi') {
+    fallback = `🌟 **कहानी का परिणाम (RTI यात्रा):**
+
+आपने सरपंच से सीधे सवाल पूछने और लिखित में सूचना का अधिकार (RTI) दायर करने का साहसी निर्णय लिया! 📝
+**सच्चाई की बात:** RTI अधिनियम, २००५ की धारा ६(१) के तहत, आपको केवल ₹१० का आवेदन शुल्क देना होता है और लोक सूचना अधिकारी (PIO) को ३० दिनों के भीतर जवाब देना ही होगा।
+
+जब सरपंच ने देखा कि आप कानूनी अधिकारों से लैस हैं, तो उनके हाव-भाव बदल गए। उन्होंने एक बंद कमरे में फुसफुसाते हुए कहा, *"अरे बेटा, RTI क्यों कर रहे हो? गाँव के विकास में समय लगता है। अगर तुम यह वापस ले लो, तो मैं तुम्हारी पढ़ाई के लिए विशेष छात्रवृत्ति मंजूर कर दूंगा।"*
+
+अब आप एक बड़े नैतिक धर्मसंकट में हैं! ⚖️
+
+**आप अगला कदम क्या चुनेंगे?**
+• **विकल्प अ:** प्रलोभन को ठुकराएं। सार्वजनिक रूप से ग्राम सभा में सबके सामने यह बात उठाएं और सामाजिक ऑडिट की मांग करें।
+• **विकल्प ब:** छात्रवृत्ति स्वीकार कर लें, क्योंकि निजी विकास भी गाँव के शिक्षित युवाओं के लिए ज़रूरी है।
+• **विकल्प स:** सरपंच की बात को रिकॉर्ड कर लें और इसे जिला विकास अधिकारी (DDO) को भ्रष्टाचार निवारण सेल में प्रमाण के रूप में भेजें।`;
+  } else if (language === 'te') {
+    fallback = `🌟 **కథా ఫలితం (RTI పోరాటం):**
+
+మీరు ధైర్యంగా సమాచార హక్కు చట్టం (RTI) ద్వారా నిధుల వివరాలను లిఖితపూర్వకంగా అడగాలని నిర్ణయించుకున్నారు! 📝
+**నిజమైన చట్టం:** సమాచార హక్కు చట్టం, 2005 సెక్షన్ 6(1) కింద, కేవలం ₹10 పోస్టల్ ఆర్డర్ చెల్లించి దరఖాస్తు చేసుకోవచ్చు. ప్రభుత్వ అధికారి 30 రోజుల్లో సమాధానం ఇవ్వాల్సిందే.
+
+మీరు చట్టబద్ధమైన హక్కును ఉపయోగించడంతో సర్పంచ్ కంగారు పడ్డారు. మిమ్మల్ని రహస్యంగా గదిలోకి పిలిచి, *"తమ్ముడు, ఎందుకు ఈ RTI గొడవలు? గ్రామ పనుల్లో ఆలస్యం మామూలే. ఒకవేళ నువ్వు ఈ దరఖాస్తు ఉపసంహరించుకుంటే, నీ ఉన్నత చదువుల కోసం ప్రత్యేక నిధులు మంజూరు చేస్తా"* అని ప్రలోభపెట్టారు.
+
+ఇప్పుడు మీరు ఒక నైతిక సందిగ్ధంలో పడ్డారు! ⚖️
+
+**మీ తదుపరి నిర్ణయం ఏమిటి?**
+• **ఆప్షన్ A:** ప్రలోభాన్ని తిరస్కరించండి. నేరుగా రాబోయే గ్రామ సభలో అందరి ముందూ ఈ విషయాన్ని లేవనెత్తి సామాజిక ఆడిట్ కోరండి.
+• **ఆప్షన్ B:** వ్యక్తిగత అభివృద్ధి కూడా ముఖ్యమే కాబట్టి స్కాలర్‌షిప్ ఒప్పందాన్ని అంగీకరించండి.
+• **ఆప్షన్ C:** సర్పంచ్ ఆఫర్‌ను స్మార్ట్‌ఫోన్‌లో రహస్యంగా రికార్డ్ చేసి, లంచగొండితనం నిరోధక విభాగానికి (ACB) ఆధారంగా పంపండి.`;
+  } else {
+    fallback = `🌟 **Story Outcome (The RTI Path):**
+
+You boldly decided to utilize the Right to Information (RTI) Act to demand official written accounts of the road project! 📝
+**Civic Fact:** Under Section 6(1) of the RTI Act, 2005, any citizen can apply with a mere ₹10 fee, and the Public Information Officer (PIO) is legally bound to provide the details within 30 days.
+
+Seeing that you understand your constitutional rights, the Sarpanch's expression changed. He called you to his side room and whispered, *"Listen young friend, why go through all this legal hassle? Village works always take time. If you drop this RTI, I will personally approve a special digital learning scholarship for your studies."*
+
+You are now at a crucial moral crossroads! ⚖️
+
+**What do you choose to do next?**
+• **Option A:** Strongly refuse the bribe. Stand up in the upcoming Gram Sabha assembly and expose this offer, demanding a public social audit.
+• **Option B:** Accept the scholarship, thinking that your personal education will help you fight for the village better in the long run.
+• **Option C:** Secretly record the conversation on your phone and send it as evidence directly to the District Development Officer (DDO) and Anti-Corruption Bureau.`;
+  }
+
+  res.json({ outcome: fallback });
+});
+
 function getLocalFallbackTranslation(text: string, lang: string): string {
   const lower = text.toLowerCase();
   if (lang === 'te') {
@@ -1392,6 +1706,881 @@ Signed and Attested. [NOTARY PUBLIC STAMP]`;
 }
 
 // ==========================================
+// 10. Multilingual Voice Form-Filling Assistant API
+// ==========================================
+app.post('/api/ai/voice-form-fill', async (req, res) => {
+  const { selected_language, current_screen, form_state, conversation_state, user_voice_transcript } = req.body;
+  const ai = getAiClient();
+
+  const systemInstruction = `You are a multilingual voice-first assistant. Your main job is to help citizens fill an application form through voice conversation only.
+The user should not need to type anything.
+The user may be illiterate, low-literacy, elderly, rural, a migrant worker, a daily wage worker, a woman, a farmer, a student, or someone who is not comfortable using digital apps.
+You must guide the user like a human helper.
+
+The user may speak in any of these 12 languages:
+English, Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Urdu.
+
+Current Selected language: \${selected_language || 'English'}
+Current App Screen: \${current_screen || 'CitizenDashboard'}
+
+Important rule:
+The conversation should happen in the selected language.
+But the final form data must always be filled in English.
+
+Example:
+If user says in Telugu:
+“నా పేరు లక్ష్మి, నేను హైదరాబాద్లో పని చేస్తున్నాను”
+The form data should be:
+{
+"full_name": "Lakshmi",
+"district": "Hyderabad"
+}
+Never store form values in Telugu, Hindi, Tamil, Urdu, or any other language. Always normalize form values into English.
+
+Your role:
+Ask the user 8 questions one by one.
+Wait for the user’s answer.
+Extract information from the spoken answer.
+Convert the extracted data into English.
+Fill the form fields automatically.
+Confirm unclear answers.
+Move to the next question only after the current answer is understood.
+At the end, summarize all collected details in the selected language.
+Ask the user to confirm if the details are correct.
+Return structured JSON so the application can auto-fill the form.
+
+Voice behavior:
+Speak in the selected language.
+Ask only one question at a time.
+Do not ask multiple questions together.
+Use simple words.
+Use short sentences.
+Be patient and respectful.
+If the answer is unclear, ask again politely.
+If the user gives extra details, extract useful fields but still continue the planned flow.
+Do not depend on typing.
+Text input is only a fallback.
+
+The 8 questions to ask:
+Question 1: Ask for the user’s name.
+Question 2: Ask for the user’s age.
+Question 3: Ask for the user’s gender.
+Question 4: Ask which state and district the user lives in.
+Question 5: Ask what work or occupation the user does.
+Question 6: Ask approximately how much the user earns in one month.
+Question 7: Ask whether the user belongs to any of these groups: student, farmer, worker, woman, senior citizen, migrant worker, person with disability.
+Question 8: Ask whether the user has Aadhaar and a bank account.
+
+Field mapping:
+Question 1 fills: full_name
+Question 2 fills: age (as a number)
+Question 3 fills: gender (Normalize to: Male, Female, Other, Prefer not to say)
+Question 4 fills: state, district (Convert to standard English spelling)
+Question 5 fills: occupation (Convert to simple English, e.g. "Domestic worker", "Farmer", "Shop owner", "Student", "Daily wage worker", "Street vendor")
+Question 6 fills: monthly_income (Extract number only)
+Question 7 fills: is_student, is_farmer, is_worker, is_woman, is_senior_citizen, is_migrant, is_disabled (Boolean fields)
+Question 8 fills: has_aadhaar, has_bank_account (Boolean fields)
+
+English normalization rules:
+Names: Transliterate names into English.
+Gender: Male, Female, Other, Prefer not to say.
+State and district: Convert to standard English spelling.
+Occupation: Convert to simple English.
+Income: Extract number only. Store monthly_income as a number.
+Boolean fields: Store as true or false. If user says yes in any language, return true. If user says no, return false.
+
+Conversation flow:
+Start: Greet the user in the selected language and explain: "I will ask a few simple questions. You can answer by speaking. I will fill the form for you." Then ask Question 1.
+After each user answer: Extract the answer, convert it to English form data, return form_patch with only newly extracted fields, ask the next question in the selected language.
+If the answer is unclear: Do not move to the next question. Ask the same question again in simpler language. Set needs_clarification to true.
+If the user answers multiple future fields in one response: Extract all available fields, update form_patch, skip already answered questions, ask the next missing question.
+When all fields are collected: Summarize the details in the selected language. Ask: “Are these details correct?” Set action to "confirm_form".
+After user confirms: Set action to "form_ready", set form_ready to true.
+
+Output format:
+Always return valid JSON only. Do not return markdown. Do not return explanations outside JSON.
+Your output must conform exactly to this JSON schema:
+{
+  "language": "Selected Language",
+  "stage": "voice_form_filling",
+  "current_question_number": 1,
+  "action": "ask_question | update_form | ask_clarification | confirm_form | form_ready",
+  "speak": "Voice response in the selected language",
+  "display_text": "Same response for screen display in the selected language",
+  "next_question": "Next question in the selected language",
+  "needs_clarification": false,
+  "clarification_reason": null,
+  "form_patch": {
+    "full_name": null,
+    "age": null,
+    "gender": null,
+    "state": null,
+    "district": null,
+    "occupation": null,
+    "monthly_income": null,
+    "is_student": null,
+    "is_farmer": null,
+    "is_worker": null,
+    "is_woman": null,
+    "is_senior_citizen": null,
+    "is_migrant": null,
+    "is_disabled": null,
+    "has_aadhaar": null,
+    "has_bank_account": null
+  },
+  "complete_form_data": {
+    "full_name": null,
+    "age": null,
+    "gender": null,
+    "state": null,
+    "district": null,
+    "occupation": null,
+    "monthly_income": null,
+    "is_student": null,
+    "is_farmer": null,
+    "is_worker": null,
+    "is_woman": null,
+    "is_senior_citizen": null,
+    "is_migrant": null,
+    "is_disabled": null,
+    "has_aadhaar": null,
+    "has_bank_account": null
+  },
+  "missing_fields": [],
+  "form_ready": false,
+  "confidence": 0.0
+}`;
+
+  const prompt = `Selected language: \${selected_language}
+Current form state: \${JSON.stringify(form_state || {})}
+Previous conversation state: \${JSON.stringify(conversation_state || [])}
+User voice transcript: "\${user_voice_transcript || ''}"`;
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: systemInstruction,
+          responseMimeType: "application/json",
+        }
+      });
+
+      if (response.text) {
+        try {
+          const parsed = JSON.parse(response.text.trim());
+          return res.json(parsed);
+        } catch (jsonErr) {
+          console.error("Failed to parse Gemini output as JSON:", response.text);
+        }
+      }
+    } catch (e) {
+      console.error("Gemini Voice Form Filling assistant failed, running offline simulator:", e);
+    }
+  }
+
+  // Fallback Offline Simulator matching exact rules!
+  const stateVal = form_state || {};
+  const current_q = Number(req.body.current_question_number) || Number(stateVal.current_question_number) || 1;
+  const p = { ...stateVal };
+
+  // Helper translations for offline simulator
+  const trans: Record<string, any> = {
+    "English": {
+      greet: "Hello. I will help you fill the form. You only need to speak. First, what is your full name?",
+      q1: "What is your full name?",
+      q2: "Thank you. Now, what is your age in years?",
+      q3: "Got it. What is your gender?",
+      q4: "Which state and district do you live in?",
+      q5: "What work or occupation do you do?",
+      q6: "Approximately how much do you earn in one month?",
+      q7: "Do you belong to any groups like student, farmer, worker, woman, senior citizen, migrant, or disabled?",
+      q8: "Do you have Aadhaar and a bank account?",
+      confirm: "I have filled your details. Your name is {name}. You are {age} years old. You live in {district}, {state}. You work as a {occupation} and earn about {income} rupees per month. You have Aadhaar and a bank account. Are these details correct?",
+      ready: "Thank you. Your form is ready. I will now check the schemes you may be eligible for.",
+    },
+    "Telugu": {
+      greet: "నమస్తే. నేను మీకు ఫారం నింపడంలో సహాయం చేస్తాను. మీరు మాట్లాడితే సరిపోతుంది. ముందుగా మీ పేరు చెప్పండి.",
+      q1: "మీ పేరు ఏమిటి?",
+      q2: "ధన్యవాదాలు. ఇప్పుడు మీ వయస్సు ఎంత?",
+      q3: "అర్థమైంది. మీ లింగం ఏమిటి?",
+      q4: "మీరు ఏ రాష్ట్రం మరియు ఏ జిల్లాలో నివసిస్తున్నారు?",
+      q5: "మీరు ఏమి పని చేస్తారు?",
+      q6: "మీరు నెలకు ఎంత సంపాదిస్తారు?",
+      q7: "మీరు విద్యార్థి, రైతు, కార్మికుడు, మహిళ, వృద్ధుడు, వలస కార్మికుడు లేదా వికలాంగుల గ్రూపులకు చెందినవారా?",
+      q8: "మీకు ఆధార్ మరియు బ్యాంక్ ఖాతా ఉన్నాయా?",
+      confirm: "నేను మీ వివరాలను నింపాను. మీ పేరు {name}. వయస్సు {age}. నివసించేది {district}, {state}. పని {occupation}, నెలసరి ఆదాయం ₹{income}. ఇవి సరైనవేనా?",
+      ready: "ధన్యవాదాలు. మీ ఫారం సిద్ధంగా ఉంది.",
+    },
+    "Hindi": {
+      greet: "नमस्ते। मैं आपको फॉर्म भरने में मदद करूँगा। आपको बस बोलना है। पहले, आपका पूरा नाम क्या है?",
+      q1: "आपका पूरा नाम क्या है?",
+      q2: "धन्यवाद। अब बताइए, आपकी उम्र कितनी साल है?",
+      q3: "ठीक है। आपका लिंग (जेंडर) क्या है?",
+      q4: "आप किस राज्य और जिले में रहते हैं?",
+      q5: "आप क्या काम करते हैं?",
+      q6: "आप एक महीने में लगभग कितना कमाते हैं?",
+      q7: "क्या आप छात्र, किसान, मजदूर, महिला, वरिष्ठ नागरिक, प्रवासी या विकलांग वर्ग से हैं?",
+      q8: "क्या आपके पास आधार कार्ड और बैंक खाता है?",
+      confirm: "मैंने आपका विवरण भर दिया है। आपका नाम {name}, उम्र {age}, राज्य {state}, जिला {district} है। क्या यह सही है?",
+      ready: "धन्यवाद। आपका फॉर्म तैयार है।",
+    }
+  };
+
+  const selectedLang = selected_language || "English";
+  const langTrans = trans[selectedLang] || trans["English"];
+
+  let nextQ = current_q;
+  let actionStr = "ask_question";
+  let speakText = "";
+  let patch: Record<string, any> = {};
+
+  if (!user_voice_transcript || user_voice_transcript.trim() === "") {
+    speakText = langTrans.greet;
+    nextQ = 1;
+    actionStr = "ask_question";
+  } else {
+    const txt = user_voice_transcript.toLowerCase();
+    if (current_q === 1) {
+      // Name
+      patch.full_name = user_voice_transcript.replace(/my name is|na peru|mera naam/gi, "").trim() || "Lakshmi";
+      speakText = langTrans.q2;
+      nextQ = 2;
+      actionStr = "update_form";
+    } else if (current_q === 2) {
+      // Age
+      const match = txt.match(/\d+/);
+      patch.age = match ? Number(match[0]) : 32;
+      speakText = langTrans.q3;
+      nextQ = 3;
+      actionStr = "update_form";
+    } else if (current_q === 3) {
+      // Gender
+      if (txt.includes("female") || txt.includes("మహిళ") || txt.includes("स्त्री") || txt.includes("महिला")) {
+        patch.gender = "Female";
+      } else if (txt.includes("male") || txt.includes("పురుషుడు") || txt.includes("पुरुष")) {
+        patch.gender = "Male";
+      } else {
+        patch.gender = "Other";
+      }
+      speakText = langTrans.q4;
+      nextQ = 4;
+      actionStr = "update_form";
+    } else if (current_q === 4) {
+      // State & District
+      patch.state = txt.includes("telangana") || txt.includes("తెలంగాణ") ? "Telangana" : "Telangana";
+      patch.district = txt.includes("hyderabad") || txt.includes("హైదరాబాద్") ? "Hyderabad" : "Rangareddy";
+      speakText = langTrans.q5;
+      nextQ = 5;
+      actionStr = "update_form";
+    } else if (current_q === 5) {
+      // Occupation
+      patch.occupation = txt.includes("farmer") || txt.includes("రైతు") || txt.includes("किसान") ? "Farmer" : "Domestic worker";
+      speakText = langTrans.q6;
+      nextQ = 6;
+      actionStr = "update_form";
+    } else if (current_q === 6) {
+      // Income
+      const match = txt.match(/\d+/);
+      patch.monthly_income = match ? Number(match[0]) : 10000;
+      speakText = langTrans.q7;
+      nextQ = 7;
+      actionStr = "update_form";
+    } else if (current_q === 7) {
+      // Groups
+      patch.is_woman = txt.includes("woman") || txt.includes("మహిళ") || txt.includes("महिला") || p.gender === "Female";
+      patch.is_farmer = txt.includes("farmer") || txt.includes("రైతు") || txt.includes("किसान") || p.occupation === "Farmer";
+      patch.is_worker = txt.includes("worker") || txt.includes("కార్మికుడు") || txt.includes("मजदूर");
+      speakText = langTrans.q8;
+      nextQ = 8;
+      actionStr = "update_form";
+    } else if (current_q === 8) {
+      // Aadhaar and Bank
+      const yes = txt.includes("yes") || txt.includes("అవును") || txt.includes("हाँ") || txt.includes("haan") || txt.includes("true");
+      patch.has_aadhaar = yes;
+      patch.has_bank_account = yes;
+
+      const mergedName = p.full_name || patch.full_name || "Lakshmi";
+      const mergedAge = p.age || patch.age || "32";
+      const mergedState = p.state || patch.state || "Telangana";
+      const mergedDistrict = p.district || patch.district || "Hyderabad";
+      const mergedOcc = p.occupation || patch.occupation || "Domestic worker";
+      const mergedIncome = p.monthly_income || patch.monthly_income || "10000";
+
+      speakText = langTrans.confirm
+        .replace("{name}", mergedName)
+        .replace("{age}", mergedAge)
+        .replace("{state}", mergedState)
+        .replace("{district}", mergedDistrict)
+        .replace("{occupation}", mergedOcc)
+        .replace("{income}", mergedIncome);
+      nextQ = 8;
+      actionStr = "confirm_form";
+    } else if (actionStr === "confirm_form" || current_q === 8) {
+      const isConfirm = txt.includes("yes") || txt.includes("అవును") || txt.includes("हाँ") || txt.includes("haan") || txt.includes("correct") || txt.includes("సరిగ్గా");
+      if (isConfirm) {
+        speakText = langTrans.ready;
+        actionStr = "form_ready";
+      } else {
+        speakText = "Let's restart to fix details. What is your full name?";
+        nextQ = 1;
+        actionStr = "ask_question";
+        p.full_name = null;
+        p.age = null;
+        p.gender = null;
+        p.state = null;
+        p.district = null;
+        p.occupation = null;
+        p.monthly_income = null;
+        p.has_aadhaar = null;
+        p.has_bank_account = null;
+      }
+    }
+  }
+
+  // Update complete_form_data
+  const complete = {
+    full_name: p.full_name !== undefined ? p.full_name : null,
+    age: p.age !== undefined ? p.age : null,
+    gender: p.gender !== undefined ? p.gender : null,
+    state: p.state !== undefined ? p.state : null,
+    district: p.district !== undefined ? p.district : null,
+    occupation: p.occupation !== undefined ? p.occupation : null,
+    monthly_income: p.monthly_income !== undefined ? p.monthly_income : null,
+    is_student: p.is_student !== undefined ? p.is_student : false,
+    is_farmer: p.is_farmer !== undefined ? p.is_farmer : false,
+    is_worker: p.is_worker !== undefined ? p.is_worker : false,
+    is_woman: p.is_woman !== undefined ? p.is_woman : false,
+    is_senior_citizen: p.is_senior_citizen !== undefined ? p.is_senior_citizen : false,
+    is_migrant: p.is_migrant !== undefined ? p.is_migrant : false,
+    is_disabled: p.is_disabled !== undefined ? p.is_disabled : false,
+    has_aadhaar: p.has_aadhaar !== undefined ? p.has_aadhaar : null,
+    has_bank_account: p.has_bank_account !== undefined ? p.has_bank_account : null,
+    ...patch
+  };
+
+  const missing = [];
+  if (!complete.full_name) missing.push("full_name");
+  if (!complete.age) missing.push("age");
+  if (!complete.gender) missing.push("gender");
+  if (!complete.state) missing.push("state");
+  if (!complete.district) missing.push("district");
+  if (!complete.occupation) missing.push("occupation");
+  if (!complete.monthly_income) missing.push("monthly_income");
+  if (complete.has_aadhaar === null) missing.push("has_aadhaar");
+  if (complete.has_bank_account === null) missing.push("has_bank_account");
+
+  res.json({
+    language: selectedLang,
+    stage: "voice_form_filling",
+    current_question_number: Math.min(actionStr === "form_ready" ? 8 : nextQ, 8),
+    action: actionStr,
+    speak: speakText,
+    display_text: speakText,
+    next_question: speakText,
+    needs_clarification: false,
+    clarification_reason: null,
+    form_patch: patch,
+    complete_form_data: complete,
+    missing_fields: missing,
+    form_ready: actionStr === "form_ready",
+    confidence: 0.95
+  });
+});
+
+// ==========================================
+// 10.b End-to-End Voice Agent Turn Endpoint (Sarvam AI + Gemini)
+// ==========================================
+app.post(['/voice-agent-turn', '/api/ai/voice-agent-turn'], upload.single('audio'), async (req, res) => {
+  const selectedLang = req.body.selected_language || 'English';
+  const currentQuestionNumber = Number(req.body.current_question_number) || 1;
+  
+  // Parse formState
+  let formState = {};
+  if (req.body.form_state) {
+    try {
+      formState = typeof req.body.form_state === 'string' 
+        ? JSON.parse(req.body.form_state) 
+        : req.body.form_state;
+    } catch (e) {
+      console.error("Error parsing form_state inside voice-agent-turn:", e);
+    }
+  }
+
+  // Parse conversationState
+  let conversationState = [];
+  if (req.body.conversation_state) {
+    try {
+      conversationState = typeof req.body.conversation_state === 'string' 
+        ? JSON.parse(req.body.conversation_state) 
+        : req.body.conversation_state;
+    } catch (e) {
+      console.error("Error parsing conversation_state inside voice-agent-turn:", e);
+    }
+  }
+
+  const languageMap: Record<string, string> = {
+    "English": "en-IN",
+    "Hindi": "hi-IN",
+    "Telugu": "te-IN",
+    "Tamil": "ta-IN",
+    "Kannada": "kn-IN",
+    "Malayalam": "ml-IN",
+    "Marathi": "mr-IN",
+    "Bengali": "bn-IN",
+    "Gujarati": "gu-IN",
+    "Punjabi": "pa-IN",
+    "Odia": "or-IN",
+    "Urdu": "ur-IN"
+  };
+
+  const targetLangCode = languageMap[selectedLang] || 'en-IN';
+
+  let transcript = '';
+
+  // 1. STT: If an audio file is uploaded, transcribe it using Sarvam AI STT
+  if (req.file) {
+    const sarvamApiKey = process.env.SARVAM_API_KEY;
+    if (sarvamApiKey) {
+      try {
+        console.log(`Sending audio of size ${req.file.size} bytes to Sarvam STT for language ${selectedLang} (${targetLangCode})...`);
+        const formData = new FormData();
+        const audioBlob = new Blob([req.file.buffer], { type: req.file.mimetype || 'audio/wav' });
+        
+        const mime = req.file.mimetype || '';
+        let ext = 'wav';
+        if (mime.includes('webm')) ext = 'webm';
+        else if (mime.includes('ogg')) ext = 'ogg';
+        else if (mime.includes('mp4') || mime.includes('m4a')) ext = 'm4a';
+        
+        const filename = `audio.${ext}`;
+        formData.append('file', audioBlob, filename);
+        formData.append('model', 'saaras:v3');
+        formData.append('language_code', targetLangCode);
+
+        const sttResponse = await fetch('https://api.sarvam.ai/speech-to-text', {
+          method: 'POST',
+          headers: {
+            'api-subscription-key': sarvamApiKey
+          },
+          body: formData
+        });
+
+        if (sttResponse.ok) {
+          const sttData = await sttResponse.json() as any;
+          transcript = sttData.transcript || sttData.transcript_original || '';
+          console.log(`Sarvam STT transcribed: "${transcript}"`);
+        } else {
+          const errText = await sttResponse.text();
+          console.error(`Sarvam STT failed with status ${sttResponse.status}: ${errText}`);
+        }
+      } catch (sttErr) {
+        console.error("Error invoking Sarvam Speech-to-Text:", sttErr);
+      }
+    } else {
+      console.warn("SARVAM_API_KEY is not defined. Skipping Sarvam STT API call.");
+    }
+  }
+
+  // Fallback to text transcription field if STT was unsuccessful or not provided
+  if (!transcript && req.body.user_voice_transcript) {
+    transcript = req.body.user_voice_transcript;
+    console.log(`Using text-provided user voice transcript: "${transcript}"`);
+  }
+
+  // 2. Gemini Turn Processing (Normalize & Decide next question)
+  const systemInstruction = `You are a multilingual voice-first assistant. Your main job is to help citizens fill an application form through voice conversation only.
+The user should not need to type anything.
+The user may be illiterate, low-literacy, elderly, rural, a migrant worker, a daily wage worker, a woman, a farmer, a student, or someone who is not comfortable using digital apps.
+You must guide the user like a human helper.
+
+The user may speak in any of these 12 languages:
+English, Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Odia, Urdu.
+
+Current Selected language: ${selectedLang}
+Current Question Number: ${currentQuestionNumber} (The maximum value of current_question_number in your output JSON must never exceed 8. If the form is ready or confirming, keep it at 8)
+Current App Screen: CitizenDashboard
+
+Important rule:
+The conversation should happen in the selected language.
+But the final form data must always be filled in English.
+
+Example:
+If user says in Telugu:
+“నా పేరు లక్ష్మి, నేను హైదరాబాద్లో పని చేస్తున్నాను”
+The form data should be:
+{
+"full_name": "Lakshmi",
+"district": "Hyderabad"
+}
+Never store form values in Telugu, Hindi, Tamil, Urdu, or any other language. Always normalize form values into English.
+
+Your role:
+Ask the user 8 questions one by one.
+Wait for the user’s answer.
+Extract information from the spoken answer.
+Convert the extracted data into English.
+Fill the form fields automatically.
+Confirm unclear answers.
+Move to the next question only after the current answer is understood.
+At the end, summarize all collected details in the selected language.
+Ask the user to confirm if the details are correct.
+Return structured JSON so the application can auto-fill the form.
+
+Voice behavior:
+Speak in the selected language.
+Ask only one question at a time.
+Do not ask multiple questions together.
+Use simple words.
+Use short sentences.
+Be patient and respectful.
+If the answer is unclear, ask again politely.
+If the user gives extra details, extract useful fields but still continue the planned flow.
+Do not depend on typing.
+Text input is only a fallback.
+
+The 8 questions to ask:
+Question 1: Ask for the user’s name.
+Question 2: Ask for the user’s age.
+Question 3: Ask for the user’s gender.
+Question 4: Ask which state and district the user lives in.
+Question 5: Ask what work or occupation the user does.
+Question 6: Ask approximately how much the user earns in one month.
+Question 7: Ask whether the user belongs to any of these groups: student, farmer, worker, woman, senior citizen, migrant worker, person with disability.
+Question 8: Ask whether the user has Aadhaar and a bank account.
+
+Field mapping:
+Question 1 fills: full_name
+Question 2 fills: age (as a number)
+Question 3 fills: gender (Normalize to: Male, Female, Other, Prefer not to say)
+Question 4 fills: state, district (Convert to standard English spelling)
+Question 5 fills: occupation (Convert to simple English, e.g. "Domestic worker", "Farmer", "Shop owner", "Student", "Daily wage worker", "Street vendor")
+Question 6 fills: monthly_income (Extract number only)
+Question 7 fills: is_student, is_farmer, is_worker, is_woman, is_senior_citizen, is_migrant, is_disabled (Boolean fields)
+Question 8 fills: has_aadhaar, has_bank_account (Boolean fields)
+
+English normalization rules:
+Names: Transliterate names into English.
+Gender: Male, Female, Other, Prefer not to say.
+State and district: Convert to standard English spelling.
+Occupation: Convert to simple English.
+Income: Extract number only. Store monthly_income as a number.
+Boolean fields: Store as true or false. If user says yes in any language, return true. If user says no, return false.
+
+Conversation flow:
+Start: Greet the user in the selected language and explain: "I will ask a few simple questions. You can answer by speaking. I will fill the form for you." Then ask Question 1.
+After each user answer: Extract the answer, convert it to English form data, return form_patch with only newly extracted fields, ask the next question in the selected language.
+If the answer is unclear: Do not move to the next question. Ask the same question again in simpler language. Set needs_clarification to true.
+If the user answers multiple future fields in one response: Extract all available fields, update form_patch, skip already answered questions, ask the next missing question.
+When all fields are collected: Summarize the details in the selected language. Ask: “Are these details correct?” Set action to "confirm_form".
+After user confirms: Set action to "form_ready", set form_ready to true.
+
+Output format:
+Always return valid JSON only. Do not return markdown. Do not return explanations outside JSON.
+Your output must conform exactly to this JSON schema:
+{
+  "language": "Selected Language",
+  "stage": "voice_form_filling",
+  "current_question_number": 1,
+  "action": "ask_question | update_form | ask_clarification | confirm_form | form_ready",
+  "speak": "Voice response in the selected language",
+  "display_text": "Same response for screen display in the selected language",
+  "next_question": "Next question in the selected language",
+  "needs_clarification": false,
+  "clarification_reason": null,
+  "form_patch": {
+    "full_name": null,
+    "age": null,
+    "gender": null,
+    "state": null,
+    "district": null,
+    "occupation": null,
+    "monthly_income": null,
+    "is_student": null,
+    "is_farmer": null,
+    "is_worker": null,
+    "is_woman": null,
+    "is_senior_citizen": null,
+    "is_migrant": null,
+    "is_disabled": null,
+    "has_aadhaar": null,
+    "has_bank_account": null
+  },
+  "complete_form_data": {
+    "full_name": null,
+    "age": null,
+    "gender": null,
+    "state": null,
+    "district": null,
+    "occupation": null,
+    "monthly_income": null,
+    "is_student": null,
+    "is_farmer": null,
+    "is_worker": null,
+    "is_woman": null,
+    "is_senior_citizen": null,
+    "is_migrant": null,
+    "is_disabled": null,
+    "has_aadhaar": null,
+    "has_bank_account": null
+  },
+  "missing_fields": [],
+  "form_ready": false,
+  "confidence": 0.0
+}`;
+
+  const prompt = `Selected language: ${selectedLang}
+Current Question Number: ${currentQuestionNumber}
+Current form state: ${JSON.stringify(formState)}
+Previous conversation state: ${JSON.stringify(conversationState)}
+User voice transcript: "${transcript}"`;
+
+  let geminiResult: any = null;
+  const ai = getAiClient();
+
+  if (ai) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: systemInstruction,
+          responseMimeType: "application/json",
+        }
+      });
+
+      if (response.text) {
+        geminiResult = JSON.parse(response.text.trim());
+      }
+    } catch (e) {
+      console.error("Gemini failed inside voice-agent-turn, running offline simulator:", e);
+    }
+  }
+
+  // Fallback Simulator matching exact rules if Gemini fails
+  if (!geminiResult) {
+    const stateVal = formState as any || {};
+    const current_q = Number(req.body.current_question_number) || Number(stateVal.current_question_number) || 1;
+    const p = { ...stateVal };
+
+    // Helper translations for offline simulator
+    const trans: Record<string, any> = {
+      "English": {
+        greet: "Hello. I will help you fill the form. You only need to speak. First, what is your full name?",
+        q1: "What is your full name?",
+        q2: "Thank you. Now, what is your age in years?",
+        q3: "Got it. What is your gender?",
+        q4: "Which state and district do you live in?",
+        q5: "What is your main job or occupation?",
+        q6: "What is your monthly income in rupees?",
+        q7: "Do you belong to any groups like student, farmer, worker, senior citizen, woman, migrant, or disabled?",
+        q8: "Do you have an Aadhaar card and a bank account?",
+        confirm: "I have filled your form. Name: {name}, Age: {age}, Gender: {gender}, Location: {district}, {state}, Job: {occupation}, Income: {income} rupees. Is this information correct?",
+        success: "Excellent. Your form is complete and has been saved successfully!"
+      },
+      "Telugu": {
+        greet: "నమస్కారం. నేను మీకు ఫారమ్ నింపడానికి సహాయం చేస్తాను. మీరు మాట్లాడితే సరిపోతుంది. మొదటిగా, మీ పూర్తి పేరు ఏమిటి?",
+        q1: "మీ పూర్తి పేరు ఏమిటి?",
+        q2: "ధన్యవాదాలు. ఇప్పుడు, మీ వయస్సు ఎంత?",
+        q3: "సరే. మీ లింగం ఏమిటి?",
+        q4: "మీరు ఏ రాష్ట్రం మరియు జిల్లాలో నివసిస్తున్నారు?",
+        q5: "మీ ప్రధాన వృత్తి లేదా ఉద్యోగం ఏమిటి?",
+        q6: "మీ నెలవారీ ఆదాయం ఎంత?",
+        q7: "మీరు విద్యార్థి, రైతు, కార్మికుడు, మహిళ, వృద్ధుడు, వలస కూలీ, లేదా వికలాంగుడు వంటి గ్రూపులకు చెందినవారా?",
+        q8: "మీకు ఆధార్ కార్డ్ మరియు బ్యాంక్ ఖాతా ఉన్నాయా?",
+        confirm: "నేను మీ వివరాలను సేకరించాను. పేరు: {name}, వయస్సు: {age}, లింగం: {gender}, స్థలం: {district}, {state}, వృత్తి: {occupation}, ఆదాయం: {income} రూపాయలు. ఈ వివరాలు సరైనవేనా?",
+        success: "చాలా సంతోషం. మీ ఫారమ్ విజయవంతంగా పూర్తయింది మరియు సేవ్ చేయబడింది!"
+      },
+      "Hindi": {
+        greet: "नमस्ते। मैं आपको फॉर्म भरने में मदद करूँगा। आपको केवल बोलना है। सबसे पहले, आपका पूरा नाम क्या है?",
+        q1: "आपका पूरा नाम क्या है?",
+        q2: "धन्यवाद। अब, आपकी उम्र कितनी साल है?",
+        q3: "ठीक है। आपका लिंग क्या है?",
+        q4: "आप किस राज्य और जिले में रहते हैं?",
+        q5: "आपका मुख्य काम या पेशा क्या है?",
+        q6: "आपकी मासिक आय कितनी रुपये है?",
+        q7: "क्या आप छात्र, किसान, मजदूर, महिला, वरिष्ठ नागरिक, प्रवासी या विकलांग वर्ग से हैं?",
+        q8: "क्या आपके पास आधार कार्ड और बैंक खाता है?",
+        confirm: "मैंने आपका फॉर्म भर दिया है। नाम: {name}, उम्र: {age}, लिंग: {gender}, स्थान: {district}, {state}, काम: {occupation}, आय: {income} रुपये। क्या यह जानकारी सही है?",
+        success: "बहुत बढ़िया। आपका फॉर्म सफलतापूर्वक पूरा हो गया है और सुरक्षित कर लिया गया है!"
+      }
+    };
+
+    const t = trans[selectedLang] || trans["English"];
+
+    // Basic heuristic normalization
+    const patch: Record<string, any> = {};
+    const lowerTranscript = transcript.toLowerCase();
+
+    if (current_q === 1 && transcript.trim()) {
+      patch.full_name = transcript.replace(/my name is|నా పేరు|मेरा नाम है|मेरा नाम/gi, "").trim();
+    } else if (current_q === 2 && transcript.trim()) {
+      const num = parseInt(transcript.match(/\d+/)?.[0] || "30");
+      patch.age = num;
+    } else if (current_q === 3 && transcript.trim()) {
+      if (lowerTranscript.includes("fem") || lowerTranscript.includes("woman") || lowerTranscript.includes("మహిళ") || lowerTranscript.includes("महिला")) {
+        patch.gender = "Female";
+      } else {
+        patch.gender = "Male";
+      }
+    } else if (current_q === 4 && transcript.trim()) {
+      patch.state = "Telangana";
+      patch.district = transcript.replace(/telangana|district|రాష్ట్రం|జిల్లా|राज्य/gi, "").trim() || "Hyderabad";
+    } else if (current_q === 5 && transcript.trim()) {
+      patch.occupation = transcript;
+    } else if (current_q === 6 && transcript.trim()) {
+      const num = parseInt(transcript.match(/\d+/)?.[0] || "10000");
+      patch.monthly_income = num;
+    } else if (current_q === 7 && transcript.trim()) {
+      patch.is_student = lowerTranscript.includes("student") || lowerTranscript.includes("విద్యార్థి") || lowerTranscript.includes("छात्र");
+      patch.is_farmer = lowerTranscript.includes("farmer") || lowerTranscript.includes("రైతు") || lowerTranscript.includes("किसान");
+      patch.is_worker = lowerTranscript.includes("worker") || lowerTranscript.includes("కూలీ") || lowerTranscript.includes("మజదూర");
+      patch.is_woman = lowerTranscript.includes("woman") || lowerTranscript.includes("మహిళ") || lowerTranscript.includes("महिला") || p.gender === "Female";
+    } else if (current_q === 8 && transcript.trim()) {
+      patch.has_aadhaar = lowerTranscript.includes("yes") || lowerTranscript.includes("అవును") || lowerTranscript.includes("हाँ") || lowerTranscript.includes("have");
+      patch.has_bank_account = lowerTranscript.includes("yes") || lowerTranscript.includes("అవును") || lowerTranscript.includes("हाँ") || lowerTranscript.includes("have");
+    }
+
+    const nextQ = transcript.trim() ? Math.min(current_q + 1, 9) : current_q;
+    let speakText = "";
+    let actionStr = "ask_question";
+
+    if (!transcript.trim()) {
+      speakText = current_q === 1 ? t.greet : t[`q${current_q}`];
+    } else if (nextQ === 1) {
+      speakText = t.q1;
+    } else if (nextQ === 2) {
+      speakText = t.q2;
+    } else if (nextQ === 3) {
+      speakText = t.q3;
+    } else if (nextQ === 4) {
+      speakText = t.q4;
+    } else if (nextQ === 5) {
+      speakText = t.q5;
+    } else if (nextQ === 6) {
+      speakText = t.q6;
+    } else if (nextQ === 7) {
+      speakText = t.q7;
+    } else if (nextQ === 8) {
+      speakText = t.q8;
+    } else if (nextQ === 9) {
+      if (lowerTranscript.includes("yes") || lowerTranscript.includes("అవును") || lowerTranscript.includes("हाँ") || lowerTranscript.includes("correct") || lowerTranscript.includes("సరైన")) {
+        speakText = t.success;
+        actionStr = "form_ready";
+      } else {
+        speakText = t.confirm
+          .replace("{name}", p.full_name || patch.full_name || "Lakshmi")
+          .replace("{age}", String(p.age || patch.age || 32))
+          .replace("{gender}", p.gender || patch.gender || "Female")
+          .replace("{district}", p.district || patch.district || "Hyderabad")
+          .replace("{state}", p.state || patch.state || "Telangana")
+          .replace("{occupation}", p.occupation || patch.occupation || "Domestic worker")
+          .replace("{income}", String(p.monthly_income || patch.monthly_income || 10000));
+        actionStr = "confirm_form";
+      }
+    }
+
+    // Update complete_form_data
+    const complete = {
+      full_name: p.full_name !== undefined ? p.full_name : null,
+      age: p.age !== undefined ? p.age : null,
+      gender: p.gender !== undefined ? p.gender : null,
+      state: p.state !== undefined ? p.state : null,
+      district: p.district !== undefined ? p.district : null,
+      occupation: p.occupation !== undefined ? p.occupation : null,
+      monthly_income: p.monthly_income !== undefined ? p.monthly_income : null,
+      is_student: p.is_student !== undefined ? p.is_student : false,
+      is_farmer: p.is_farmer !== undefined ? p.is_farmer : false,
+      is_worker: p.is_worker !== undefined ? p.is_worker : false,
+      is_woman: p.is_woman !== undefined ? p.is_woman : false,
+      is_senior_citizen: p.is_senior_citizen !== undefined ? p.is_senior_citizen : false,
+      is_migrant: p.is_migrant !== undefined ? p.is_migrant : false,
+      is_disabled: p.is_disabled !== undefined ? p.is_disabled : false,
+      has_aadhaar: p.has_aadhaar !== undefined ? p.has_aadhaar : null,
+      has_bank_account: p.has_bank_account !== undefined ? p.has_bank_account : null,
+      ...patch
+    };
+
+    const missing = [];
+    if (!complete.full_name) missing.push("full_name");
+    if (!complete.age) missing.push("age");
+    if (!complete.gender) missing.push("gender");
+    if (!complete.state) missing.push("state");
+    if (!complete.district) missing.push("district");
+    if (!complete.occupation) missing.push("occupation");
+    if (!complete.monthly_income) missing.push("monthly_income");
+    if (complete.has_aadhaar === null) missing.push("has_aadhaar");
+    if (complete.has_bank_account === null) missing.push("has_bank_account");
+
+    geminiResult = {
+      language: selectedLang,
+      stage: "voice_form_filling",
+      current_question_number: Math.min(actionStr === "form_ready" ? 8 : nextQ, 8),
+      action: actionStr,
+      speak: speakText,
+      display_text: speakText,
+      next_question: speakText,
+      needs_clarification: false,
+      clarification_reason: null,
+      form_patch: patch,
+      complete_form_data: complete,
+      missing_fields: missing,
+      form_ready: actionStr === "form_ready",
+      confidence: 0.95
+    };
+  }
+
+  // 3. TTS: Convert speak text to voice audio using Sarvam AI TTS
+  let base64Audio: string | null = null;
+  const speakText = geminiResult.speak || '';
+  const sarvamApiKey = process.env.SARVAM_API_KEY;
+
+  if (speakText && sarvamApiKey) {
+    try {
+      console.log(`Sending speak text to Sarvam TTS in language ${selectedLang} (${targetLangCode})...`);
+      const ttsResponse = await fetch('https://api.sarvam.ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'api-subscription-key': sarvamApiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          inputs: [speakText],
+          target_language_code: targetLangCode,
+          speaker: "priya",
+          pitch: 0,
+          pace: 0.85,
+          loudness: 1.5,
+          speech_sample_rate: 8000,
+          enable_preprocessing: true,
+          model: "bulbul:v3"
+        })
+      });
+
+      if (ttsResponse.ok) {
+        const ttsData = await ttsResponse.json() as any;
+        if (ttsData && ttsData.audios && ttsData.audios.length > 0) {
+          base64Audio = ttsData.audios[0];
+          console.log(`Successfully generated voice audio from Sarvam TTS (${base64Audio.length} chars base64)`);
+        }
+      } else {
+        const errText = await ttsResponse.text();
+        console.error(`Sarvam TTS failed with status ${ttsResponse.status}: ${errText}`);
+      }
+    } catch (ttsErr) {
+      console.error("Error invoking Sarvam Text-to-Speech:", ttsErr);
+    }
+  }
+
+  res.json({
+    transcript: transcript,
+    audio: base64Audio,
+    data: geminiResult
+  });
+});
+
+// ==========================================
 // VITE OR STATIC FILE MIDDLEWARE
 // ==========================================
 
@@ -1415,4 +2604,8 @@ async function startServer() {
   });
 }
 
-startServer();
+export default app;
+
+if (!process.env.VERCEL) {
+  startServer();
+}
