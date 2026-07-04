@@ -38,6 +38,7 @@ export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isVolunteerRequested, setIsVolunteerRequested] = useState(false);
+  const [isVolunteerSubmitting, setIsVolunteerSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [successType, setSuccessType] = useState<'apply' | 'volunteer' | null>(null);
 
@@ -156,6 +157,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
   const handleRequestSupport = async () => {
     if (!scheme) return;
     const profileToUse = activeProfile || { name: 'Guest Citizen' };
+    setIsVolunteerSubmitting(true);
     try {
       const result = await dbClient.submitRequest({
         citizenName: profileToUse.name,
@@ -168,6 +170,8 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
       setSuccessMessage(`🙋 Volunteer request sent! ID: ${result.trackingId}. A Panchayat volunteer will be assigned and schedule a home visit. Check your Tracker tab.`);
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsVolunteerSubmitting(false);
     }
   };
 
@@ -363,14 +367,23 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
 
               <button
                 onClick={handleRequestSupport}
-                disabled={isSubmitted || isVolunteerRequested}
-                className={`w-full py-3 font-bold text-xs rounded-xl transition-all ${
+                disabled={isSubmitted || isVolunteerRequested || isVolunteerSubmitting}
+                className={`w-full py-3 font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-2 ${
                   isSubmitted || isVolunteerRequested
                     ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
                     : 'bg-white border border-teal-200 text-teal-800 hover:bg-teal-50/30 active:scale-95'
                 }`}
               >
-                {isVolunteerRequested ? 'Volunteer Requested' : 'Request Volunteer Handholding'}
+                {isVolunteerSubmitting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin text-teal-800" />
+                    <span>Logging Request...</span>
+                  </>
+                ) : isVolunteerRequested ? (
+                  'Volunteer Requested'
+                ) : (
+                  'Request Volunteer Handholding'
+                )}
               </button>
             {/* Inline Success Banner — shown immediately after action */}
               {successMessage && (

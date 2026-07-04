@@ -18,6 +18,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
   const [selectedFileName, setSelectedFileName] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [ocrOutput, setOcrOutput] = useState<any>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadDocs();
@@ -76,7 +77,8 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
 
         loadDocs();
         onProfileUpdated();
-        alert(`🎉 Simulated OCR successfully verified your document!\n\nExtracted: ${ocrResult.documentType}\nConfidence: ${ocrResult.confidence}%\nYour overall Application Readiness score has been dynamically boosted!`);
+        setSuccessMessage(`🎉 Document verified successfully via AI OCR!\n\nParsed Type: ${ocrResult.documentType}\nConfidence: ${ocrResult.confidence}%\nYour overall Application Readiness score has been dynamically boosted!`);
+        setTimeout(() => setSuccessMessage(null), 8000);
       }, 3000);
 
     } catch (e) {
@@ -138,7 +140,7 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-8" id="documents-view">
       
       {/* Page Header */}
-      <div className="border-b border-gray-100 pb-4 mb-8">
+      <div className="border-b border-gray-100 pb-4 mb-6">
         <h2 className="font-sans text-2xl font-extrabold text-gray-900 tracking-tight">
           Documents Vault & AI OCR Verification
         </h2>
@@ -146,6 +148,20 @@ export const DocumentsView: React.FC<DocumentsViewProps> = ({ currentLanguage, o
           Upload and verify your certificates to qualify for welfare. Try uploading simulated documents to trigger on-the-spot AI parsing.
         </p>
       </div>
+
+      {/* Inline Success Message Banner */}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-2xl flex items-start space-x-3 animate-in slide-in-from-top-2 duration-300">
+          <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-xs font-semibold leading-relaxed whitespace-pre-line">{successMessage}</p>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-gray-400 hover:text-gray-600 text-xs font-bold shrink-0 ml-2"
+          >✕</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
