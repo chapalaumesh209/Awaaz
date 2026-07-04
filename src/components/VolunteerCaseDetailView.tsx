@@ -21,10 +21,9 @@ export const VolunteerCaseDetailView: React.FC<VolunteerCaseDetailViewProps> = (
   const [caseObj, setCaseObj] = useState<VolunteerCase | null>(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Chat message input states
   const [chatInput, setChatInput] = useState('');
-  
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
   // AI Copilot recommendations states
   const [aiCopilotText, setAiCopilotText] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -50,7 +49,6 @@ export const VolunteerCaseDetailView: React.FC<VolunteerCaseDetailViewProps> = (
     }
   };
 
-  // Triggers Gemini helper to analyze case notes & generate field guidelines
   const loadAiCopilot = async (cs: VolunteerCase) => {
     setAiLoading(true);
     setAiCopilotText('');
@@ -71,31 +69,33 @@ Keep it extremely compact, helpful, and under 100 words.`;
     }
   };
 
-  // Status transitions
+  const showStatus = (msg: string) => {
+    setStatusMessage(msg);
+    setTimeout(() => setStatusMessage(null), 4000);
+  };
+
   const handleStatusChange = async (newStatus: 'new' | 'assigned' | 'in_investigation' | 'resolved' | 'closed') => {
     if (!caseObj) return;
     try {
       const updated = await dbClient.updateCase(caseObj.id, { status: newStatus });
       setCaseObj(updated);
-      alert(`💼 Case status transitioned to: ${newStatus.toUpperCase()}`);
+      showStatus(`✅ Case status updated to: ${newStatus.replace('_', ' ').toUpperCase()}`);
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Save notes updates
   const handleSaveNotes = async () => {
     if (!caseObj) return;
     try {
       const updated = await dbClient.updateCase(caseObj.id, { notes });
       setCaseObj(updated);
-      alert("✅ Case notes saved securely in administrative tracking systems.");
+      showStatus('✅ Case notes saved successfully.');
     } catch (e) {
       console.error(e);
     }
   };
 
-  // Submit mock chat message
   const handleSendChat = async () => {
     if (!chatInput.trim() || !caseObj) return;
     
@@ -113,10 +113,24 @@ Keep it extremely compact, helpful, and under 100 words.`;
     }
   };
 
-  if (!caseObj) {
+  if (loading) {
     return (
       <div className="py-12 px-4 text-center">
         <span className="text-gray-400">{t('Loading case details...')}</span>
+      </div>
+    );
+  }
+
+  if (!caseObj) {
+    return (
+      <div className="py-12 px-4 text-center space-y-3">
+        <span className="text-gray-400 block">{t('Case not found.')}</span>
+        <button
+          onClick={() => onNavigate('volunteer')}
+          className="text-xs text-teal-700 font-bold underline"
+        >
+          ← Back to Queue
+        </button>
       </div>
     );
   }
@@ -127,11 +141,20 @@ Keep it extremely compact, helpful, and under 100 words.`;
       {/* Back button */}
       <button
         onClick={() => onNavigate('volunteer')}
-        className="flex items-center space-x-1 text-xs font-bold text-teal-700 hover:text-teal-900 mb-6 transition-colors"
+        className="flex items-center space-x-1 text-xs font-bold text-teal-700 hover:text-teal-900 mb-4 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         <span>{t('Back to Queue')}</span>
       </button>
+
+      {/* Inline status feedback banner */}
+      {statusMessage && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center space-x-2 animate-in slide-in-from-top-2 duration-300">
+          <CheckCircle className="h-4 w-4 text-emerald-600 shrink-0" />
+          <p className="text-xs font-semibold text-emerald-900 flex-1">{statusMessage}</p>
+          <button onClick={() => setStatusMessage(null)} className="text-gray-400 hover:text-gray-600 text-xs font-bold">✕</button>
+        </div>
+      )}
 
       {/* Main Grid split */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -237,6 +260,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
                 placeholder={t("Log a call or type message to citizen...")}
                 className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
               />
@@ -244,7 +268,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
                 onClick={handleSendChat}
                 className="bg-teal-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-teal-700 transition-colors"
               >
-                <Send className="h-4.5 w-4.5" />
+                <Send className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -293,7 +317,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
           {/* Local camp indicator map */}
           <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center space-x-1.5">
-              <Compass className="h-4.5 w-4.5 text-teal-700 animate-spin" />
+              <Compass className="h-4 w-4 text-teal-700" />
               <h4 className="font-sans text-sm font-bold text-gray-900">{t('Coordinate with Camps')}</h4>
             </div>
             <p className="text-[10px] text-gray-400 leading-relaxed">

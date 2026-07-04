@@ -3,6 +3,7 @@ import { SCHEMES, evaluateEligibility } from '../data/schemes';
 import { CitizenProfile, Scheme, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
 import { explainScheme, generateNextSteps, generateAssistantReply, generateFilledForm } from '../lib/aiService';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   ArrowLeft, CheckCircle2, AlertTriangle, HelpCircle, Bot, Send, 
   BadgeAlert, ClipboardList, Check, UserCheck, ShieldCheck, Languages, Sparkles, RefreshCw, Eye 
@@ -15,10 +16,12 @@ interface SchemeDetailViewProps {
 }
 
 export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
-  currentLanguage,
+  currentLanguage: currentLanguageProp,
   schemeId,
   onNavigate
 }) => {
+  const { currentLanguage: ctxLanguage } = useTranslation();
+  const currentLanguage = currentLanguageProp || ctxLanguage;
   const [scheme, setScheme] = useState<Scheme | null>(null);
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [eligibility, setEligibility] = useState<any>(null);
@@ -35,6 +38,8 @@ export const SchemeDetailView: React.FC<SchemeDetailViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isVolunteerRequested, setIsVolunteerRequested] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successType, setSuccessType] = useState<'apply' | 'volunteer' | null>(null);
 
   // Form filling assistant states
   const [showFormAssistant, setShowFormAssistant] = useState(false);
@@ -131,14 +136,15 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
     const profileToUse = activeProfile || { name: 'Guest Citizen' };
     setIsSubmitting(true);
     try {
-      await dbClient.submitRequest({
+      const result = await dbClient.submitRequest({
         citizenName: profileToUse.name,
         itemType: 'scheme',
         itemId: scheme.id,
         itemName: `${scheme.name} Application`
       });
       setIsSubmitted(true);
-      alert(`🎉 Application successfully filed!\n\nTracking Reference: HS-${Math.floor(100000+Math.random()*900000)}\nCheck progress under the 'Requests Tracker' tab.`);
+      setSuccessType('apply');
+      setSuccessMessage(`🎉 Application filed! Tracking ID: ${result.trackingId}. Check progress under the 'Requests Tracker' tab.`);
     } catch (e) {
       console.error(e);
     } finally {
@@ -151,14 +157,15 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
     if (!scheme) return;
     const profileToUse = activeProfile || { name: 'Guest Citizen' };
     try {
-      await dbClient.submitRequest({
+      const result = await dbClient.submitRequest({
         citizenName: profileToUse.name,
         itemType: 'volunteer_support',
         itemId: scheme.id,
         itemName: `Help with ${scheme.name}`
       });
       setIsVolunteerRequested(true);
-      alert(`🙋 Support request logged! \n\nA local Panchayat volunteer has been assigned and will schedule a home visit to help you finish paperwork for ${scheme.name}. Check your Tracker tab.`);
+      setSuccessType('volunteer');
+      setSuccessMessage(`🙋 Volunteer request sent! ID: ${result.trackingId}. A Panchayat volunteer will be assigned and schedule a home visit. Check your Tracker tab.`);
     } catch (e) {
       console.error(e);
     }
@@ -307,68 +314,83 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
         {/* Right Column: AI Explainer Box & Application Toggles */}
         <div className="space-y-6">
           
-          {/* Eligibility Indicator Box */}
-          {eligibility && (
-            <div className={`p-5 rounded-3xl border shadow-xs ${
-              isSubmitted
-                ? 'bg-teal-50/50 border-teal-100 text-teal-900'
-                : eligibility.matched 
-                  ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' 
-                  : 'bg-amber-50/40 border-amber-100 text-amber-900'
-            }`}>
-              <div className="flex items-center space-x-2 mb-3">
-                {isSubmitted ? (
-                  <CheckCircle2 className="h-5 w-5 text-teal-600" />
-                ) : eligibility.matched ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                )}
-                <span className="font-sans text-sm font-bold uppercase tracking-wider">
-                  {isSubmitted ? "Applied" : eligibility.matched ? "All Guidelines Met" : "Requires Attention"}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed font-semibold">
-                {isSubmitted 
-                  ? "Your application has been filed successfully via the AWAAZ gateway. You can track its progress in the Tracker tab."
-                  : eligibility.reasoning}
-              </p>
-
-              {/* Action Trigger Toggles */}
-              <div className="mt-5 space-y-2 border-t border-gray-100 pt-4">
-                {isSubmitted ? (
-                  <button
-                    disabled={true}
-                    className="w-full py-3 bg-gray-100 border border-gray-200 text-gray-400 font-bold text-xs rounded-xl cursor-not-allowed flex items-center justify-center space-x-1"
-                  >
-                    <UserCheck className="h-4 w-4 text-gray-400" />
-                    <span>Applied</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleApplyNow}
-                    disabled={isSubmitting}
-                    className="w-full py-3 bg-teal-600 hover:bg-teal-700 font-bold text-xs rounded-xl text-white shadow-xs transition-all active:scale-95 flex items-center justify-center space-x-1"
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    <span>{isSubmitting ? 'Filing Application...' : 'Apply via AWAAZ'}</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={handleRequestSupport}
-                  disabled={isSubmitted || isVolunteerRequested}
-                  className={`w-full py-3 font-bold text-xs rounded-xl transition-all ${
-                    isSubmitted || isVolunteerRequested
-                      ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'bg-white border border-teal-200 text-teal-800 hover:bg-teal-50/30 active:scale-95'
-                  }`}
-                >
-                  {isVolunteerRequested ? 'Volunteer Requested' : 'Request Volunteer Handholding'}
-                </button>
-              </div>
+          {/* Action Trigger Toggles - always shown, profile not required */}
+          <div className={`p-5 rounded-3xl border shadow-xs ${
+            isSubmitted
+              ? 'bg-teal-50/50 border-teal-100 text-teal-900'
+              : eligibility?.matched 
+                ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' 
+                : 'bg-amber-50/40 border-amber-100 text-amber-900'
+          }`}>
+            <div className="flex items-center space-x-2 mb-3">
+              {isSubmitted ? (
+                <CheckCircle2 className="h-5 w-5 text-teal-600" />
+              ) : eligibility?.matched ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              )}
+              <span className="font-sans text-sm font-bold uppercase tracking-wider">
+                {isSubmitted ? "Applied" : eligibility?.matched ? "All Guidelines Met" : eligibility ? "Requires Attention" : "Apply for this Scheme"}
+              </span>
             </div>
-          )}
+            <p className="text-xs leading-relaxed font-semibold">
+              {isSubmitted 
+                ? "Your application has been filed successfully via the AWAAZ gateway. You can track its progress in the Tracker tab."
+                : eligibility?.reasoning || "Complete your profile to see eligibility. You may still apply directly."}
+            </p>
+
+            {/* Action Trigger Toggles */}
+            <div className="mt-5 space-y-2 border-t border-gray-100 pt-4">
+              {isSubmitted ? (
+                <button
+                  disabled={true}
+                  className="w-full py-3 bg-gray-100 border border-gray-200 text-gray-400 font-bold text-xs rounded-xl cursor-not-allowed flex items-center justify-center space-x-1"
+                >
+                  <UserCheck className="h-4 w-4 text-gray-400" />
+                  <span>Applied</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleApplyNow}
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 font-bold text-xs rounded-xl text-white shadow-xs transition-all active:scale-95 flex items-center justify-center space-x-1"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span>{isSubmitting ? 'Filing Application...' : 'Apply via AWAAZ'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleRequestSupport}
+                disabled={isSubmitted || isVolunteerRequested}
+                className={`w-full py-3 font-bold text-xs rounded-xl transition-all ${
+                  isSubmitted || isVolunteerRequested
+                    ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-white border border-teal-200 text-teal-800 hover:bg-teal-50/30 active:scale-95'
+                }`}
+              >
+                {isVolunteerRequested ? 'Volunteer Requested' : 'Request Volunteer Handholding'}
+              </button>
+            {/* Inline Success Banner — shown immediately after action */}
+              {successMessage && (
+                <div className={`mt-4 p-4 rounded-2xl border flex items-start space-x-3 animate-in slide-in-from-top-2 duration-300 ${
+                  successType === 'apply'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    : 'bg-teal-50 border-teal-200 text-teal-900'
+                }`}>
+                  <CheckCircle2 className={`h-5 w-5 shrink-0 mt-0.5 ${successType === 'apply' ? 'text-emerald-600' : 'text-teal-600'}`} />
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold leading-relaxed">{successMessage}</p>
+                  </div>
+                  <button
+                    onClick={() => setSuccessMessage(null)}
+                    className="text-gray-400 hover:text-gray-600 text-xs font-bold ml-2 shrink-0"
+                  >✕</button>
+                </div>
+              )}
+            </div>
+          </div>
 
                     {/* Dynamic question box */}
           <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">

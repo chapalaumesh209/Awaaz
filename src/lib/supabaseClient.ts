@@ -694,21 +694,19 @@ class FullStackClient {
       ]
     } as VolunteerCase;
 
+    // ALWAYS save to local cache first — volunteer dashboard reads from here
+    this.localCases.push(payload);
+    this.saveLocalCache();
+
     if (!auth.currentUser) {
-      this.localCases.push(payload);
-      this.saveLocalCache();
       return payload;
     }
 
     try {
       await setDoc(doc(db, 'cases', caseId), payload);
-      return payload;
     } catch (e) {
-      handleFirestoreError(e, OperationType.CREATE, `cases/${caseId}`);
+      console.warn('Firestore case save failed, using local cache:', e);
     }
-
-    this.localCases.push(payload);
-    this.saveLocalCache();
     return payload;
   }
 
@@ -719,13 +717,16 @@ class FullStackClient {
     try {
       const q = query(collection(db, 'cases'));
       const querySnapshot = await getDocs(q);
-      const cases: VolunteerCase[] = [];
+      const firestoreCases: VolunteerCase[] = [];
       querySnapshot.forEach((doc) => {
-        cases.push(doc.data() as VolunteerCase);
+        firestoreCases.push(doc.data() as VolunteerCase);
       });
-      return cases;
+      // Merge Firestore cases with local cases (avoid duplicates by id)
+      const firestoreIds = new Set(firestoreCases.map(c => c.id));
+      const localOnly = this.localCases.filter(c => !firestoreIds.has(c.id));
+      return [...firestoreCases, ...localOnly];
     } catch (e) {
-      handleFirestoreError(e, OperationType.LIST, 'cases');
+      console.warn('Firestore cases fetch failed, using local cache:', e);
     }
     return this.localCases;
   }

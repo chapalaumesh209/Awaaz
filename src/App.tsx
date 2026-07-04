@@ -177,6 +177,7 @@ function AppContent() {
         return (
           <SchemeDetailView
             schemeId={routeParams.id || 'pm-vishwakarma'}
+            currentLanguage={currentLanguage}
             onNavigate={handleNavigate}
           />
         );

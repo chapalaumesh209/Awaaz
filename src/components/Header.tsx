@@ -7,7 +7,6 @@ import { AwaazLogo } from './AwaazLogo';
 import { useTranslation } from '../contexts/TranslationContext';
 
 interface HeaderProps {
-  currentLanguage: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
   activeUser: UserProfile;
   setRole: (role: UserProfile['role']) => void;
@@ -17,7 +16,6 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  currentLanguage,
   setLanguage,
   activeUser,
   setRole,
@@ -27,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
 
   const triggerSos = () => {
     setSosActive(true);
@@ -144,64 +142,69 @@ export const Header: React.FC<HeaderProps> = ({
 
       </div>
 
-                  {/* SOS Alert Modal/Toast */}
+                  {/* SOS Alert Full-Screen Modal */}
       {sosActive && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-300">
-          <div className="relative overflow-hidden bg-[#FDFBF7] border-2 border-red-200 shadow-2xl rounded-2xl p-6 max-w-sm w-full animate-in zoom-in-95 duration-300">
-            {/* Elegant Red Border accent */}
-            <div className="absolute top-0 inset-x-0 h-1 bg-red-600" />
-
-            {/* Header Content */}
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-red-50 p-2 rounded-xl text-red-600 border border-red-100 shrink-0">
-                <AlertTriangle className="h-5 w-5 animate-bounce" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-red-800 uppercase tracking-wide">
-                  {t('QUICK SOS ACTIVE')}
-                </h2>
-                <p className="text-[10px] text-gray-500 font-sans tracking-wide">
-                  {t('Emergency protocols initiated')}
-                </p>
-              </div>
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gradient-to-br from-red-900 via-red-800 to-red-950 animate-in fade-in duration-300">
+          
+          {/* Pulsing ring behind icon */}
+          <div className="relative mb-8">
+            <span className="absolute inset-0 rounded-full bg-red-500 opacity-30 animate-ping scale-150" />
+            <div className="relative bg-red-700 border-4 border-red-400 rounded-full p-6 shadow-2xl">
+              <AlertTriangle className="h-14 w-14 text-white animate-bounce" />
             </div>
-
-            {/* Simulated steps */}
-            <div className="space-y-2.5 bg-[#F9F6F0] border border-[#E8E2D6] rounded-xl p-4 mb-4 text-xs text-gray-700">
-              <div className="flex items-start space-x-2">
-                <span className="text-red-600 font-bold">•</span>
-                <p>{t('Silent alert sent to Panchayat Volunteers')}</p>
-              </div>
-              <div className="flex items-start space-x-2">
-                <span className="text-red-600 font-bold">•</span>
-                <p>{t('Mock location dispatched to trusted circle')}</p>
-              </div>
-            </div>
-
-            {/* Status indicators */}
-            <div className="grid grid-cols-3 gap-2 mb-5">
-              <div className="bg-[#F9F6F0] border border-[#E8E2D6] rounded-lg p-2 text-center">
-                <span className="block text-[8px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">{t('GPS Link')}</span>
-                <span className="text-emerald-700 text-[10px] font-bold uppercase tracking-wider">{t('Active')}</span>
-              </div>
-              <div className="bg-[#F9F6F0] border border-[#E8E2D6] rounded-lg p-2 text-center">
-                <span className="block text-[8px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">{t('Audio')}</span>
-                <span className="text-red-600 text-[10px] font-bold uppercase tracking-wider animate-pulse">{t('Rec')}</span>
-              </div>
-              <div className="bg-[#F9F6F0] border border-[#E8E2D6] rounded-lg p-2 text-center">
-                <span className="block text-[8px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">{t('Contacts')}</span>
-                <span className="text-amber-700 text-[10px] font-bold uppercase tracking-wider">{t('Alerted')}</span>
-              </div>
-            </div>
-
-            {/* Dismiss Button */}
-            <button
-              onClick={() => setSosActive(false)}
-              className="w-full py-2.5 bg-red-700 hover:bg-red-800 active:scale-95 text-white font-bold text-xs rounded-xl tracking-wider uppercase transition-all shadow-sm"
-            >
-              {t('Cancel Distress Alert')}
-            </button>
           </div>
+
+          {/* Title */}
+          <h1 className="text-4xl font-extrabold text-white uppercase tracking-widest mb-2 text-center drop-shadow-lg">
+            {t('SOS ACTIVE')}
+          </h1>
+          <p className="text-red-200 text-sm font-semibold uppercase tracking-wider mb-10 text-center">
+            {t('Emergency protocols initiated')}
+          </p>
+
+          {/* Action log */}
+          <div className="w-full max-w-sm mx-auto bg-red-950/60 border border-red-700/50 rounded-2xl p-5 mb-6 space-y-3">
+            <div className="flex items-center space-x-3">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <p className="text-sm text-red-100 font-medium">{t('Silent alert sent to Panchayat Volunteers')}</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <p className="text-sm text-red-100 font-medium">{t('Mock location dispatched to trusted circle')}</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <p className="text-sm text-red-100 font-medium">{t('Audio recording initiated')}</p>
+            </div>
+          </div>
+
+          {/* Status grid */}
+          <div className="flex items-center space-x-4 mb-10">
+            <div className="bg-red-950/50 border border-red-700/40 rounded-xl px-5 py-3 text-center min-w-[90px]">
+              <span className="block text-[10px] text-red-300 uppercase font-bold tracking-wider mb-1">{t('GPS Link')}</span>
+              <span className="text-emerald-400 text-sm font-extrabold uppercase tracking-wider">{t('Active')}</span>
+            </div>
+            <div className="bg-red-950/50 border border-red-700/40 rounded-xl px-5 py-3 text-center min-w-[90px]">
+              <span className="block text-[10px] text-red-300 uppercase font-bold tracking-wider mb-1">{t('Audio')}</span>
+              <span className="text-red-300 text-sm font-extrabold uppercase tracking-wider animate-pulse">{t('Rec')}</span>
+            </div>
+            <div className="bg-red-950/50 border border-red-700/40 rounded-xl px-5 py-3 text-center min-w-[90px]">
+              <span className="block text-[10px] text-red-300 uppercase font-bold tracking-wider mb-1">{t('Contacts')}</span>
+              <span className="text-amber-400 text-sm font-extrabold uppercase tracking-wider">{t('Alerted')}</span>
+            </div>
+          </div>
+
+          {/* Dismiss button */}
+          <button
+            onClick={() => setSosActive(false)}
+            className="bg-white text-red-800 font-extrabold text-sm px-12 py-4 rounded-2xl shadow-2xl uppercase tracking-widest hover:bg-red-50 active:scale-95 transition-all duration-200 border-2 border-red-200"
+          >
+            {t('Cancel Distress Alert')}
+          </button>
+
+          <p className="mt-6 text-red-400 text-[11px] font-semibold uppercase tracking-wider text-center">
+            {t('Stay Safe • Help is on the way')}
+          </p>
         </div>
       )}
     </header>

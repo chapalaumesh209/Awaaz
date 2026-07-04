@@ -6,7 +6,7 @@ import { dbClient } from '../lib/supabaseClient';
 interface TranslationContextType {
   currentLanguage: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
-  t: (englishText: string) => string;
+  t: any;
 }
 
 export const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -63,7 +63,7 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const t = (englishText: string): string => {
+  const tBase = (englishText: string): string => {
     if (!englishText) return englishText;
     if (currentLanguage === 'en') return englishText;
     
@@ -74,15 +74,54 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return englishText.replace(trimmed, localTrans[trimmed]);
     }
     
+    // Check if the trimmed text is a key in the current language dictionary
     const glob = TRANSLATIONS[currentLanguage] || {};
     if (glob[trimmed]) {
       return englishText.replace(trimmed, glob[trimmed]);
+    }
+
+    // Check if the trimmed text matches the VALUE of a key in the English dictionary
+    const englishDict = TRANSLATIONS['en'] || {};
+    const matchingKey = Object.keys(englishDict).find(key => englishDict[key] === trimmed);
+    if (matchingKey && glob[matchingKey]) {
+      return englishText.replace(trimmed, glob[matchingKey]);
     }
 
     // Trigger translate in background
     triggerAsyncTranslation(trimmed);
     return englishText;
   };
+
+  // Create a Proxy around tBase so it can be called as a function (t("text"))
+  // or accessed as a dictionary (t.welcome, t.slogan, etc.)
+  const t = new Proxy(tBase, {
+    get(target, prop) {
+      if (typeof prop === 'symbol' || prop === 'prototype' || prop === 'name') {
+        return Reflect.get(target, prop);
+      }
+      
+      const key = String(prop);
+      
+      // If the property exists on the function itself (e.g. toString), return it
+      if (key in target) {
+        return (target as any)[key];
+      }
+
+      // Check current language dictionary
+      const currentDict = TRANSLATIONS[currentLanguage] || {};
+      if (currentLanguage !== 'en' && currentDict[key]) {
+        return currentDict[key];
+      }
+
+      // Fallback to English dictionary
+      const englishDict = TRANSLATIONS['en'] || {};
+      if (englishDict[key]) {
+        return englishDict[key];
+      }
+
+      return key;
+    }
+  });
 
   return (
     <TranslationContext.Provider value={{ currentLanguage, setLanguage: setCurrentLanguage, t }}>

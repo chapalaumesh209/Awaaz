@@ -103,17 +103,17 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </h1>
         
         <p className="font-serif italic text-lg sm:text-2xl font-semibold text-gray-700 tracking-wide mb-6">
-          {t.slogan || "Voice, Safety & Social Access"}
+          {t("Voice, Safety & Social Access")}
         </p>
 
         <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg mb-8 leading-relaxed">
-          {t.tagline || "Empowering Indian citizens to access entitlements, secure identity documents, obtain safe transit, and connect with volunteers."}
+          {t("Empowering Indian citizens to access entitlements, secure identity documents, obtain safe transit, and connect with volunteers.")}
         </p>
 
         {/* 12 Indian Languages Bento Grid */}
         <div className="mb-12">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">
-            {t.selectLanguage || "Select Your Language"}
+            {t("Select Your Language")}
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-w-4xl mx-auto">
             {LANGUAGES.map((lang) => (
@@ -143,7 +143,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             className="w-full sm:w-auto flex items-center justify-center space-x-2 rounded-2xl bg-teal-600 text-white font-semibold text-base py-4 px-12 shadow-lg shadow-teal-600/20 hover:bg-teal-700 hover:shadow-xl transition-all duration-200 active:scale-95 group"
             id="enter-citizen-btn"
           >
-            <span>{t.getStarted || "Get Started as Citizen"}</span>
+            <span>{t("Get Started as Citizen")}</span>
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
 

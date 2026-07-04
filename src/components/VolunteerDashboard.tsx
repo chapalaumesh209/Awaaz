@@ -22,6 +22,14 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
 
   useEffect(() => {
     loadCases();
+    // Auto-refresh every 5s for the first 30s so newly submitted citizen cases appear immediately
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      loadCases();
+      if (count >= 6) clearInterval(interval);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadCases = async () => {

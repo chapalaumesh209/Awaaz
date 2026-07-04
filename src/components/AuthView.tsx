@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import { dbClient } from '../lib/supabaseClient';
 import { LanguageCode, UserProfile } from '../types';
-import { TRANSLATIONS } from '../data/translations';
+import { useTranslation } from '../contexts/TranslationContext';
 import { Shield, Mail, Lock, User, LogIn, ArrowRight, Check, AlertCircle } from 'lucide-react';
 
 interface AuthViewProps {
-  currentLanguage: LanguageCode;
   onAuthSuccess: (user: UserProfile) => void;
   onNavigateBack: () => void;
   initialRole?: UserProfile['role'];
 }
 
 export const AuthView: React.FC<AuthViewProps> = ({
-  currentLanguage,
   onAuthSuccess,
   onNavigateBack,
   initialRole = 'citizen'
 }) => {
+  const { currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState<UserProfile['role']>(initialRole);
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -25,7 +24,6 @@ export const AuthView: React.FC<AuthViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS['en'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
