@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SCHEMES, evaluateEligibility } from '../data/schemes';
 import { CitizenProfile, Scheme, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { generateVoiceEligibilityEvaluation } from '../lib/aiService';
 import { 
@@ -10,11 +11,11 @@ import {
 
 
 interface SchemesViewProps {
-  currentLanguage: LanguageCode;
   onNavigate: (route: string, params?: Record<string, string>) => void;
 }
 
-export const SchemesView: React.FC<SchemesViewProps> = ({ currentLanguage, onNavigate }) => {
+export const SchemesView: React.FC<SchemesViewProps> = ({ onNavigate }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');

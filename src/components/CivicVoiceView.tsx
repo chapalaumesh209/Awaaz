@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GramSabhaMeeting, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { 
   generateAllyTrainingFeedback,
@@ -14,11 +15,9 @@ import {
 } from 'lucide-react';
 
 
-interface CivicVoiceViewProps {
-  currentLanguage: LanguageCode;
-}
 
-export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage }) => {
+
+export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ }) => {
   const [meetings, setMeetings] = useState<GramSabhaMeeting[]>([]);
   
   // Game states
@@ -393,7 +392,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
       
       {/* Page Header */}
       <div className="border-b border-gray-100 pb-4 mb-8">
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">Civic Voice & Gram Sabha Hub</h1>
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">{t('Civic Voice & Gram Sabha Hub')}</h1>
         <p className="mt-1 text-sm text-gray-500 font-medium max-w-3xl">
           Review Gram Panchayat budgets, RSVP for upcoming assemblies, or play our Panchayat rights learning board game!
         </p>
@@ -412,7 +411,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
           <div className="bg-white border border-teal-100 rounded-3xl p-6 shadow-xs">
             <div className="flex items-center space-x-2 mb-4">
               <Calendar className="h-5 w-5 text-teal-700" />
-              <h3 className="font-sans text-base font-bold text-gray-900">Gram Sabha Schedules</h3>
+              <h3 className="font-sans text-base font-bold text-gray-900">{t('Gram Sabha Schedules')}</h3>
             </div>
 
             <div className="space-y-4">
@@ -433,7 +432,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                     </div>
 
                     <p className="text-xs text-gray-600 leading-relaxed">
-                      <span className="font-bold text-gray-800">Agenda:</span> {m.agenda}
+                      <span className="font-bold text-gray-800">{t('Agenda:')}</span> {m.agenda}
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[10px] font-semibold text-gray-500 pt-1 border-b border-gray-100 pb-3">
@@ -464,7 +463,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                           ) : (
                             <Share2 className="h-3.5 w-3.5 text-teal-700" />
                           )}
-                          <span>Generate WhatsApp Agenda Summary</span>
+                          <span>{t('Generate WhatsApp Agenda Summary')}</span>
                         </button>
                       </div>
 
@@ -473,7 +472,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                           <div className="flex items-center justify-between border-b border-[#B3DDA7]/40 pb-2">
                             <div className="flex items-center space-x-1.5">
                               <MessageCircle className="h-4 w-4 text-[#25D366]" />
-                              <span className="text-[10px] font-bold text-gray-800 uppercase tracking-wide">WhatsApp Preview (Simplified Bulletin)</span>
+                              <span className="text-[10px] font-bold text-gray-800 uppercase tracking-wide">{t('WhatsApp Preview (Simplified Bulletin)')}</span>
                             </div>
                             <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">Translated to {currentLanguage.toUpperCase()}</span>
                           </div>
@@ -494,10 +493,10 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                               {copiedMeetingId === m.id ? (
                                 <>
                                   <Check className="h-3 w-3 text-emerald-600" />
-                                  <span>Copied!</span>
+                                  <span>{t('Copied!')}</span>
                                 </>
                               ) : (
-                                <span>Copy Bulletin</span>
+                                <span>{t('Copy Bulletin')}</span>
                               )}
                             </button>
                             <button
@@ -508,12 +507,12 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                               {isBroadcasting ? (
                                 <>
                                   <RefreshCw className="h-3 w-3 animate-spin" />
-                                  <span>Broadcasting to 420 Villagers...</span>
+                                  <span>{t('Broadcasting to 420 Villagers...')}</span>
                                 </>
                               ) : (
                                 <>
                                   <Send className="h-3 w-3" />
-                                  <span>Simulate Village Broadcast</span>
+                                  <span>{t('Simulate Village Broadcast')}</span>
                                 </>
                               )}
                             </button>
@@ -528,7 +527,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                           {isBroadcastSuccess && (
                             <div className="bg-emerald-50 text-emerald-950 p-2.5 rounded-xl border border-emerald-200 text-[10px] font-semibold flex items-center space-x-1.5">
                               <Check className="h-4 w-4 text-emerald-600" />
-                              <span>Success! SMS & WhatsApp broadcasts pushed to all registered Ward Sabhyas of Moinabad Panchayat.</span>
+                              <span>{t('Success! SMS & WhatsApp broadcasts pushed to all registered Ward Sabhyas of Moinabad Panchayat.')}</span>
                             </div>
                           )}
                         </div>
@@ -537,7 +536,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
 
                     {/* Citizen Feedback Portal */}
                     <div className="space-y-3 pt-2">
-                      <h5 className="text-[11px] font-extrabold text-teal-950 uppercase tracking-wide">Panchayat Feedback Board (Collect Direct Comments)</h5>
+                      <h5 className="text-[11px] font-extrabold text-teal-950 uppercase tracking-wide">{t('Panchayat Feedback Board (Collect Direct Comments)')}</h5>
                       
                       {feedbackList.length > 0 && (
                         <div className="space-y-2 max-h-[150px] overflow-y-auto">
@@ -560,7 +559,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                           type="text"
                           value={fbText}
                           onChange={(e) => setNewFeedbackTexts(prev => ({ ...prev, [m.id]: e.target.value }))}
-                          placeholder="Ask a question or submit feedback directly to the Sarpanch..."
+                          placeholder={t("Ask a question or submit feedback directly to the Sarpanch...")}
                           className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleAddFeedback(m.id);
@@ -586,9 +585,9 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center space-x-2">
                 <LandmarkIcon className="h-5 w-5 text-teal-700" />
-                <h3 className="font-sans text-base font-bold text-gray-900">Participatory Budget Tracker (Real-Time)</h3>
+                <h3 className="font-sans text-base font-bold text-gray-900">{t('Participatory Budget Tracker (Real-Time)')}</h3>
               </div>
-              <span className="text-[10px] uppercase font-bold text-teal-800 bg-teal-50 px-2 py-1 rounded-md border border-teal-100">Live Citizen Audit</span>
+              <span className="text-[10px] uppercase font-bold text-teal-800 bg-teal-50 px-2 py-1 rounded-md border border-teal-100">{t('Live Citizen Audit')}</span>
             </div>
             
             <p className="text-xs text-gray-400 mb-6 leading-relaxed">
@@ -646,19 +645,19 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                         
                         {/* Interactive Toolbar */}
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-gray-500 uppercase">Interactive Actions:</span>
+                          <span className="font-bold text-gray-500 uppercase">{t('Interactive Actions:')}</span>
                           <button
                             onClick={() => handleVoteBudget(i)}
                             className="flex items-center space-x-1 bg-teal-50 hover:bg-teal-100 text-teal-900 px-3 py-1 rounded-xl font-bold transition-all"
                           >
                             <ThumbsUp className="h-3.5 w-3.5 text-teal-700" />
-                            <span>Upvote Priority</span>
+                            <span>{t('Upvote Priority')}</span>
                           </button>
                         </div>
 
                         {/* Audit / Flagged Concerns */}
                         <div className="space-y-3">
-                          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Citizen Audit Concerns & Official Responses</h4>
+                          <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('Citizen Audit Concerns & Official Responses')}</h4>
                           
                           {flags.length > 0 ? (
                             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
@@ -667,7 +666,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                                   <div className="flex items-start justify-between gap-1 text-[9px] font-bold text-gray-400">
                                     <span className="text-red-700 bg-red-50 border border-red-100/50 px-1.5 py-0.5 rounded-md flex items-center space-x-0.5">
                                       <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
-                                      <span>IRREGULARITY REPORT</span>
+                                      <span>{t('IRREGULARITY REPORT')}</span>
                                     </span>
                                     <span>{flag.timestamp}</span>
                                   </div>
@@ -679,7 +678,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                                     <div className="bg-[#FAF9F5] border border-amber-100 p-3 rounded-xl space-y-1.5 shadow-4xs">
                                       <div className="flex items-center space-x-1 border-b border-amber-100 pb-1">
                                         <Landmark className="h-3.5 w-3.5 text-amber-800" />
-                                        <span className="text-[9.5px] font-extrabold uppercase text-amber-900">Gram Panchayat Sarpanch Official reply</span>
+                                        <span className="text-[9.5px] font-extrabold uppercase text-amber-900">{t('Gram Panchayat Sarpanch Official reply')}</span>
                                       </div>
                                       <p className="text-[11px] font-medium text-amber-950 whitespace-pre-line leading-relaxed">
                                         {flag.response}
@@ -694,18 +693,18 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                               ))}
                             </div>
                           ) : (
-                            <p className="text-[10.5px] text-gray-400 italic">No irregularities flagged yet. If you notice leaks, subpar materials, or project delays, submit a concern below.</p>
+                            <p className="text-[10.5px] text-gray-400 italic">{t('No irregularities flagged yet. If you notice leaks, subpar materials, or project delays, submit a concern below.')}</p>
                           )}
 
                           {/* Submit Concern Form */}
                           <div className="space-y-1.5 pt-1.5 border-t border-gray-100">
-                            <label className="block text-[9px] font-bold text-gray-500 uppercase">Flag a public budget concern (Sends inquiry to Sarpanch):</label>
+                            <label className="block text-[9px] font-bold text-gray-500 uppercase">{t('Flag a public budget concern (Sends inquiry to Sarpanch):')}</label>
                             <div className="flex gap-2">
                               <input
                                 type="text"
                                 value={flagInput}
                                 onChange={(e) => setNewFlagTexts(prev => ({ ...prev, [i]: e.target.value }))}
-                                placeholder="Describe the delay or suspected misuse of funds here..."
+                                placeholder={t("Describe the delay or suspected misuse of funds here...")}
                                 className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') handleAddBudgetFlag(i, bud.category);
@@ -719,10 +718,10 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                                 {isSubmittingFlag ? (
                                   <>
                                     <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                    <span>Auditing...</span>
+                                    <span>{t('Auditing...')}</span>
                                   </>
                                 ) : (
-                                  <span>Flag Concern</span>
+                                  <span>{t('Flag Concern')}</span>
                                 )}
                               </button>
                             </div>
@@ -770,7 +769,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1">
                     <Sparkles className="h-4.5 w-4.5 text-teal-700 animate-pulse" />
-                    <span className="text-xs font-extrabold text-teal-950">AI Discrimination Ally Training</span>
+                    <span className="text-xs font-extrabold text-teal-950">{t('AI Discrimination Ally Training')}</span>
                   </div>
                 </div>
 
@@ -820,7 +819,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                   </p>
 
                   <div className="space-y-2 pt-2 border-t border-gray-200">
-                    <span className="block text-[9px] font-bold text-gray-500 uppercase">Interactive response choices:</span>
+                    <span className="block text-[9px] font-bold text-gray-500 uppercase">{t('Interactive response choices:')}</span>
                     {trainingScenarios[trainingRole][0].options.map((opt, oIdx) => (
                       <button
                         key={oIdx}
@@ -838,11 +837,11 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                   </div>
 
                   <div className="space-y-1 pt-2">
-                    <label className="block text-[9px] font-bold text-gray-500 uppercase">Or, compose custom response:</label>
+                    <label className="block text-[9px] font-bold text-gray-500 uppercase">{t('Or, compose custom response:')}</label>
                     <textarea
                       value={customResponseText}
                       onChange={(e) => setCustomResponseText(e.target.value)}
-                      placeholder="Compose how you would intervene, resolve, or mediate here..."
+                      placeholder={t("Compose how you would intervene, resolve, or mediate here...")}
                       className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     />
                     <button
@@ -853,12 +852,12 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                       {feedbackLoading ? (
                         <>
                           <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                          <span>Gemini Consulting guidelines...</span>
+                          <span>{t('Gemini Consulting guidelines...')}</span>
                         </>
                       ) : (
                         <>
                           <MessageSquare className="h-3.5 w-3.5" />
-                          <span>Get Gemini AI Feedback</span>
+                          <span>{t('Get Gemini AI Feedback')}</span>
                         </>
                       )}
                     </button>
@@ -870,7 +869,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                   <div className="bg-[#FDFBF7] p-3.5 rounded-2xl border border-teal-100 text-xs font-sans text-teal-950 space-y-1 leading-relaxed max-h-[180px] overflow-y-auto">
                     <div className="flex items-center space-x-1 border-b pb-1 mb-1 border-teal-100/50">
                       <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                      <span className="font-sans font-bold text-[9px] uppercase text-teal-800">Gemini Expert Feedback</span>
+                      <span className="font-sans font-bold text-[9px] uppercase text-teal-800">{t('Gemini Expert Feedback')}</span>
                     </div>
                     <p className="whitespace-pre-line text-[11px] text-gray-700 leading-normal">
                       {feedbackResult}
@@ -884,7 +883,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                 <div className="flex items-center justify-between border-b border-gray-100 pb-3 mb-4">
                   <div className="flex items-center space-x-1.5">
                     <Trophy className="h-5 w-5 text-amber-500 animate-pulse" />
-                    <h3 className="font-sans text-sm font-bold text-gray-900">Panchayat Wisdom Game</h3>
+                    <h3 className="font-sans text-sm font-bold text-gray-900">{t('Panchayat Wisdom Game')}</h3>
                   </div>
                   <span className="text-xs font-extrabold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md">
                     Score: {gameSubTab === 'quiz' ? gameScore : storyScore}
@@ -981,13 +980,13 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                     {/* Character Name Form */}
                     {storyHistory.length <= 1 && (
                       <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2">
-                        <label className="block text-[9px] font-bold text-gray-500 uppercase">Change Character Name:</label>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase">{t('Change Character Name:')}</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={charName}
                             onChange={(e) => setCharName(e.target.value)}
-                            placeholder="Type Ravi, Priya..."
+                            placeholder={t("Type Ravi, Priya...")}
                             className="bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-none"
                           />
                           <button
@@ -1024,7 +1023,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                       <div className="space-y-1.5">
                         <div className="flex items-center space-x-1.5">
                           <BookOpen className="h-4 w-4 text-teal-700" />
-                          <span className="text-[10px] uppercase font-extrabold tracking-wide text-teal-800">Current Chapter Narrative</span>
+                          <span className="text-[10px] uppercase font-extrabold tracking-wide text-teal-800">{t('Current Chapter Narrative')}</span>
                         </div>
                         <p className="text-xs font-bold text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">
                           {storyState || "Loading first chapter..."}
@@ -1034,7 +1033,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                       {/* Interactive Choices */}
                       {!storyCompleted ? (
                         <div className="space-y-2 pt-2 border-t border-gray-100">
-                          <span className="block text-[9px] font-bold text-gray-500 uppercase">Make your choice to proceed:</span>
+                          <span className="block text-[9px] font-bold text-gray-500 uppercase">{t('Make your choice to proceed:')}</span>
                           {storyChoices.map((choice, cIdx) => (
                             <button
                               key={cIdx}
@@ -1049,7 +1048,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                       ) : (
                         <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl text-center space-y-2">
                           <Trophy className="h-7 w-7 text-amber-500 mx-auto animate-bounce" />
-                          <h4 className="text-xs font-extrabold text-emerald-950 uppercase">Congratulations! RPG Completed!</h4>
+                          <h4 className="text-xs font-extrabold text-emerald-950 uppercase">{t('Congratulations! RPG Completed!')}</h4>
                           <p className="text-[11px] font-semibold text-emerald-900 leading-relaxed">
                             You successfully finished {charName}'s civic rights and public accountability journey! You earned {storyScore} Honor Points.
                           </p>
@@ -1065,7 +1064,7 @@ export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ currentLanguage 
                       {storyLoading && (
                         <div className="flex items-center justify-center space-x-2 py-3 bg-white/70 rounded-xl border border-teal-100">
                           <RefreshCw className="h-4 w-4 text-teal-700 animate-spin" />
-                          <span className="text-xs font-bold text-teal-900">Gemini generating civic outcomes...</span>
+                          <span className="text-xs font-bold text-teal-900">{t('Gemini generating civic outcomes...')}</span>
                         </div>
                       )}
 

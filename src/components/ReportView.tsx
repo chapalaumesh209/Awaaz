@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { generateGrievanceDraft, generateCasteReferral, generateDisabilityReport } from '../lib/aiService';
 import { 
@@ -8,13 +9,11 @@ import {
 } from 'lucide-react';
 
 
-interface ReportViewProps {
-  currentLanguage: LanguageCode;
-}
+
 
 type ReportTab = 'civic' | 'caste_discrimination' | 'disability_audit';
 
-export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
+export const ReportView: React.FC<ReportViewProps> = ({ }) => {
   const [activeTab, setActiveTab] = useState<ReportTab>('civic');
 
   // Generic & Civic fields
@@ -159,7 +158,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
       
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">Incident & Audit Reporting</h1>
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-teal-900">{t('Incident & Audit Reporting')}</h1>
         <p className="mt-1 text-sm text-gray-500 font-medium max-w-3xl">
           Secure, anonymous infrastructure for filing civic grievances, logging systemic discrimination for advocacy partners, and crowdsourcing accessibility audits. 
         </p>
@@ -212,7 +211,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
               <div className="mx-auto h-14 w-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
                 <CheckCircle className="h-8 w-8" />
               </div>
-              <h3 className="font-sans text-lg font-bold text-gray-900">Report Registered Securely</h3>
+              <h3 className="font-sans text-lg font-bold text-gray-900">{t('Report Registered Securely')}</h3>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
                 Your dossier has been registered safely in our civic accountability index using a random proxy identifier. Watch your assigned volunteer caseworkers trace resolutions on your **Tracker** tab.
               </p>
@@ -235,7 +234,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <EyeOff className="h-4.5 w-4.5 text-teal-600 animate-pulse" />
-                  <span className="text-xs font-bold text-gray-700">Awaaz Anonymity Layer Active</span>
+                  <span className="text-xs font-bold text-gray-700">{t('Awaaz Anonymity Layer Active')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <input
@@ -255,7 +254,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                 <div className="bg-amber-50/50 border border-amber-100 p-4 rounded-2xl flex items-start space-x-2.5 text-xs text-amber-900 font-semibold leading-relaxed">
                   <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                   <p>
-                    <strong>Prevention of Atrocities Act Safeguards:</strong> This portal securely channels complaints regarding caste segregation, physical abuse, or denied access to public amenities directly to Scheduled Caste Commission coordinators, utilizing secure non-traceable proxies.
+                    <strong>{t('Prevention of Atrocities Act Safeguards:')}</strong> This portal securely channels complaints regarding caste segregation, physical abuse, or denied access to public amenities directly to Scheduled Caste Commission coordinators, utilizing secure non-traceable proxies.
                   </p>
                 </div>
               )}
@@ -264,7 +263,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                 <div className="bg-teal-50/50 border border-teal-100 p-4 rounded-2xl flex items-start space-x-2.5 text-xs text-teal-900 font-semibold leading-relaxed">
                   <Accessibility className="h-5 w-5 text-teal-700 shrink-0 mt-0.5" />
                   <p>
-                    <strong>RPWD Act, 2016 Mandates:</strong> Document broken or inaccessible public structures with physical audit descriptions. This system generates formal accessibility petitions sent to municipal engineering commissioners.
+                    <strong>{t('RPWD Act, 2016 Mandates:')}</strong> Document broken or inaccessible public structures with physical audit descriptions. This system generates formal accessibility petitions sent to municipal engineering commissioners.
                   </p>
                 </div>
               )}
@@ -288,29 +287,29 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Inaccessibility Type</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Inaccessibility Type')}</label>
                     <select
                       value={inaccessibilityType}
                       onChange={(e) => setInaccessibilityType(e.target.value)}
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     >
-                      <option value="No Wheelchair Ramp">No Wheelchair Ramp / Steep Steps</option>
-                      <option value="Broken Tactile Pavement">Broken Tactile Pavement (Visual Handicap)</option>
-                      <option value="Blocked Accessibility Entrance">Blocked Accessibility Entrance</option>
-                      <option value="No Disabled-friendly Toilet">No Disabled-friendly Toilet</option>
-                      <option value="No Lift / Elevator Access">No Lift / Elevator Access</option>
+                      <option value="No Wheelchair Ramp">{t('No Wheelchair Ramp / Steep Steps')}</option>
+                      <option value="Broken Tactile Pavement">{t('Broken Tactile Pavement (Visual Handicap)')}</option>
+                      <option value="Blocked Accessibility Entrance">{t('Blocked Accessibility Entrance')}</option>
+                      <option value="No Disabled-friendly Toilet">{t('No Disabled-friendly Toilet')}</option>
+                      <option value="No Lift / Elevator Access">{t('No Lift / Elevator Access')}</option>
                     </select>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Exact Location of Occurrence</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Exact Location of Occurrence')}</label>
                   <input
                     type="text"
                     required
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Moinabad Ward 4, Panchayat Office"
+                    placeholder={t("e.g. Moinabad Ward 4, Panchayat Office")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                   />
                 </div>
@@ -321,7 +320,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Action Authority</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Target Action Authority')}</label>
                   <select
                     value={authority}
                     onChange={(e) => setAuthority(e.target.value)}
@@ -329,29 +328,29 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                   >
                     {activeTab === 'caste_discrimination' ? (
                       <>
-                        <option value="National Commission for Scheduled Castes (NCSC)">National Commission for Scheduled Castes (NCSC)</option>
-                        <option value="District Magistrate & Superintendent of Police">District Magistrate (DM) & Superintendent of Police (SP)</option>
-                        <option value="State Human Rights Commission (SHRC)">State Human Rights Commission (SHRC)</option>
+                        <option value="National Commission for Scheduled Castes (NCSC)">{t('National Commission for Scheduled Castes (NCSC)')}</option>
+                        <option value="District Magistrate & Superintendent of Police">{t('District Magistrate (DM) & Superintendent of Police (SP)')}</option>
+                        <option value="State Human Rights Commission (SHRC)">{t('State Human Rights Commission (SHRC)')}</option>
                       </>
                     ) : activeTab === 'disability_audit' ? (
                       <>
-                        <option value="Municipal Commissioner & Ward Development Officer">Municipal Commissioner & Ward Development Officer</option>
-                        <option value="State Commissioner for Persons with Disabilities">State Commissioner for Persons with Disabilities</option>
-                        <option value="Public Works Department (PWD) Chief Engineer">Public Works Department (PWD) Chief Engineer</option>
+                        <option value="Municipal Commissioner & Ward Development Officer">{t('Municipal Commissioner & Ward Development Officer')}</option>
+                        <option value="State Commissioner for Persons with Disabilities">{t('State Commissioner for Persons with Disabilities')}</option>
+                        <option value="Public Works Department (PWD) Chief Engineer">{t('Public Works Department (PWD) Chief Engineer')}</option>
                       </>
                     ) : (
                       <>
-                        <option value="Gram Panchayat Secretary">Gram Panchayat Secretary</option>
-                        <option value="Block Development Officer">Block Development Officer (BDO)</option>
-                        <option value="District Tahsildar">District Tahsildar</option>
-                        <option value="District Collector">District Collector</option>
+                        <option value="Gram Panchayat Secretary">{t('Gram Panchayat Secretary')}</option>
+                        <option value="Block Development Officer">{t('Block Development Officer (BDO)')}</option>
+                        <option value="District Tahsildar">{t('District Tahsildar')}</option>
+                        <option value="District Collector">{t('District Collector')}</option>
                       </>
                     )}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Supporting Witnesses / Citizens affected</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Supporting Witnesses / Citizens affected')}</label>
                   <input
                     type="number"
                     min={1}
@@ -368,7 +367,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                 <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl space-y-3">
                   <span className="block text-[10px] font-bold text-gray-500 uppercase flex items-center space-x-1">
                     <Camera className="h-4 w-4 text-teal-700" />
-                    <span>Geo-Tagged Photo Audit Reference</span>
+                    <span>{t('Geo-Tagged Photo Audit Reference')}</span>
                   </span>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -409,7 +408,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
 
                   <div className="text-[10px] text-gray-500 bg-teal-50/30 p-2.5 rounded-lg border border-teal-100/30 flex items-center space-x-1.5">
                     <MapPin className="h-3.5 w-3.5 text-teal-700" />
-                    <span><strong>Verified Metadata:</strong> {photoDetails}</span>
+                    <span><strong>{t('Verified Metadata:')}</strong> {photoDetails}</span>
                   </div>
                 </div>
               )}
@@ -450,7 +449,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
                   {draftLoading ? (
                     <>
                       <RefreshCw className="h-4 w-4 animate-spin" />
-                      <span>Generating Petition...</span>
+                      <span>{t('Generating Petition...')}</span>
                     </>
                   ) : (
                     <>
@@ -509,7 +508,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
               ) : (
                 <div className="text-center py-12 px-4 border border-dashed border-teal-800 rounded-2xl">
                   <Sparkles className="h-8 w-8 text-teal-400 mx-auto mb-2 animate-bounce" />
-                  <span className="block text-xs font-bold text-teal-200">No draft compiled</span>
+                  <span className="block text-xs font-bold text-teal-200">{t('No draft compiled')}</span>
                   <p className="text-[10px] text-teal-100/50 mt-1">
                     Describe your issue and click 'Draft' to generate a formal, legally structured complaint or petition document in {currentLanguage}.
                   </p>
@@ -535,7 +534,7 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
             <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
               <div className="flex items-center space-x-2 mb-3 border-b border-gray-100 pb-2">
                 <BarChart3 className="h-4.5 w-4.5 text-teal-700" />
-                <h3 className="font-sans text-xs font-bold text-gray-900">Registered Incidents Hub (Policy Advocacy)</h3>
+                <h3 className="font-sans text-xs font-bold text-gray-900">{t('Registered Incidents Hub (Policy Advocacy)')}</h3>
               </div>
               <p className="text-[10px] text-gray-400 mb-4 leading-relaxed">
                 Anonymous aggregated metric trends supplied directly to civil liberty coalitions and Scheduled Caste state administrators for systemic policy changes.
@@ -544,16 +543,16 @@ export const ReportView: React.FC<ReportViewProps> = ({ currentLanguage }) => {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="bg-teal-50/40 p-2.5 rounded-xl border border-teal-100/30 text-center">
                   <span className="text-lg font-extrabold text-teal-950 block">{aggregatedStats.totalReports}</span>
-                  <span className="text-[9px] text-teal-800 font-bold uppercase">Total Logged</span>
+                  <span className="text-[9px] text-teal-800 font-bold uppercase">{t('Total Logged')}</span>
                 </div>
                 <div className="bg-emerald-50/40 p-2.5 rounded-xl border border-emerald-100/30 text-center">
                   <span className="text-lg font-extrabold text-emerald-950 block">{aggregatedStats.firsRegistered}</span>
-                  <span className="text-[9px] text-emerald-800 font-bold uppercase">FIRs Registered</span>
+                  <span className="text-[9px] text-emerald-800 font-bold uppercase">{t('FIRs Registered')}</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <span className="block text-[9px] uppercase font-bold text-gray-500 tracking-wider">Reports by block / ward</span>
+                <span className="block text-[9px] uppercase font-bold text-gray-500 tracking-wider">{t('Reports by block / ward')}</span>
                 {aggregatedStats.byDistrict.map((dist, idx) => (
                   <div key={idx} className="space-y-1">
                     <div className="flex justify-between text-[10px] font-bold text-gray-600">

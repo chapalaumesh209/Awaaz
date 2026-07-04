@@ -24,70 +24,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
   activeUser,
   setRole
 }) => {
-  const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS['en'];
-
-  const [localTrans, setLocalTrans] = useState<Record<string, string>>({});
-  const translatingKeys = React.useRef<Set<string>>(new Set());
-
-  // Load the complete translation dictionary from Firestore once per language change
-  useEffect(() => {
-    if (currentLanguage === 'en') {
-      setLocalTrans({});
-      translatingKeys.current.clear();
-      return;
-    }
-
-    translatingKeys.current.clear();
-    dbClient.getTranslationsForLanguage(currentLanguage, TRANSLATIONS[currentLanguage] || {})
-      .then((existingTranslations) => {
-        if (existingTranslations) {
-          TRANSLATIONS[currentLanguage] = {
-            ...TRANSLATIONS[currentLanguage],
-            ...existingTranslations
-          };
-          setLocalTrans(existingTranslations);
-        }
-      })
-      .catch((err) => {
-        console.warn("Firestore pre-load translations failed:", err);
-      });
-  }, [currentLanguage]);
-
-  // Real-time asynchronous background translator powered by Gemini and Firestore
-  const triggerAsyncTranslation = async (key: string, englishText: string) => {
-    if (currentLanguage === 'en') return;
-    if (translatingKeys.current.has(key)) return;
-    translatingKeys.current.add(key);
-
-    try {
-      const translated = await dbClient.translateTextDynamically(englishText, currentLanguage);
-      if (translated && translated !== englishText) {
-        const updatedDict = {
-          ...(TRANSLATIONS[currentLanguage] || {}),
-          [key]: translated
-        };
-        TRANSLATIONS[currentLanguage] = updatedDict;
-        setLocalTrans(prev => ({ ...prev, [key]: translated }));
-
-        // Save back to Firestore
-        await dbClient.saveTranslationsForLanguage(currentLanguage, updatedDict);
-      }
-    } catch (err) {
-      console.error("Failed dynamic translation in LandingView:", err);
-    }
-  };
-
-  const translate = (key: string, englishText: string): string => {
-    if (currentLanguage === 'en') return englishText;
-    if (localTrans[key]) return localTrans[key];
-    
-    const glob = TRANSLATIONS[currentLanguage] || {};
-    if (glob[key]) return glob[key];
-
-    // Trigger translate in background
-    triggerAsyncTranslation(key, englishText);
-    return englishText;
-  };
+  const { t } = useTranslation();
 
   const [feedbackCategory, setFeedbackCategory] = useState<string>('schemes');
   const [feedbackText, setFeedbackText] = useState<string>('');
@@ -156,7 +93,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         {/* Animated Badge */}
         <div className="inline-flex items-center space-x-1.5 self-center rounded-full bg-teal-50 border border-teal-100 px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-xs mb-6">
           <Shield className="h-3.5 w-3.5 text-teal-600" />
-          <span>{translate('portalSubTitle', 'Official Public Entitlements & Grievance Portal: Voice, Safety & Welfare')}</span>
+          <span>{t('Official Public Entitlements & Grievance Portal: Voice, Safety & Welfare')}</span>
         </div>
 
         {/* Display Typography */}
@@ -219,7 +156,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
             <div>
               <span className="block text-xl font-extrabold text-gray-900">4,500+</span>
-              <span className="text-xs text-gray-400 font-medium">{translate('panchayatsLabel', 'Gram Panchayats')}</span>
+              <span className="text-xs text-gray-400 font-medium">{t('Gram Panchayats')}</span>
             </div>
           </div>
 
@@ -229,7 +166,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
             <div>
               <span className="block text-xl font-extrabold text-gray-900">12,200+</span>
-              <span className="text-xs text-gray-400 font-medium">{translate('volunteersLabel', 'Volunteers Active')}</span>
+              <span className="text-xs text-gray-400 font-medium">{t('Volunteers Active')}</span>
             </div>
           </div>
 
@@ -239,7 +176,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
             <div>
               <span className="block text-xl font-extrabold text-gray-900">18 Lakhs+</span>
-              <span className="text-xs text-gray-400 font-medium">{translate('disbursedLabel', 'Entitlements Disbursed')}</span>
+              <span className="text-xs text-gray-400 font-medium">{t('Entitlements Disbursed')}</span>
             </div>
           </div>
 
@@ -249,7 +186,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             </div>
             <div>
               <span className="block text-xl font-extrabold text-gray-900">99.8%</span>
-              <span className="text-xs text-gray-400 font-medium">{translate('safeAuditLabel', 'Safe Grievance Audit')}</span>
+              <span className="text-xs text-gray-400 font-medium">{t('Safe Grievance Audit')}</span>
             </div>
           </div>
         </div>
@@ -267,10 +204,10 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   AWAAZ Platform Overview
                 </span>
                 <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight leading-tight">
-                  {translate('appOverviewTitle', 'Application Overview, Core Features & Feedback Hub')}
+                  {t('Application Overview, Core Features & Feedback Hub')}
                 </h2>
                 <p className="text-teal-100/80 text-sm leading-relaxed max-w-xl">
-                  {translate('appOverviewDesc', 'Explore the exhaustive capabilities, operational workflow, and community feedback mechanisms of the AWAAZ application below.')}
+                  {t('Explore the exhaustive capabilities, operational workflow, and community feedback mechanisms of the AWAAZ application below.')}
                 </p>
               </div>
               <div className="lg:col-span-5 grid grid-cols-3 gap-3">
@@ -301,11 +238,11 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   <span className="font-mono text-xs font-bold text-teal-600 tracking-wider">01</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
                   <h3 className="font-serif text-xl font-bold text-teal-950">
-                    {translate('appInfoTitle', 'Complete Application Information')}
+                    {t('Complete Application Information')}
                   </h3>
                 </div>
                 <p className="text-sm text-gray-600 leading-relaxed max-w-3xl">
-                  {translate('appInfoDesc', 'AWAAZ (आवाज़) is an offline-first, multilingual, and voice-assisted digital access engine designed specifically for marginalized populations, migrant laborers, stateless communities, and women in rural India. Built to bypass complex red-tape barriers, the application ensures that language barriers, lack of physical records, and access limitations do not prevent citizens from obtaining their fundamental social rights, security resources, and government subsidies.')}
+                  {t('AWAAZ (आवाज़) is an offline-first, multilingual, and voice-assisted digital access engine designed specifically for marginalized populations, migrant laborers, stateless communities, and women in rural India. Built to bypass complex red-tape barriers, the application ensures that language barriers, lack of physical records, and access limitations do not prevent citizens from obtaining their fundamental social rights, security resources, and government subsidies.')}
                 </p>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <span className="px-2.5 py-1 bg-teal-50 text-teal-800 text-[11px] font-semibold rounded-lg border border-teal-100/50">Offline-first</span>
@@ -322,7 +259,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <div className="flex items-center space-x-3 mb-6">
               <span className="bg-teal-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono">02</span>
               <h3 className="font-serif text-2xl font-bold text-teal-950">
-                {translate('systemFeaturesTitle', 'Core System Features')}
+                {t('Core System Features')}
               </h3>
             </div>
             
@@ -336,8 +273,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     </div>
                     <span className="text-xs font-mono font-bold text-gray-300">01</span>
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature1Title', 'AI Entitlements Screening')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature1Desc', 'Diagnose eligibility across 10+ premium Central Government of India welfare schemes instantly via voice in local dialects.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('AI Entitlements Screening')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Diagnose eligibility across 10+ premium Central Government of India welfare schemes instantly via voice in local dialects.')}</p>
                 </div>
               </div>
 
@@ -350,8 +287,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     </div>
                     <span className="text-xs font-mono font-bold text-gray-300">02</span>
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature2Title', 'Paperless Documents Cabinet')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature2Desc', 'Interactive OCR engine extracts, verifies, and stores Aadhaar, Ration, and income credentials safely.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Paperless Documents Cabinet')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Interactive OCR engine extracts, verifies, and stores Aadhaar, Ration, and income credentials safely.')}</p>
                 </div>
               </div>
 
@@ -364,8 +301,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     </div>
                     <span className="text-xs font-mono font-bold text-gray-300">03</span>
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature3Title', 'Stateless Identity Wallet & Legal Affidavits')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature3Desc', 'Biometric digital trust scoring and automated generation of court-grade pre-notary affidavits for recordless citizens.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Stateless Identity Wallet & Legal Affidavits')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Biometric digital trust scoring and automated generation of court-grade pre-notary affidavits for recordless citizens.')}</p>
                 </div>
               </div>
 
@@ -378,8 +315,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     </div>
                     <span className="text-xs font-mono font-bold text-gray-300">04</span>
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature4Title', 'Women Safety & Helpdesk')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature4Desc', 'Crowdsourced safe route planning, local Gram Panchayat panic sirens, and menstrual hygiene health desks.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Women Safety & Helpdesk')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Crowdsourced safe route planning, local Gram Panchayat panic sirens, and menstrual hygiene health desks.')}</p>
                 </div>
               </div>
 
@@ -392,8 +329,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     </div>
                     <span className="text-xs font-mono font-bold text-gray-300">05</span>
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('feature5Title', 'Civic Voice & Gram Sabha Hub')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('feature5Desc', 'Review localized development funds, join digital town halls, or play the Gram Sabha education board game.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Civic Voice & Gram Sabha Hub')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Review localized development funds, join digital town halls, or play the Gram Sabha education board game.')}</p>
                 </div>
               </div>
             </div>
@@ -404,7 +341,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <div className="flex items-center space-x-3 mb-8">
               <span className="bg-teal-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono">03</span>
               <h3 className="font-serif text-2xl font-bold text-teal-950">
-                {translate('workflowTitle', 'System Functionality & User Workflow')}
+                {t('System Functionality & User Workflow')}
               </h3>
             </div>
 
@@ -422,8 +359,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   <div className="bg-teal-50 text-teal-700 p-3 rounded-full mt-2 mb-4">
                     <Languages className="h-5 w-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('workflow1Title', 'Select Script & Dialect')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('workflow1Desc', 'The platform automatically translates its entire visual and conversational layer to your selected regional tongue.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Select Script & Dialect')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('The platform automatically translates its entire visual and conversational layer to your selected regional tongue.')}</p>
                 </div>
 
                 {/* Step 2 */}
@@ -434,8 +371,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   <div className="bg-teal-50 text-teal-700 p-3 rounded-full mt-2 mb-4">
                     <Sparkles className="h-5 w-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('workflow2Title', 'Perform AI Self-Assessment')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('workflow2Desc', 'Provide basic inputs (profession, income tier, gender) using easy voice prompts to determine eligible schemes.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Perform AI Self-Assessment')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Provide basic inputs (profession, income tier, gender) using easy voice prompts to determine eligible schemes.')}</p>
                 </div>
 
                 {/* Step 3 */}
@@ -446,8 +383,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   <div className="bg-teal-50 text-teal-700 p-3 rounded-full mt-2 mb-4">
                     <HeartHandshake className="h-5 w-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('workflow3Title', 'Submit to Verified Panchayat Volunteers')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('workflow3Desc', 'Local accredited NGO volunteers review, co-sign, and process applications on behalf of offline citizens.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('Submit to Verified Panchayat Volunteers')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Local accredited NGO volunteers review, co-sign, and process applications on behalf of offline citizens.')}</p>
                 </div>
 
                 {/* Step 4 */}
@@ -458,8 +395,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   <div className="bg-teal-50 text-teal-700 p-3 rounded-full mt-2 mb-4">
                     <BadgeCheck className="h-5 w-5" />
                   </div>
-                  <h4 className="text-sm font-bold text-teal-950 mb-2">{translate('workflow4Title', 'State-Engine Tracking')}</h4>
-                  <p className="text-xs text-gray-500 leading-relaxed">{translate('workflow4Desc', 'Your application receives a digital reference token to track updates up to final disbursal.')}</p>
+                  <h4 className="text-sm font-bold text-teal-950 mb-2">{t('State-Engine Tracking')}</h4>
+                  <p className="text-xs text-gray-500 leading-relaxed">{t('Your application receives a digital reference token to track updates up to final disbursal.')}</p>
                 </div>
               </div>
             </div>
@@ -470,7 +407,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <div className="flex items-center space-x-3 mb-6">
               <span className="bg-teal-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono">04</span>
               <h3 className="font-serif text-2xl font-bold text-teal-950">
-                {translate('feedbackTitle', 'Citizen Feedback & Governance Audit')}
+                {t('Citizen Feedback & Governance Audit')}
               </h3>
             </div>
 
@@ -485,8 +422,8 @@ export const LandingView: React.FC<LandingViewProps> = ({
                       <MessageSquare className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-teal-950">{translate('feedbackTitle', 'Citizen Feedback & Governance Audit')}</h4>
-                      <p className="text-[11px] text-gray-500 font-medium">{translate('feedbackSubtitle', 'Submit your live Panchayat feedback and help improve corruption-free delivery, usability, and feature quality.')}</p>
+                      <h4 className="text-sm font-bold text-teal-950">{t('Citizen Feedback & Governance Audit')}</h4>
+                      <p className="text-[11px] text-gray-500 font-medium">{t('Submit your live Panchayat feedback and help improve corruption-free delivery, usability, and feature quality.')}</p>
                     </div>
                   </div>
 
@@ -494,24 +431,24 @@ export const LandingView: React.FC<LandingViewProps> = ({
                     {/* Step 1: Category */}
                     <div>
                       <label className="block text-[11px] font-bold text-teal-900 uppercase tracking-wider mb-1.5">
-                        {translate('feedbackStep1', 'Step 1: Select Application Module / Category')}
+                        {t('Step 1: Select Application Module / Category')}
                       </label>
                       <select
                         value={feedbackCategory}
                         onChange={(e) => setFeedbackCategory(e.target.value)}
                         className="w-full text-xs border border-teal-100 rounded-xl p-3 bg-teal-50/30 text-teal-900 font-medium focus:ring-1 focus:ring-teal-600 focus:outline-none"
                       >
-                        <option value="schemes">{translate('optSchemes', 'AI Schemes Advisor')}</option>
-                        <option value="safety">{translate('optSafety', 'Women Safety & Support')}</option>
-                        <option value="identity">{translate('optIdentity', 'Identity Wallet & Documents')}</option>
-                        <option value="civic">{translate('optCivic', 'Civic Voice & Gram Sabha')}</option>
+                        <option value="schemes">{t('AI Schemes Advisor')}</option>
+                        <option value="safety">{t('Women Safety & Support')}</option>
+                        <option value="identity">{t('Identity Wallet & Documents')}</option>
+                        <option value="civic">{t('Civic Voice & Gram Sabha')}</option>
                       </select>
                     </div>
 
                     {/* Step 2: Rating */}
                     <div>
                       <label className="block text-[11px] font-bold text-teal-900 uppercase tracking-wider mb-1.5">
-                        {translate('feedbackStep2', 'Step 2: Provide Your Rating (1 to 5 Stars)')}
+                        {t('Step 2: Provide Your Rating (1 to 5 Stars)')}
                       </label>
                       <div className="flex items-center space-x-2 bg-teal-50/25 p-3 rounded-xl border border-teal-50">
                         <div className="flex items-center space-x-1">
@@ -530,19 +467,19 @@ export const LandingView: React.FC<LandingViewProps> = ({
                             </button>
                           ))}
                         </div>
-                        <span className="text-xs font-bold text-teal-800 ml-2">({feedbackRating}/5 {translate('feedbackStars', 'Stars')})</span>
+                        <span className="text-xs font-bold text-teal-800 ml-2">({feedbackRating}/5 {t('Stars')})</span>
                       </div>
                     </div>
 
                     {/* Step 3: Text */}
                     <div>
                       <label className="block text-[11px] font-bold text-teal-900 uppercase tracking-wider mb-1.5">
-                        {translate('feedbackStep3', 'Step 3: Write Your Message / Experience')}
+                        {t('Step 3: Write Your Message / Experience')}
                       </label>
                       <textarea
                         value={feedbackText}
                         onChange={(e) => setFeedbackText(e.target.value)}
-                        placeholder={translate('feedbackTextPlaceholder', 'Enter details regarding corruption-free delivery, usability or feature suggestions...')}
+                        placeholder={t('Enter details regarding corruption-free delivery, usability or feature suggestions...')}
                         rows={3}
                         className="w-full text-xs border border-teal-100 rounded-xl p-3 bg-teal-50/30 text-teal-950 placeholder-teal-800/40 focus:ring-1 focus:ring-teal-600 focus:outline-none"
                         required
@@ -555,7 +492,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                       className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-3.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center space-x-2 cursor-pointer"
                     >
                       <MessageSquare className="h-4 w-4" />
-                      <span>{translate('feedbackBtnText', 'Register Citizen Feedback')}</span>
+                      <span>{t('Register Citizen Feedback')}</span>
                     </button>
 
                     <p className="text-[10px] text-gray-400 text-center font-medium">
@@ -564,7 +501,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
 
                     {feedbackSuccess && (
                       <div className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl p-3 text-xs text-center font-bold animate-bounce">
-                        ✓ {translate('feedbackSuccessMsg', 'Thank you! Your feedback has been registered and audited securely.')}
+                        ✓ {t('Thank you! Your feedback has been registered and audited securely.')}
                       </div>
                     )}
                   </form>
@@ -576,7 +513,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 <div className="bg-teal-50/30 rounded-3xl p-5 border border-teal-100/50">
                   <h4 className="font-serif text-md font-bold text-teal-950 mb-4 flex items-center space-x-2">
                     <Lightbulb className="h-4 w-4 text-teal-700" />
-                    <span>{translate('activeFeedbacksTitle', 'Registered Panchayat Audits & Citizen Feedback Reviews')} ({feedbacks.length})</span>
+                    <span>{t('Registered Panchayat Audits & Citizen Feedback Reviews')} ({feedbacks.length})</span>
                   </h4>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

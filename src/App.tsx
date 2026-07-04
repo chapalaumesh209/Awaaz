@@ -3,6 +3,7 @@ import { LanguageCode, UserProfile } from './types';
 import { dbClient } from './lib/supabaseClient';
 import { TRANSLATIONS } from './data/translations';
 import { BrowserRouter as Router, useNavigate, useLocation } from 'react-router-dom';
+import { TranslationProvider, useTranslation } from './contexts/TranslationContext';
 
 // Core Subcomponents
 import Header from './components/Header';
@@ -40,26 +41,7 @@ function AppContent() {
   const currentRoute = location.pathname === '/' ? 'landing' : location.pathname.substring(1);
   const routeParams = Object.fromEntries(new URLSearchParams(location.search).entries());
 
-  const [translationsTrigger, setTranslationsTrigger] = useState<number>(0);
-
-  // Pre-load all cached translations from Firestore when language changes
-  useEffect(() => {
-    if (currentLanguage === 'en') return;
-
-    dbClient.getTranslationsForLanguage(currentLanguage, TRANSLATIONS[currentLanguage] || {})
-      .then((existingTranslations) => {
-        if (existingTranslations) {
-          TRANSLATIONS[currentLanguage] = {
-            ...TRANSLATIONS[currentLanguage],
-            ...existingTranslations
-          };
-          setTranslationsTrigger(prev => prev + 1);
-        }
-      })
-      .catch((err) => {
-        console.warn("App.tsx translation preload error:", err);
-      });
-  }, [currentLanguage]);
+  
   
   const [activeUser, setActiveUser] = useState<UserProfile>({
     id: 'user-default',
@@ -78,7 +60,7 @@ function AppContent() {
     const user = dbClient.getActiveUser();
     if (user) {
       setActiveUser(user);
-      setCurrentLanguage(user.selectedLanguage);
+      setLanguage(user.selectedLanguage);
     }
   };
 
@@ -93,12 +75,12 @@ function AppContent() {
         selectedLanguage: profile.primaryLanguage,
         consentGiven: true
       });
-      setCurrentLanguage(profile.primaryLanguage);
+      setLanguage(profile.primaryLanguage);
     }
   };
 
   const handleLanguageChange = (lang: LanguageCode) => {
-    setCurrentLanguage(lang);
+    setLanguage(lang);
     dbClient.setActiveUser({ selectedLanguage: lang });
     setActiveUser(prev => ({ ...prev, selectedLanguage: lang }));
   };
@@ -142,7 +124,6 @@ function AppContent() {
       case 'landing':
         return (
           <LandingView
-            currentLanguage={currentLanguage}
             setLanguage={handleLanguageChange}
             onNavigate={handleNavigate}
             activeUser={activeUser}
@@ -152,7 +133,6 @@ function AppContent() {
       case 'consent':
         return (
           <ConsentView
-            currentLanguage={currentLanguage}
             onAgree={handleConsentAgree}
             onCancel={() => handleNavigate('landing')}
           />
@@ -160,12 +140,11 @@ function AppContent() {
       case 'auth':
         return (
           <AuthView
-            currentLanguage={currentLanguage}
             initialRole={(routeParams.role as UserProfile['role']) || 'citizen'}
             onAuthSuccess={(user) => {
               setActiveUser(user);
               if (user.selectedLanguage) {
-                setCurrentLanguage(user.selectedLanguage);
+                setLanguage(user.selectedLanguage);
               }
               if (user.role === 'citizen') {
                 if (!user.consentGiven) {
@@ -185,47 +164,44 @@ function AppContent() {
       case 'home':
         return (
           <CitizenDashboard
-            currentLanguage={currentLanguage}
             onNavigate={handleNavigate}
             onProfileUpdated={handleProfileUpdated}
           />
         );
       case 'assistant':
-        return <AiAssistantView currentLanguage={currentLanguage} />;
+        return <AiAssistantView />;
       case 'schemes':
-        return <SchemesView currentLanguage={currentLanguage} onNavigate={handleNavigate} />;
+        return <SchemesView onNavigate={handleNavigate} />;
       case 'scheme-detail':
         return (
           <SchemeDetailView
-            currentLanguage={currentLanguage}
             schemeId={routeParams.id || 'pm-vishwakarma'}
             onNavigate={handleNavigate}
           />
         );
       case 'documents':
-        return <DocumentsView currentLanguage={currentLanguage} onProfileUpdated={handleProfileUpdated} />;
+        return <DocumentsView onProfileUpdated={handleProfileUpdated} />;
       case 'readiness':
-        return <ReadinessView currentLanguage={currentLanguage} onNavigate={handleNavigate} />;
+        return <ReadinessView onNavigate={handleNavigate} />;
       case 'tracker':
-        return <TrackerView currentLanguage={currentLanguage} />;
+        return <TrackerView />;
       case 'support':
-        return <SupportView currentLanguage={currentLanguage} />;
+        return <SupportView />;
       case 'safety':
-        return <SafetyView currentLanguage={currentLanguage} />;
+        return <SafetyView />;
       case 'recordless':
-        return <RecordlessView currentLanguage={currentLanguage} />;
+        return <RecordlessView />;
       case 'report':
-        return <ReportView currentLanguage={currentLanguage} />;
+        return <ReportView />;
       case 'civic':
-        return <CivicVoiceView currentLanguage={currentLanguage} />;
+        return <CivicVoiceView />;
       
       // Volunteer views
       case 'volunteer':
-        return <VolunteerDashboard currentLanguage={currentLanguage} onNavigate={handleNavigate} />;
+        return <VolunteerDashboard onNavigate={handleNavigate} />;
       case 'volunteer-case-detail':
         return (
           <VolunteerCaseDetailView
-            currentLanguage={currentLanguage}
             caseId={routeParams.id || 'case-101'}
             onNavigate={handleNavigate}
           />
@@ -233,7 +209,7 @@ function AppContent() {
 
       // Admin views
       case 'admin':
-        return <AdminDashboard currentLanguage={currentLanguage} onNavigate={handleNavigate} />;
+        return <AdminDashboard onNavigate={handleNavigate} />;
       case 'admin-seed-companion':
         return <AdminSeedView onNavigate={handleNavigate} />;
 
@@ -254,7 +230,6 @@ function AppContent() {
       
       {/* Top Header Row */}
       <Header
-        currentLanguage={currentLanguage}
         setLanguage={handleLanguageChange}
         activeUser={activeUser}
         setRole={handleRoleChange}
@@ -303,7 +278,7 @@ function AppContent() {
               }`}
             >
               <Award className="h-5 w-5" />
-              <span className="text-[9px] mt-1 font-bold">Schemes</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Schemes')}</span>
             </button>
 
             <button
@@ -313,7 +288,7 @@ function AppContent() {
               }`}
             >
               <FileText className="h-5 w-5" />
-              <span className="text-[9px] mt-1 font-bold">Documents</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Documents')}</span>
             </button>
 
             <button
@@ -323,7 +298,7 @@ function AppContent() {
               }`}
             >
               <ShieldCheck className="h-5 w-5" />
-              <span className="text-[9px] mt-1 font-bold">Identity</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Identity')}</span>
             </button>
 
             <button
@@ -333,7 +308,7 @@ function AppContent() {
               }`}
             >
               <ClipboardList className="h-5 w-5" />
-              <span className="text-[9px] mt-1 font-bold">Tracker</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Tracker')}</span>
             </button>
 
             <button
@@ -343,7 +318,7 @@ function AppContent() {
               }`}
             >
               <HeartPulse className="h-5 w-5 text-teal-600" />
-              <span className="text-[9px] mt-1 font-bold">Safety</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Safety')}</span>
             </button>
 
             <button
@@ -353,7 +328,7 @@ function AppContent() {
               }`}
             >
               <Volume2 className="h-5 w-5" />
-              <span className="text-[9px] mt-1 font-bold">Civic</span>
+              <span className="text-[9px] mt-1 font-bold">{t('Civic')}</span>
             </button>
 
           </div>

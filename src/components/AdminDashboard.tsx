@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Scheme, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { SCHEMES } from '../data/schemes';
 import { 
@@ -8,11 +9,10 @@ import {
 } from 'lucide-react';
 
 interface AdminDashboardProps {
-  currentLanguage: LanguageCode;
   onNavigate: (route: string) => void;
 }
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage, onNavigate }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   
   // New scheme creation states
@@ -156,14 +156,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-2">
                 <Settings className="h-5 w-5 text-teal-700" />
-                <h3 className="font-sans text-lg font-bold text-gray-900">Government Schemes Catalog</h3>
+                <h3 className="font-sans text-lg font-bold text-gray-900">{t('Government Schemes Catalog')}</h3>
               </div>
               <button
                 onClick={() => setShowCreateForm(!showCreateForm)}
                 className="flex items-center space-x-1 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-colors"
               >
                 <Plus className="h-4 w-4" />
-                <span>Publish New Scheme</span>
+                <span>{t('Publish New Scheme')}</span>
               </button>
             </div>
 
@@ -172,30 +172,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
               <form onSubmit={handlePublishScheme} className="bg-gray-50/50 rounded-2xl p-5 border border-teal-100/50 mb-6 space-y-4">
                 <div className="flex items-center space-x-2 border-b border-gray-200 pb-3 mb-2">
                   <Sparkles className="h-4 w-4 text-teal-600 animate-spin" />
-                  <span className="text-xs font-bold text-teal-950">Publish Live Welfare Program</span>
+                  <span className="text-xs font-bold text-teal-950">{t('Publish Live Welfare Program')}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Scheme Name</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Scheme Name')}</label>
                     <input
                       type="text"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Central India Weaver toolkit grant"
+                      placeholder={t("e.g. Central India Weaver toolkit grant")}
                       className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Department</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Department')}</label>
                     <input
                       type="text"
                       required
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      placeholder="e.g. Handlooms & Textiles Ministry"
+                      placeholder={t("e.g. Handlooms & Textiles Ministry")}
                       className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     />
                   </div>
@@ -203,48 +203,48 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Category</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Category')}</label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     >
-                      <option value="Business">Business</option>
-                      <option value="Agriculture">Agriculture</option>
-                      <option value="Healthcare">Healthcare</option>
-                      <option value="Scholarship">Scholarship</option>
-                      <option value="Pension">Pension</option>
+                      <option value="Business">{t('Business')}</option>
+                      <option value="Agriculture">{t('Agriculture')}</option>
+                      <option value="Healthcare">{t('Healthcare')}</option>
+                      <option value="Scholarship">{t('Scholarship')}</option>
+                      <option value="Pension">{t('Pension')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Estimated Benefits</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Estimated Benefits')}</label>
                     <input
                       type="text"
                       required
                       value={benefits}
                       onChange={(e) => setBenefits(e.target.value)}
-                      placeholder="e.g. ₹15,000 cash grant & support kit"
+                      placeholder={t("e.g. ₹15,000 cash grant & support kit")}
                       className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Detailed Description</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Detailed Description')}</label>
                   <textarea
                     required
                     rows={3}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide simple parameters for citizens to read..."
+                    placeholder={t("Provide simple parameters for citizens to read...")}
                     className="w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
                   />
                 </div>
 
                 {/* Identity papers selector checkboxes */}
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">Required Identity Papers</label>
+                  <label className="block text-[10px] font-bold text-gray-500 uppercase mb-2">{t('Required Identity Papers')}</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {['aadhaar', 'ration_card', 'voter_id', 'income_cert', 'caste_cert', 'disability_cert'].map((doc) => {
                       const selected = requiredDocs.includes(doc);
@@ -267,14 +267,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
                 {/* Eligibility rule rows */}
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between items-center mb-3">
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase">Target Eligibility Rules</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase">{t('Target Eligibility Rules')}</label>
                     <button
                       type="button"
                       onClick={handleAddRuleRow}
                       className="text-[10px] font-extrabold text-teal-600 hover:text-teal-800 flex items-center space-x-0.5"
                     >
                       <Plus className="h-3 w-3" />
-                      <span>Add Rule Parameter</span>
+                      <span>{t('Add Rule Parameter')}</span>
                     </button>
                   </div>
 
@@ -286,10 +286,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
                           onChange={(e) => handleRuleChange(idx, 'field', e.target.value)}
                           className="flex-1 bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-xs font-semibold focus:outline-hidden"
                         >
-                          <option value="age">Age</option>
-                          <option value="householdIncome">Household Income</option>
-                          <option value="gender">Gender (male/female)</option>
-                          <option value="state">State</option>
+                          <option value="age">{t('Age')}</option>
+                          <option value="householdIncome">{t('Household Income')}</option>
+                          <option value="gender">{t('Gender (male/female)')}</option>
+                          <option value="state">{t('State')}</option>
                         </select>
 
                         <select
@@ -306,7 +306,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
                           type="text"
                           value={rule.value}
                           onChange={(e) => handleRuleChange(idx, 'value', e.target.value)}
-                          placeholder="value"
+                          placeholder={t("value")}
                           className="flex-1 bg-white border border-gray-200 rounded-xl px-2 py-1.5 text-xs font-semibold focus:outline-hidden animate-none"
                         />
 
@@ -355,7 +355,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
                   <button
                     onClick={() => handleDeleteScheme(s.id)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-xl shrink-0 transition-colors"
-                    title="Delete Scheme Program"
+                    title={t("Delete Scheme Program")}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -372,7 +372,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
           <div>
             <div className="flex items-center space-x-1.5 border-b border-gray-100 pb-3 mb-4">
               <BarChart className="h-5 w-5 text-teal-700 animate-pulse" />
-              <h3 className="font-sans text-base font-bold text-gray-900">Top Schemes Applied</h3>
+              <h3 className="font-sans text-base font-bold text-gray-900">{t('Top Schemes Applied')}</h3>
             </div>
             <p className="text-[10px] text-gray-400 leading-relaxed">
               Distribution metrics based on live submitted claims logged through AWAAZ gateways.
@@ -382,8 +382,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
           <div className="space-y-4 pt-2">
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
-                <span>PM Vishwakarma</span>
-                <span className="font-bold">450 claims</span>
+                <span>{t('PM Vishwakarma')}</span>
+                <span className="font-bold">{t('450 claims')}</span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div className="bg-teal-600 h-full rounded-full" style={{ width: '90%' }} />
@@ -392,8 +392,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
 
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
-                <span>PM SVANidhi</span>
-                <span className="font-bold">320 claims</span>
+                <span>{t('PM SVANidhi')}</span>
+                <span className="font-bold">{t('320 claims')}</span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div className="bg-teal-700 h-full rounded-full" style={{ width: '65%' }} />
@@ -402,8 +402,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
 
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
-                <span>Ayushman Bharat</span>
-                <span className="font-bold">280 claims</span>
+                <span>{t('Ayushman Bharat')}</span>
+                <span className="font-bold">{t('280 claims')}</span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div className="bg-teal-600 h-full rounded-full" style={{ width: '55%' }} />
@@ -412,8 +412,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentLanguage,
 
             <div>
               <div className="flex justify-between text-[11px] font-semibold text-gray-600 mb-1">
-                <span>Pradhan Mantri Awas</span>
-                <span className="font-bold">140 claims</span>
+                <span>{t('Pradhan Mantri Awas')}</span>
+                <span className="font-bold">{t('140 claims')}</span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
                 <div className="bg-emerald-600 h-full rounded-full" style={{ width: '30%' }} />

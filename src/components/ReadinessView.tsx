@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CitizenProfile, DocumentCamp, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { 
   Award, ShieldAlert, CheckCircle2, MapPin, Calendar, Users2, 
@@ -7,11 +8,10 @@ import {
 } from 'lucide-react';
 
 interface ReadinessViewProps {
-  currentLanguage: LanguageCode;
   onNavigate: (route: string) => void;
 }
 
-export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, onNavigate }) => {
+export const ReadinessView: React.FC<ReadinessViewProps> = ({ onNavigate }) => {
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [missingDocs, setMissingDocs] = useState<string[]>([]);
   const [verifiedDocs, setVerifiedDocs] = useState<string[]>([]);
@@ -95,7 +95,7 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
               </svg>
               <div className="text-center">
                 <span className="text-4xl font-extrabold text-teal-950 block">{score}%</span>
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-0.5">Readiness</span>
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mt-0.5">{t('Readiness')}</span>
               </div>
             </div>
 
@@ -113,7 +113,7 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
                 onClick={() => onNavigate('documents')}
                 className="inline-flex items-center space-x-1 text-xs font-bold text-teal-600 hover:text-teal-800"
               >
-                <span>Upload missing documents to boost score</span>
+                <span>{t('Upload missing documents to boost score')}</span>
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -122,7 +122,7 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
 
           {/* Checklist: Verified vs Missing papers */}
           <div className="bg-white border border-teal-100 rounded-3xl p-6 shadow-xs">
-            <h3 className="font-sans text-base font-bold text-gray-900 mb-4">Your Documentation Checklist</h3>
+            <h3 className="font-sans text-base font-bold text-gray-900 mb-4">{t('Your Documentation Checklist')}</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
@@ -130,28 +130,28 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
               <div className="space-y-2">
                 <span className="block text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center space-x-1">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span>Verified Identity Papers</span>
+                  <span>{t('Verified Identity Papers')}</span>
                 </span>
                 {verifiedDocs.map((doc, idx) => (
                   <div key={idx} className="p-3 bg-emerald-50/40 border border-emerald-100 rounded-2xl text-xs font-bold text-emerald-900">
                     {doc}
                   </div>
                 ))}
-                {verifiedDocs.length === 0 && <span className="text-xs text-gray-400 block px-1">No verified papers found yet.</span>}
+                {verifiedDocs.length === 0 && <span className="text-xs text-gray-400 block px-1">{t('No verified papers found yet.')}</span>}
               </div>
 
               {/* Missing list */}
               <div className="space-y-2">
                 <span className="block text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-2 flex items-center space-x-1">
                   <ShieldAlert className="h-4 w-4 animate-pulse" />
-                  <span>Missing Requirements</span>
+                  <span>{t('Missing Requirements')}</span>
                 </span>
                 {missingDocs.map((doc, idx) => (
                   <div key={idx} className="p-3 bg-amber-50/40 border border-amber-100 rounded-2xl text-xs font-bold text-amber-900">
                     {doc}
                   </div>
                 ))}
-                {missingDocs.length === 0 && <span className="text-xs text-emerald-600 block font-bold px-1">Congratulations! No missing documents.</span>}
+                {missingDocs.length === 0 && <span className="text-xs text-emerald-600 block font-bold px-1">{t('Congratulations! No missing documents.')}</span>}
               </div>
 
             </div>
@@ -163,7 +163,7 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
         <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
           <div className="flex items-center space-x-2 mb-4">
             <Compass className="h-5 w-5 text-teal-700" />
-            <h3 className="font-sans text-base font-bold text-gray-900">Nearby Document Camps</h3>
+            <h3 className="font-sans text-base font-bold text-gray-900">{t('Nearby Document Camps')}</h3>
           </div>
           <p className="text-[10px] text-gray-400 mb-4 leading-relaxed">
             Visit these local Panchayat document enrollment kiosks to obtain missing caste, income, or disability certificates in 1 day on-the-spot.
@@ -190,7 +190,7 @@ export const ReadinessView: React.FC<ReadinessViewProps> = ({ currentLanguage, o
                 </div>
 
                 <div className="bg-teal-50/50 p-2 rounded-lg border border-teal-100/30">
-                  <span className="block text-[9px] text-teal-800 font-extrabold uppercase tracking-wider">Targeted Benefits</span>
+                  <span className="block text-[9px] text-teal-800 font-extrabold uppercase tracking-wider">{t('Targeted Benefits')}</span>
                   <span className="block text-[9px] text-gray-500 font-medium mt-0.5">{camp.schemesTargeted}</span>
                 </div>
               </div>

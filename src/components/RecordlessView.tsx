@@ -10,10 +10,9 @@ import {
 
 import { dbClient } from '../lib/supabaseClient';
 import { LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 
-interface RecordlessViewProps {
-  currentLanguage: LanguageCode;
-}
+
 
 interface Camp {
   id: string;
@@ -48,7 +47,7 @@ interface EvidenceBlock {
   points: number;
 }
 
-export const RecordlessView: React.FC<RecordlessViewProps> = ({ currentLanguage }) => {
+export const RecordlessView: React.FC<RecordlessViewProps> = ({ }) => {
   const [activeTab, setActiveTab] = useState<'camps' | 'affidavit' | 'wallet'>('wallet');
   const [camps, setCamps] = useState<Camp[]>([]);
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
@@ -429,14 +428,14 @@ Place: ______________________      Court/Registration No: _________`;
           <div>
             <h2 className="font-sans text-2xl font-extrabold text-gray-900 tracking-tight flex items-center space-x-2">
               <ShieldCheck className="h-7 w-7 text-teal-600" />
-              <span>Identity & Document Support for Recordless Communities</span>
+              <span>{t('Identity & Document Support for Recordless Communities')}</span>
             </h2>
             <p className="text-sm text-gray-500 font-medium mt-1">
               NGO-supported pre-registrations, verifiable digital wallets, and AI-powered court affidavits for migrant and undocumented families.
             </p>
           </div>
           <div className="flex items-center space-x-2 shrink-0">
-            <span className="text-xs font-bold text-gray-400">Coordinator Mode:</span>
+            <span className="text-xs font-bold text-gray-400">{t('Coordinator Mode:')}</span>
             <button
               onClick={() => setIsNgoMode(!isNgoMode)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
@@ -495,7 +494,7 @@ Place: ______________________      Court/Registration No: _________`;
           }`}
         >
           <Layers className="h-4.5 w-4.5" />
-          <span>Portable Identity Wallet</span>
+          <span>{t('Portable Identity Wallet')}</span>
         </button>
         <button
           onClick={() => { setActiveTab('affidavit'); setErrorMsg(''); }}
@@ -504,7 +503,7 @@ Place: ______________________      Court/Registration No: _________`;
           }`}
         >
           <FileText className="h-4.5 w-4.5" />
-          <span>AI Evidence Affidavit Builder</span>
+          <span>{t('AI Evidence Affidavit Builder')}</span>
         </button>
         <button
           onClick={() => { setActiveTab('camps'); setErrorMsg(''); }}
@@ -513,7 +512,7 @@ Place: ______________________      Court/Registration No: _________`;
           }`}
         >
           <Calendar className="h-4.5 w-4.5" />
-          <span>Document Drive Organiser</span>
+          <span>{t('Document Drive Organiser')}</span>
         </button>
       </div>
 
@@ -542,7 +541,7 @@ Place: ______________________      Court/Registration No: _________`;
                       <h4 className="font-sans text-sm font-extrabold uppercase tracking-widest leading-none text-white">
                         AWAAZ CITIZEN ID
                       </h4>
-                      <span className="text-[9px] text-teal-300/80 font-bold tracking-wider">VERIFIABLE DIGITAL IDENTITY TRUST BLOCK</span>
+                      <span className="text-[9px] text-teal-300/80 font-bold tracking-wider">{t('VERIFIABLE DIGITAL IDENTITY TRUST BLOCK')}</span>
                     </div>
                   </div>
                   <div className={`px-2.5 py-1 rounded-full border text-[9px] font-extrabold uppercase tracking-widest leading-none ${trustBadge.color}`}>
@@ -558,39 +557,39 @@ Place: ______________________      Court/Registration No: _________`;
                     <div className="h-28 w-28 rounded-2xl bg-teal-900/60 border border-teal-700/60 p-1.5 flex items-center justify-center relative overflow-hidden group">
                       <div className="bg-teal-950/80 w-full h-full rounded-xl flex flex-col items-center justify-center border border-teal-800 text-teal-400 relative">
                         <User className="h-10 w-10 text-teal-200/80" />
-                        <span className="text-[8px] font-extrabold text-teal-400 uppercase mt-1">Photo Active</span>
+                        <span className="text-[8px] font-extrabold text-teal-400 uppercase mt-1">{t('Photo Active')}</span>
                       </div>
                     </div>
-                    <span className="text-[9px] font-mono font-bold text-teal-300">ID: AW-8940-2184</span>
+                    <span className="text-[9px] font-mono font-bold text-teal-300">{t('ID: AW-8940-2184')}</span>
                   </div>
 
                   {/* Identity detail fields */}
                   <div className="md:col-span-2 space-y-3">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                       <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">Full Name</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">{t('Full Name')}</span>
                         <span className="block text-xs font-extrabold tracking-wide truncate">{advName || 'Umesh Chapala'}</span>
                       </div>
                       <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">Primary Work</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">{t('Primary Work')}</span>
                         <span className="block text-xs font-extrabold tracking-wide truncate flex items-center space-x-1">
                           <HardHat className="h-3.5 w-3.5 text-teal-400 inline" />
                           <span>{advOccupation || 'Construction Hand'}</span>
                         </span>
                       </div>
                       <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">Current Residing</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">{t('Current Residing')}</span>
                         <span className="block text-xs font-semibold tracking-wide truncate">{advCurrentAddress || 'Labor Colony, Hyderabad'}</span>
                       </div>
                       <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">Home Province / State</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">{t('Home Province / State')}</span>
                         <span className="block text-xs font-semibold tracking-wide truncate">{advHomeState || 'Bihar State'}</span>
                       </div>
                     </div>
 
                     <div className="border-t border-teal-800 pt-3 flex items-center justify-between">
                       <div>
-                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">Identity Trust Score</span>
+                        <span className="block text-[8px] uppercase tracking-wider text-teal-300/70 font-extrabold">{t('Identity Trust Score')}</span>
                         <div className="flex items-center space-x-2 mt-1">
                           <div className="w-24 bg-teal-950 rounded-full h-1.5 overflow-hidden">
                             <div 
@@ -606,7 +605,7 @@ Place: ______________________      Court/Registration No: _________`;
                         className="bg-teal-800 hover:bg-teal-700 active:scale-95 transition-all text-white px-2.5 py-1.5 rounded-xl border border-teal-700 text-[10px] font-bold flex items-center space-x-1 cursor-pointer"
                       >
                         <QrCode className="h-3.5 w-3.5 text-teal-300" />
-                        <span>Verify QR</span>
+                        <span>{t('Verify QR')}</span>
                       </button>
                     </div>
 
@@ -631,7 +630,7 @@ Place: ______________________      Court/Registration No: _________`;
                     className="bg-teal-50 text-teal-700 border border-teal-100 rounded-xl px-3 py-1.5 hover:bg-teal-100 text-xs font-bold flex items-center space-x-1 cursor-pointer"
                   >
                     <Plus className="h-4 w-4" />
-                    <span>Add Proof Block</span>
+                    <span>{t('Add Proof Block')}</span>
                   </button>
                 </div>
 
@@ -673,7 +672,7 @@ Place: ______________________      Court/Registration No: _________`;
 
                   {evidenceBlocks.length === 0 && (
                     <div className="text-center py-6 border border-dashed border-gray-200 rounded-2xl">
-                      <span className="text-xs text-gray-400 block">No local proof points added yet. Click 'Add Proof Block' to upload.</span>
+                      <span className="text-xs text-gray-400 block">{t('No local proof points added yet. Click \'Add Proof Block\' to upload.')}</span>
                     </div>
                   )}
                 </div>
@@ -699,18 +698,18 @@ Place: ______________________      Court/Registration No: _________`;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Full Legal Name</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Full Legal Name')}</label>
                   <input
                     type="text"
                     value={advName}
                     onChange={(e) => setAdvName(e.target.value)}
-                    placeholder="e.g. Umesh Chapala"
+                    placeholder={t("e.g. Umesh Chapala")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Age (Years)</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Age (Years)')}</label>
                   <input
                     type="number"
                     value={advAge}
@@ -720,45 +719,45 @@ Place: ______________________      Court/Registration No: _________`;
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Occupation</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Current Occupation')}</label>
                   <input
                     type="text"
                     value={advOccupation}
                     onChange={(e) => setAdvOccupation(e.target.value)}
-                    placeholder="e.g. Brick Kiln Loader"
+                    placeholder={t("e.g. Brick Kiln Loader")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Original Province / State</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Original Province / State')}</label>
                   <input
                     type="text"
                     value={advHomeState}
                     onChange={(e) => setAdvHomeState(e.target.value)}
-                    placeholder="e.g. Jharkhand"
+                    placeholder={t("e.g. Jharkhand")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Current Residing Colony/Address</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Current Residing Colony/Address')}</label>
                   <input
                     type="text"
                     value={advCurrentAddress}
                     onChange={(e) => setAdvCurrentAddress(e.target.value)}
-                    placeholder="e.g. Tent 12, shamirpet brick kilns, Hyderabad"
+                    placeholder={t("e.g. Tent 12, shamirpet brick kilns, Hyderabad")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Reason for Missing Official Records</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Reason for Missing Official Records')}</label>
                   <input
                     type="text"
                     value={advReason}
                     onChange={(e) => setAdvReason(e.target.value)}
-                    placeholder="e.g. Ancestors migrated seasonally; documents were ruined during high state floods"
+                    placeholder={t("e.g. Ancestors migrated seasonally; documents were ruined during high state floods")}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   />
                 </div>
@@ -767,12 +766,12 @@ Place: ______________________      Court/Registration No: _________`;
                 <div className="md:col-span-2 border-t border-gray-100 pt-4 space-y-3">
                   <span className="block text-xs font-bold text-gray-800 flex items-center space-x-1.5">
                     <Users className="h-4.5 w-4.5 text-teal-600" />
-                    <span>Witness Swear Sign-offs (Neighbors or Employers)</span>
+                    <span>{t('Witness Swear Sign-offs (Neighbors or Employers)')}</span>
                   </span>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Witness 1 (Authority/Contractor)</label>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">{t('Witness 1 (Authority/Contractor)')}</label>
                       <input
                         type="text"
                         value={witness1}
@@ -781,7 +780,7 @@ Place: ______________________      Court/Registration No: _________`;
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">Witness 2 (Neighbor resident)</label>
+                      <label className="block text-[9px] font-bold text-gray-400 uppercase mb-1">{t('Witness 2 (Neighbor resident)')}</label>
                       <input
                         type="text"
                         value={witness2}
@@ -794,7 +793,7 @@ Place: ______________________      Court/Registration No: _________`;
 
                 {/* Unofficial Proof points checkboxes */}
                 <div className="md:col-span-2 space-y-2 border-t border-gray-100 pt-4">
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Secondary Supporting Proofs Available</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('Secondary Supporting Proofs Available')}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
@@ -803,7 +802,7 @@ Place: ______________________      Court/Registration No: _________`;
                         hasRentReceipt ? 'bg-teal-50 border-teal-200 text-teal-950' : 'bg-white border-gray-100 text-gray-400'
                       }`}
                     >
-                      <span>Rent Slip Scan</span>
+                      <span>{t('Rent Slip Scan')}</span>
                       {hasRentReceipt && <Check className="h-3.5 w-3.5 text-teal-600" />}
                     </button>
                     <button
@@ -813,7 +812,7 @@ Place: ______________________      Court/Registration No: _________`;
                         hasWorkSlip ? 'bg-teal-50 border-teal-200 text-teal-950' : 'bg-white border-gray-100 text-gray-400'
                       }`}
                     >
-                      <span>Contractor Payment Memo</span>
+                      <span>{t('Contractor Payment Memo')}</span>
                       {hasWorkSlip && <Check className="h-3.5 w-3.5 text-teal-600" />}
                     </button>
                     <button
@@ -823,7 +822,7 @@ Place: ______________________      Court/Registration No: _________`;
                         hasPanchayatRec ? 'bg-teal-50 border-teal-200 text-teal-950' : 'bg-white border-gray-100 text-gray-400'
                       }`}
                     >
-                      <span>Panchayat Leader Note</span>
+                      <span>{t('Panchayat Leader Note')}</span>
                       {hasPanchayatRec && <Check className="h-3.5 w-3.5 text-teal-600" />}
                     </button>
                   </div>
@@ -840,12 +839,12 @@ Place: ______________________      Court/Registration No: _________`;
                 {loading ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>NGO AI Notary compiling certified statements...</span>
+                    <span>{t('NGO AI Notary compiling certified statements...')}</span>
                   </>
                 ) : (
                   <>
                     <FileText className="h-4 w-4 text-teal-100" />
-                    <span>Formulate Court-Grade Affidavit</span>
+                    <span>{t('Formulate Court-Grade Affidavit')}</span>
                   </>
                 )}
               </button>
@@ -864,10 +863,10 @@ Place: ______________________      Court/Registration No: _________`;
                     <button
                       onClick={() => window.print()}
                       className="p-1.5 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg text-gray-600 text-[10px] font-bold flex items-center space-x-1 shadow-xs"
-                      title="Print Affidavit"
+                      title={t("Print Affidavit")}
                     >
                       <Printer className="h-3.5 w-3.5" />
-                      <span>Print</span>
+                      <span>{t('Print')}</span>
                     </button>
                     <button
                       onClick={async () => {
@@ -889,14 +888,14 @@ Place: ______________________      Court/Registration No: _________`;
                       className="p-1.5 bg-teal-600 hover:bg-teal-700 rounded-lg text-white text-[10px] font-bold flex items-center space-x-1 shadow-xs cursor-pointer"
                     >
                       <Download className="h-3.5 w-3.5" />
-                      <span>Save to Wallet</span>
+                      <span>{t('Save to Wallet')}</span>
                     </button>
                   </div>
 
                   {/* Stamp top section */}
                   <div className="text-center border-b-2 border-gray-300 pb-4 mb-6 pt-4">
-                    <span className="block text-sm font-extrabold text-teal-900 tracking-widest uppercase">NOTARIAL DE DECLARATION</span>
-                    <span className="block text-[9px] text-gray-400 uppercase tracking-widest font-sans font-bold mt-1">BHARAT NOTARY STAMP PAPER SPECIAL COGNIZANCE</span>
+                    <span className="block text-sm font-extrabold text-teal-900 tracking-widest uppercase">{t('NOTARIAL DE DECLARATION')}</span>
+                    <span className="block text-[9px] text-gray-400 uppercase tracking-widest font-sans font-bold mt-1">{t('BHARAT NOTARY STAMP PAPER SPECIAL COGNIZANCE')}</span>
                   </div>
 
                   {/* Content rendered with markdown look */}
@@ -927,19 +926,19 @@ Place: ______________________      Court/Registration No: _________`;
                 <form onSubmit={handleBookSlot} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Citizen Applicant Name</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Citizen Applicant Name')}</label>
                     <input
                       type="text"
                       value={registerName}
                       onChange={(e) => setRegisterName(e.target.value)}
-                      placeholder="e.g. Umesh Chapala"
+                      placeholder={t("e.g. Umesh Chapala")}
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Age</label>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Age')}</label>
                       <input
                         type="number"
                         value={registerAge}
@@ -948,19 +947,19 @@ Place: ______________________      Court/Registration No: _________`;
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Mobile No</label>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Mobile No')}</label>
                       <input
                         type="tel"
                         value={registerPhone}
                         onChange={(e) => setRegisterPhone(e.target.value)}
-                        placeholder="e.g. 9845012345"
+                        placeholder={t("e.g. 9845012345")}
                         className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Select Drive/Camp</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Select Drive/Camp')}</label>
                     <select
                       value={registerCampId}
                       onChange={(e) => setRegisterCampId(e.target.value)}
@@ -968,10 +967,10 @@ Place: ______________________      Court/Registration No: _________`;
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500 disabled:opacity-50"
                     >
                       {camps.length === 0 ? (
-                        <option value="">Loading camps...</option>
+                        <option value="">{t('Loading camps...')}</option>
                       ) : (
                         <>
-                          <option value="" disabled>-- Select a Camp --</option>
+                          <option value="" disabled>{t('-- Select a Camp --')}</option>
                           {camps.map(camp => (
                             <option key={camp.id} value={camp.id}>{camp.title}</option>
                           ))}
@@ -981,16 +980,16 @@ Place: ______________________      Court/Registration No: _________`;
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Select Time Slot</label>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Select Time Slot')}</label>
                     <select
                       value={registerSlot}
                       onChange={(e) => setRegisterSlot(e.target.value)}
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                     >
-                      <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM (Early Kiosk)</option>
-                      <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM (Midday Spot)</option>
-                      <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM (Afternoon Batch)</option>
-                      <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM (Evening Batch)</option>
+                      <option value="09:00 AM - 11:00 AM">{t('09:00 AM - 11:00 AM (Early Kiosk)')}</option>
+                      <option value="11:00 AM - 01:00 PM">{t('11:00 AM - 01:00 PM (Midday Spot)')}</option>
+                      <option value="02:00 PM - 04:00 PM">{t('02:00 PM - 04:00 PM (Afternoon Batch)')}</option>
+                      <option value="04:00 PM - 06:00 PM">{t('04:00 PM - 06:00 PM (Evening Batch)')}</option>
                     </select>
                   </div>
 
@@ -1065,7 +1064,7 @@ Place: ______________________      Court/Registration No: _________`;
 
                         {slot.notes && (
                           <div className="bg-white/80 p-2 rounded-xl border border-gray-100 text-[10px] text-gray-600 font-medium">
-                            <span className="font-extrabold block text-teal-950 mb-0.5">Coordinator Follow-up Note:</span>
+                            <span className="font-extrabold block text-teal-950 mb-0.5">{t('Coordinator Follow-up Note:')}</span>
                             {slot.notes}
                           </div>
                         )}
@@ -1120,14 +1119,14 @@ Place: ______________________      Court/Registration No: _________`;
             <div className="bg-teal-900 p-2 w-max rounded-xl">
               <Landmark className="h-5 w-5 text-teal-300" />
             </div>
-            <h4 className="font-sans text-base font-extrabold">Socio-Economic Verification Rules</h4>
+            <h4 className="font-sans text-base font-extrabold">{t('Socio-Economic Verification Rules')}</h4>
             <p className="text-xs text-teal-100/80 leading-relaxed">
               Under UIDAI and Welfare guidelines, individuals lacking standard certificates (e.g. rent agreement, water bill) can utilize legal alternative affidavits with 2 local neighborhood witness sign-offs to enroll.
             </p>
             <div className="border-t border-teal-900 pt-3 space-y-1.5 text-[10px] text-teal-200 font-semibold">
-              <span className="block">• Self-declaration Oath Statement</span>
-              <span className="block">• Verification by 2 local ward residents</span>
-              <span className="block">• Contractor employment verification</span>
+              <span className="block">{t('• Self-declaration Oath Statement')}</span>
+              <span className="block">{t('• Verification by 2 local ward residents')}</span>
+              <span className="block">{t('• Contractor employment verification')}</span>
             </div>
           </div>
 
@@ -1135,7 +1134,7 @@ Place: ______________________      Court/Registration No: _________`;
           <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs space-y-4">
             <div className="flex items-center space-x-2">
               <ClipboardList className="h-5 w-5 text-teal-700" />
-              <h4 className="font-sans text-sm font-extrabold text-gray-900">Active Identity Camps</h4>
+              <h4 className="font-sans text-sm font-extrabold text-gray-900">{t('Active Identity Camps')}</h4>
             </div>
             <p className="text-[10px] text-gray-500 leading-relaxed">
               NGOs organize and host continuous on-the-spot enrollment centers. Citizens pre-register to reserve spot priority.
@@ -1169,7 +1168,7 @@ Place: ______________________      Court/Registration No: _________`;
 
           {/* Card 3: Help Desk */}
           <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-5 shadow-xs text-emerald-950 space-y-2">
-            <h5 className="font-sans text-xs font-extrabold uppercase tracking-wide">Awaaz Trust Protocol</h5>
+            <h5 className="font-sans text-xs font-extrabold uppercase tracking-wide">{t('Awaaz Trust Protocol')}</h5>
             <p className="text-[11px] text-emerald-900 leading-relaxed">
               We leverage local grassroots networks (Ward members, block leaders, site supervisors) to gather decentralized evidence blocks. This builds digital identity wallets that represent genuine residential proof over time.
             </p>
@@ -1185,7 +1184,7 @@ Place: ______________________      Court/Registration No: _________`;
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative text-center border border-gray-100">
             
             <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
-              <h4 className="font-sans text-xs font-bold text-gray-900 uppercase tracking-wider">Verifiable QR Security Passport</h4>
+              <h4 className="font-sans text-xs font-bold text-gray-900 uppercase tracking-wider">{t('Verifiable QR Security Passport')}</h4>
               <button 
                 onClick={() => setShowQrCodeModal(false)}
                 className="text-gray-400 hover:text-gray-600 text-sm font-extrabold"
@@ -1201,7 +1200,7 @@ Place: ______________________      Court/Registration No: _________`;
                   <div className="absolute inset-2 border-2 border-teal-400 opacity-60 rounded-sm" />
                   <div className="text-center font-sans">
                     <QrCode className="h-16 w-16 mx-auto text-teal-400 animate-pulse" />
-                    <span className="block text-[8px] tracking-widest text-teal-300 font-extrabold uppercase mt-2">SECURE SIGNATURE</span>
+                    <span className="block text-[8px] tracking-widest text-teal-300 font-extrabold uppercase mt-2">{t('SECURE SIGNATURE')}</span>
                   </div>
                 </div>
               </div>
@@ -1227,7 +1226,7 @@ Place: ______________________      Court/Registration No: _________`;
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-100">
             
             <div className="flex justify-between items-center border-b border-gray-100 pb-2.5">
-              <h4 className="font-sans text-sm font-extrabold text-teal-950 uppercase tracking-wider">Add Non-Standard Proof Block</h4>
+              <h4 className="font-sans text-sm font-extrabold text-teal-950 uppercase tracking-wider">{t('Add Non-Standard Proof Block')}</h4>
               <button 
                 onClick={() => setShowAddEvidence(false)}
                 className="text-gray-400 hover:text-gray-600 text-sm font-extrabold"
@@ -1238,24 +1237,24 @@ Place: ______________________      Court/Registration No: _________`;
 
             <form onSubmit={handleAddEvidenceBlock} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Evidence / Document Title</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Evidence / Document Title')}</label>
                 <input
                   type="text"
                   value={newEvidenceTitle}
                   onChange={(e) => setNewEvidenceTitle(e.target.value)}
-                  placeholder="e.g. Contractor Daily Wage Ledger log, Gas Bill, Sworn Landlord Letter"
+                  placeholder={t("e.g. Contractor Daily Wage Ledger log, Gas Bill, Sworn Landlord Letter")}
                   className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Verifying Signee / Provider Authority</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Verifying Signee / Provider Authority')}</label>
                 <input
                   type="text"
                   value={newEvidenceProvider}
                   onChange={(e) => setNewEvidenceProvider(e.target.value)}
-                  placeholder="e.g. Sri Ramesh Kumar (Site Supervisor, Gachibowli)"
+                  placeholder={t("e.g. Sri Ramesh Kumar (Site Supervisor, Gachibowli)")}
                   className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   required
                 />
@@ -1263,23 +1262,23 @@ Place: ______________________      Court/Registration No: _________`;
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Evidence Category</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Evidence Category')}</label>
                   <select
                     value={newEvidenceCat}
                     onChange={(e) => setNewEvidenceCat(e.target.value as any)}
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:ring-1 focus:ring-teal-500"
                   >
-                    <option value="residence">Local Residence Proof (+25 pts)</option>
-                    <option value="employment">Active Employment Proof (+25 pts)</option>
-                    <option value="identity">Vouched Witness/Leader Proof (+15 pts)</option>
+                    <option value="residence">{t('Local Residence Proof (+25 pts)')}</option>
+                    <option value="employment">{t('Active Employment Proof (+25 pts)')}</option>
+                    <option value="identity">{t('Vouched Witness/Leader Proof (+15 pts)')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Attach Scan Proof</label>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{t('Attach Scan Proof')}</label>
                   <div className="border border-dashed border-gray-200 rounded-xl p-2.5 bg-gray-50/30 text-center relative hover:bg-gray-50 cursor-pointer">
-                    <span className="block text-[9px] text-gray-400 font-bold">Simulated Camera scan</span>
-                    <span className="block text-[8px] text-teal-600 font-extrabold uppercase mt-1">Select File / Photo</span>
+                    <span className="block text-[9px] text-gray-400 font-bold">{t('Simulated Camera scan')}</span>
+                    <span className="block text-[8px] text-teal-600 font-extrabold uppercase mt-1">{t('Select File / Photo')}</span>
                   </div>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { TRANSLATIONS } from '../data/translations';
 import { LanguageCode, UserProfile } from '../types';
 import { Shield, Languages, UserCheck, AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { AwaazLogo } from './AwaazLogo';
+import { useTranslation } from '../contexts/TranslationContext';
 
 interface HeaderProps {
   currentLanguage: LanguageCode;
@@ -26,12 +27,11 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [sosActive, setSosActive] = useState(false);
-  const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS['en'];
+  const { t } = useTranslation();
 
   const triggerSos = () => {
     setSosActive(true);
     // Simulate loud panic siren or safety logging
-    alert("⚠️ QUICK SOS TRIGGERED! \n\n1. Simulating silent notification to local Panchayat Volunteers...\n2. Simulating SMS alert to trusted contacts with current mock GPS coordinates...\n3. Safety log hs-sos-493 registered.");
     setTimeout(() => setSosActive(false), 5000);
   };
 
@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
             id="quick-sos-btn"
           >
             <AlertTriangle className="h-4 w-4" />
-            <span className="hidden xs:inline">{t.quickSOS || "QUICK SOS"}</span>
+            <span className="hidden xs:inline">{t("QUICK SOS")}</span>
           </button>
 
           {/* Language Selector Dropdown */}
@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <UserCheck className="h-4 w-4" />
               <span className="hidden sm:inline">
-                {activeUser.role === 'citizen' ? 'Citizen' : activeUser.role === 'volunteer' ? 'Volunteer' : 'Admin'}
+                {activeUser.role === 'citizen' ? t('Citizen') : activeUser.role === 'volunteer' ? t('Volunteer') : t('Admin')}
               </span>
             </button>
 
@@ -135,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Sign Out Session"
               >
                 <LogOut className="h-4 w-4 mr-1 sm:mr-0 md:mr-1" />
-                <span className="hidden md:inline">Sign Out</span>
+                <span className="hidden md:inline">{t('Sign Out')}</span>
               </button>
             )}
           </div>
@@ -143,6 +143,24 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
       </div>
+
+      {/* SOS Alert Modal/Toast */}
+      {sosActive && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#1e1e1e] border border-[#333] shadow-2xl rounded-lg p-6 max-w-lg w-full mx-4 animate-in slide-in-from-top-10 duration-300">
+            <div className="flex items-center space-x-3 text-orange-400 mb-6">
+              <AlertTriangle className="h-6 w-6 fill-current text-[#1e1e1e]" strokeWidth={1.5} />
+              <h2 className="text-xl font-semibold tracking-wide">{t('QUICK SOS TRIGGERED!')}</h2>
+            </div>
+            
+            <div className="space-y-3 text-gray-200 text-sm md:text-base leading-relaxed">
+              <p>1. {t('Simulating silent notification to local Panchayat Volunteers...')}</p>
+              <p>2. {t('Simulating SMS alert to trusted contacts with current mock GPS coordinates...')}</p>
+              <p>3. {t('Safety log hs-sos-493 registered.')}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

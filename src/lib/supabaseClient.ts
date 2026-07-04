@@ -628,6 +628,9 @@ class FullStackClient {
       // Auto-create volunteer case for all requests/applications
       await this.createVolunteerCase({
         requestId: payload.id,
+        trackingId: payload.trackingId,
+        schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
+        schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
         citizenName: payload.citizenName || user.name || 'Citizen',
         primaryLanguage: user.selectedLanguage,
         category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',
@@ -643,6 +646,9 @@ class FullStackClient {
       // Auto-create volunteer case for all requests/applications
       await this.createVolunteerCase({
         requestId: payload.id,
+        trackingId: payload.trackingId,
+        schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
+        schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
         citizenName: payload.citizenName || user.name || 'Citizen',
         primaryLanguage: user.selectedLanguage,
         category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',

@@ -77,7 +77,7 @@ export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
   onNavigate,
   onProfileUpdated
 }) => {
-  const t = TRANSLATIONS[currentLanguage] || TRANSLATIONS['en'];
+  
   const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   
   // Local states for the profile form

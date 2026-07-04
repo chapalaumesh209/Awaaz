@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VolunteerCase, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { 
   Users2, MessageSquare, AlertTriangle, Filter, 
@@ -7,12 +8,10 @@ import {
 } from 'lucide-react';
 
 interface VolunteerDashboardProps {
-  currentLanguage: LanguageCode;
   onNavigate: (route: string, params?: Record<string, string>) => void;
 }
 
 export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
-  currentLanguage,
   onNavigate
 }) => {
   const [cases, setCases] = useState<VolunteerCase[]>([]);
@@ -78,7 +77,7 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
           className="mt-4 md:mt-0 flex items-center space-x-1.5 px-3 py-1.5 bg-teal-50 border border-teal-100 text-teal-800 rounded-xl text-xs font-bold hover:bg-teal-100 transition-colors"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Queue</span>
+          <span>{t('Refresh Queue')}</span>
         </button>
       </div>
 
@@ -86,21 +85,21 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
           <span className="block text-2xl font-extrabold text-teal-900">{cases.length}</span>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">Total Active Cases</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">{t('Total Active Cases')}</span>
         </div>
 
         <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
           <span className="block text-2xl font-extrabold text-amber-600">
             {cases.filter(c => c.status === 'new').length}
           </span>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">Unassigned Queue</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">{t('Unassigned Queue')}</span>
         </div>
 
         <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
           <span className="block text-2xl font-extrabold text-emerald-600">
             {cases.filter(c => c.status === 'resolved').length}
           </span>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">Completed Audits</span>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mt-1">{t('Completed Audits')}</span>
         </div>
       </div>
 
@@ -108,7 +107,7 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
       <div className="flex flex-wrap items-center gap-3 mb-6 bg-gray-50/50 border border-gray-100 p-4 rounded-2xl">
         <div className="flex items-center space-x-1 text-xs font-bold text-gray-500 mr-2">
           <Filter className="h-4 w-4" />
-          <span>Filter Desk</span>
+          <span>{t('Filter Desk')}</span>
         </div>
 
         <select
@@ -116,9 +115,9 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
           onChange={(e) => setFilterCategory(e.target.value)}
           className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
         >
-          <option value="All">All Categories</option>
-          <option value="scheme_help">Scheme Support</option>
-          <option value="document_help">Identity Papers</option>
+          <option value="All">{t('All Categories')}</option>
+          <option value="scheme_help">{t('Scheme Support')}</option>
+          <option value="document_help">{t('Identity Papers')}</option>
         </select>
 
         <select
@@ -126,10 +125,10 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
           onChange={(e) => setFilterPriority(e.target.value)}
           className="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
         >
-          <option value="All">All Priorities</option>
-          <option value="high">High Priority</option>
-          <option value="medium">Medium Priority</option>
-          <option value="low">Standard Priority</option>
+          <option value="All">{t('All Priorities')}</option>
+          <option value="high">{t('High Priority')}</option>
+          <option value="medium">{t('Medium Priority')}</option>
+          <option value="low">{t('Standard Priority')}</option>
         </select>
       </div>
 
@@ -156,8 +155,14 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
                 </div>
                 <span className="block text-xs font-semibold text-gray-500 mt-1">
                   {getCategoryLabel(cs.category)}
+                  {cs.trackingId && <span className="ml-2 font-mono text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">ID: {cs.trackingId}</span>}
                 </span>
-                <p className="text-xs text-gray-400 mt-2 line-clamp-1 max-w-xl font-medium">
+                {cs.schemeName && (
+                  <p className="text-xs text-teal-700 font-semibold mt-1">
+                    Scheme: {cs.schemeName}
+                  </p>
+                )}
+                <p className="text-xs text-gray-400 mt-1 line-clamp-1 max-w-xl font-medium">
                   Notes: {cs.notes}
                 </p>
               </div>
@@ -188,8 +193,8 @@ export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
         {filteredCases.length === 0 && (
           <div className="bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 py-12 px-4 text-center">
             <Inbox className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <h4 className="font-sans text-sm font-bold text-gray-700">No matching cases in queue</h4>
-            <p className="text-xs text-gray-400 mt-1">Clear filters or refresh queue.</p>
+            <h4 className="font-sans text-sm font-bold text-gray-700">{t('No matching cases in queue')}</h4>
+            <p className="text-xs text-gray-400 mt-1">{t('Clear filters or refresh queue.')}</p>
           </div>
         )}
       </div>

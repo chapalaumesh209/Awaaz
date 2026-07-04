@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VolunteerCase, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { generateAssistantReply } from '../lib/aiService';
 import { 
@@ -8,13 +9,11 @@ import {
 } from 'lucide-react';
 
 interface VolunteerCaseDetailViewProps {
-  currentLanguage: LanguageCode;
   caseId: string;
   onNavigate: (route: string) => void;
 }
 
 export const VolunteerCaseDetailView: React.FC<VolunteerCaseDetailViewProps> = ({
-  currentLanguage,
   caseId,
   onNavigate
 }) => {
@@ -116,7 +115,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
   if (!caseObj) {
     return (
       <div className="py-12 px-4 text-center">
-        <span className="text-gray-400">Loading case details...</span>
+        <span className="text-gray-400">{t('Loading case details...')}</span>
       </div>
     );
   }
@@ -130,7 +129,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
         className="flex items-center space-x-1 text-xs font-bold text-teal-700 hover:text-teal-900 mb-6 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Back to Queue</span>
+        <span>{t('Back to Queue')}</span>
       </button>
 
       {/* Main Grid split */}
@@ -141,13 +140,29 @@ Keep it extremely compact, helpful, and under 100 words.`;
           
           {/* Main Case details Card */}
           <div className="bg-white border border-teal-100 rounded-3xl p-6 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-teal-700 font-extrabold bg-teal-50 px-2.5 py-1 rounded-md">
-                Case ID: {caseObj.id}
-              </span>
-              <span className="text-[10px] uppercase font-bold text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-md">
-                {caseObj.priority} priority
-              </span>
+            <div className="flex flex-col gap-2 mb-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase font-mono tracking-wider text-teal-700 font-extrabold bg-teal-50 px-2.5 py-1 rounded-md">
+                  Case ID: {caseObj.id}
+                </span>
+                <span className="text-[10px] uppercase font-bold text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-md">
+                  {caseObj.priority} priority
+                </span>
+              </div>
+              {(caseObj.trackingId || caseObj.schemeName) && (
+                <div className="flex items-center gap-2 mt-1">
+                  {caseObj.trackingId && (
+                    <span className="text-[10px] font-mono tracking-wider text-gray-600 bg-gray-100 px-2 py-0.5 rounded-sm border border-gray-200">
+                      Tracking ID: {caseObj.trackingId}
+                    </span>
+                  )}
+                  {caseObj.schemeName && (
+                    <span className="text-[10px] font-bold tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-sm border border-emerald-100">
+                      Scheme: {caseObj.schemeName}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center space-x-3 mb-4">
@@ -156,13 +171,13 @@ Keep it extremely compact, helpful, and under 100 words.`;
               </div>
               <div>
                 <h3 className="font-sans text-lg font-bold text-gray-900">{caseObj.citizenName}</h3>
-                <span className="block text-[10px] text-gray-400 font-medium">Primary Language: <span className="text-teal-700 uppercase font-bold">{caseObj.primaryLanguage}</span></span>
+                <span className="block text-[10px] text-gray-400 font-medium">{t('Primary Language:')} <span className="text-teal-700 uppercase font-bold">{caseObj.primaryLanguage}</span></span>
               </div>
             </div>
 
             {/* Status change actions */}
             <div className="border-t border-b border-gray-100 py-4 my-4">
-              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Transition Case Status</span>
+              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('Transition Case Status')}</span>
               <div className="flex flex-wrap gap-2">
                 {(['assigned', 'in_investigation', 'resolved', 'closed'] as const).map((st) => (
                   <button
@@ -181,7 +196,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
             </div>
 
             <div className="space-y-2">
-              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Citizen Complaint/Request Narrative</span>
+              <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('Citizen Complaint/Request Narrative')}</span>
               <p className="text-xs text-gray-700 leading-relaxed font-semibold bg-gray-50/50 p-3.5 rounded-2xl border border-gray-100">
                 {caseObj.notes}
               </p>
@@ -192,7 +207,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
           <div className="bg-white border border-teal-100 rounded-3xl p-6 shadow-xs">
             <h4 className="font-sans text-base font-bold text-gray-900 mb-4 flex items-center space-x-1.5">
               <MessageSquare className="h-5 w-5 text-teal-700" />
-              <span>Inter-Panchayat Communication thread</span>
+              <span>{t('Inter-Panchayat Communication thread')}</span>
             </h4>
 
             <div className="space-y-4 max-h-[220px] overflow-y-auto mb-4 bg-gray-50/30 p-3 rounded-2xl border border-gray-100">
@@ -221,7 +236,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Log a call or type message to citizen..."
+                placeholder={t("Log a call or type message to citizen...")}
                 className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-teal-500 focus:outline-hidden"
               />
               <button
@@ -235,7 +250,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
 
           {/* Internal administrative case notes */}
           <div className="bg-white border border-teal-100 rounded-3xl p-6 shadow-xs space-y-4">
-            <h4 className="font-sans text-base font-bold text-gray-900">Internal Audit Field Notes</h4>
+            <h4 className="font-sans text-base font-bold text-gray-900">{t('Internal Audit Field Notes')}</h4>
             <textarea
               rows={3}
               value={notes}
@@ -247,7 +262,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
               className="px-5 py-2.5 bg-teal-600 text-white font-bold text-xs rounded-xl hover:bg-teal-700 transition-colors flex items-center space-x-1.5"
             >
               <Save className="h-4 w-4" />
-              <span>Save Internal Notes</span>
+              <span>{t('Save Internal Notes')}</span>
             </button>
           </div>
 
@@ -258,7 +273,7 @@ Keep it extremely compact, helpful, and under 100 words.`;
           <div className="bg-teal-950 text-white rounded-3xl p-5 shadow-sm space-y-4">
             <div className="flex items-center space-x-2 border-b border-teal-900 pb-3">
               <Bot className="h-5 w-5 text-teal-400 animate-pulse" />
-              <span className="text-xs font-bold text-teal-200 uppercase tracking-wider">AI Case Companion</span>
+              <span className="text-xs font-bold text-teal-200 uppercase tracking-wider">{t('AI Case Companion')}</span>
             </div>
 
             {aiLoading ? (
@@ -278,14 +293,14 @@ Keep it extremely compact, helpful, and under 100 words.`;
           <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center space-x-1.5">
               <Compass className="h-4.5 w-4.5 text-teal-700 animate-spin" />
-              <h4 className="font-sans text-sm font-bold text-gray-900">Coordinate with Camps</h4>
+              <h4 className="font-sans text-sm font-bold text-gray-900">{t('Coordinate with Camps')}</h4>
             </div>
             <p className="text-[10px] text-gray-400 leading-relaxed">
               If this case requires on-spot Tahsildar identity clearance, coordinate with the next live camp session in Moinabad Block.
             </p>
             <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl">
-              <span className="block text-xs font-bold text-gray-800">Enrollment Camp #49</span>
-              <span className="block text-[9px] text-gray-400 font-medium mt-1">Date: Monday 10:00 AM • High School Ground</span>
+              <span className="block text-xs font-bold text-gray-800">{t('Enrollment Camp #49')}</span>
+              <span className="block text-[9px] text-gray-400 font-medium mt-1">{t('Date: Monday 10:00 AM • High School Ground')}</span>
             </div>
           </div>
         </div>

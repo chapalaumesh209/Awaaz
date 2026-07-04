@@ -100,6 +100,9 @@ export interface ApplicationRequest {
 export interface VolunteerCase {
   id: string;
   requestId: string;
+  trackingId?: string;
+  schemeId?: string;
+  schemeName?: string;
   citizenName: string;
   primaryLanguage: LanguageCode;
   category: string; // 'scheme_help' | 'document_help' | 'legal_aid' | 'safety_support'

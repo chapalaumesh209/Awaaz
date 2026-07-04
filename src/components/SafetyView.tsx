@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { 
   Heart, Compass, BookOpen, ShieldCheck, Star, 
   MapPin, AlertTriangle, HelpCircle, Activity, Calendar,
@@ -13,9 +14,7 @@ import {
 import dbClient from '../lib/supabaseClient';
 import { generateAssistantReply } from '../lib/aiService';
 
-interface SafetyViewProps {
-  currentLanguage: LanguageCode;
-}
+
 
 interface CommunityReport {
   id: string;
@@ -58,7 +57,7 @@ interface PeerPost {
   date: string;
 }
 
-export const SafetyView: React.FC<SafetyViewProps> = ({ currentLanguage }) => {
+export const SafetyView: React.FC<SafetyViewProps> = ({ }) => {
   const [activeTab, setActiveTab] = useState<'route' | 'legal' | 'wellness'>('route');
 
   // ==========================================
@@ -554,13 +553,13 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
         {/* SOS Panic Trigger */}
         <div className="flex items-center gap-3">
-          <span className="text-xs text-red-700 font-bold hidden sm:inline">⚠️ Emergency SOS Active:</span>
+          <span className="text-xs text-red-700 font-bold hidden sm:inline">{t('⚠️ Emergency SOS Active:')}</span>
           <button 
             onClick={triggerLiveAlert}
             className="px-5 py-3.5 bg-red-700 text-white font-bold rounded-2xl hover:bg-red-800 transition-all flex items-center gap-2.5 shadow-md active:scale-95 animate-pulse"
           >
             <ShieldAlert className="h-5 w-5 shrink-0" />
-            <span>QUICK SOS PANIC</span>
+            <span>{t('QUICK SOS PANIC')}</span>
           </button>
         </div>
       </div>
@@ -579,7 +578,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
         >
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
             <Compass className="h-5 w-5" />
-            <span>Community Safe-Routes</span>
+            <span>{t('Community Safe-Routes')}</span>
           </div>
         </button>
 
@@ -591,7 +590,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
         >
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
             <BookOpen className="h-5 w-5" />
-            <span>Domestic Violence Legal Companion</span>
+            <span>{t('Domestic Violence Legal Companion')}</span>
           </div>
         </button>
 
@@ -603,7 +602,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
         >
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
             <Activity className="h-5 w-5" />
-            <span>Menstrual Wellness Hub</span>
+            <span>{t('Menstrual Wellness Hub')}</span>
           </div>
         </button>
       </div>
@@ -621,14 +620,14 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
             <div className="lg:col-span-2 space-y-6">
               
               <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs">
-                <h3 className="font-serif text-xl font-bold text-teal-900 mb-2">Evaluate Commute Safe-Route</h3>
+                <h3 className="font-serif text-xl font-bold text-teal-900 mb-2">{t('Evaluate Commute Safe-Route')}</h3>
                 <p className="text-xs text-gray-600 leading-relaxed mb-4">
                   Find street-light densities, police patrol checkpoints, and women volunteer guards sourced directly from other women in the neighborhood.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Commencing Location</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Commencing Location')}</label>
                     <input
                       type="text"
                       value={start}
@@ -638,7 +637,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Destination</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Target Destination')}</label>
                     <input
                       type="text"
                       value={destination}
@@ -657,12 +656,12 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                     {routeLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Scanning Illumination Nodes...</span>
+                        <span>{t('Scanning Illumination Nodes...')}</span>
                       </>
                     ) : (
                       <>
                         <Compass className="h-4 w-4" />
-                        <span>Query Community Safe Routes</span>
+                        <span>{t('Query Community Safe Routes')}</span>
                       </>
                     )}
                   </button>
@@ -685,7 +684,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-amber-400 font-bold animate-pulse">
                         <Activity className="h-4.5 w-4.5" />
-                        <span>LIVE JOURNEY MONITORING ACTIVE</span>
+                        <span>{t('LIVE JOURNEY MONITORING ACTIVE')}</span>
                       </span>
                       <span className="text-[10px] bg-teal-900 px-2.5 py-1 rounded-full text-white">
                         GPS Progress: {commuteStep * 25}%
@@ -711,13 +710,13 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                     {/* Quick Trigger Emergency Panel during journey */}
                     <div className="pt-3 border-t border-teal-900 flex flex-col sm:flex-row items-center gap-4">
                       <div className="flex-1 w-full">
-                        <label className="block text-[9px] text-teal-300 font-bold uppercase mb-1">Emergency Contact Number</label>
+                        <label className="block text-[9px] text-teal-300 font-bold uppercase mb-1">{t('Emergency Contact Number')}</label>
                         <input
                           type="tel"
                           value={emergencyPhone}
                           onChange={(e) => setEmergencyPhone(e.target.value)}
                           className="w-full bg-teal-900 text-white border border-teal-800 rounded-lg px-2.5 py-1.5 text-xs font-mono"
-                          placeholder="Contact mobile"
+                          placeholder={t("Contact mobile")}
                         />
                       </div>
                       <button
@@ -725,7 +724,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                         className="w-full sm:w-auto px-4 py-2 bg-red-700 text-white font-bold rounded-lg hover:bg-red-800 transition-colors flex items-center justify-center gap-1.5"
                       >
                         <Volume2 className="h-4 w-4" />
-                        <span>Send Emergency Alert</span>
+                        <span>{t('Send Emergency Alert')}</span>
                       </button>
                     </div>
                   </div>
@@ -736,25 +735,25 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                     <div className="flex items-center justify-between gap-3 text-xs font-serif font-bold text-teal-900 bg-[#F3F0E9] px-4 py-2.5 rounded-xl border border-[#DED9CE]">
                       <div className="flex items-center gap-1.5">
                         <ShieldCheck className="h-4.5 w-4.5 text-teal-600 shrink-0" />
-                        <span>Suggested Safe Corridor:</span>
+                        <span>{t('Suggested Safe Corridor:')}</span>
                       </div>
                       <span className="font-sans italic">{routeReport.routePath}</span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-[#FDFBF7] p-4 rounded-xl border border-[#E8E2D6]">
-                        <span className="block text-[9px] text-gray-500 font-bold uppercase font-sans">Sourced Illumination Score</span>
+                        <span className="block text-[9px] text-gray-500 font-bold uppercase font-sans">{t('Sourced Illumination Score')}</span>
                         <span className="block text-sm font-serif font-bold text-teal-900 mt-1">{routeReport.lightingScore}</span>
                       </div>
 
                       <div className="bg-[#FDFBF7] p-4 rounded-xl border border-[#E8E2D6]">
-                        <span className="block text-[9px] text-gray-500 font-bold uppercase font-sans">Active Ward Watch</span>
+                        <span className="block text-[9px] text-gray-500 font-bold uppercase font-sans">{t('Active Ward Watch')}</span>
                         <span className="block text-sm font-serif font-bold text-teal-900 mt-1">{routeReport.vigilanceGroup}</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <span className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider font-sans">Emergency Safe Havens on Path</span>
+                      <span className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider font-sans">{t('Emergency Safe Havens on Path')}</span>
                       {routeReport.safePoints.map((pt: any, i: number) => (
                         <div key={i} className="flex justify-between items-center text-xs bg-white border border-[#E8E2D6] p-3 rounded-xl shadow-xs">
                           <span className="font-serif font-bold text-teal-900 flex items-center gap-1.5">
@@ -770,7 +769,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                       <div className="bg-[#FFFBEB] border border-[#F59E0B] p-4 rounded-xl flex items-start gap-2.5 text-xs text-[#B45309]">
                         <AlertTriangle className="h-5 w-5 text-[#D97706] shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-bold block mb-0.5">Route Advisory Warning:</span>
+                          <span className="font-bold block mb-0.5">{t('Route Advisory Warning:')}</span>
                           <p className="font-serif italic leading-relaxed">{routeReport.alerts}</p>
                         </div>
                       </div>
@@ -781,7 +780,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
               {/* Submit a New Safety Rating or Area Report */}
               <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs">
-                <h3 className="font-serif text-xl font-bold text-teal-900 mb-2">File Area Illumination & Safety Report</h3>
+                <h3 className="font-serif text-xl font-bold text-teal-900 mb-2">{t('File Area Illumination & Safety Report')}</h3>
                 <p className="text-xs text-gray-600 leading-relaxed mb-4">
                   Flag missing street lights, dark spots, or request volunteer patrols to help make movement safer for school girls and women.
                 </p>
@@ -789,35 +788,35 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                 <form onSubmit={handleAddCommunityReport} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Street or Area Name</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Street or Area Name')}</label>
                       <input
                         type="text"
                         required
                         value={newAreaName}
                         onChange={(e) => setNewAreaName(e.target.value)}
-                        placeholder="e.g. Ward-4 Girls School backlane"
+                        placeholder={t("e.g. Ward-4 Girls School backlane")}
                         className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl px-3.5 py-2.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Issue Category</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Issue Category')}</label>
                       <select
                         value={newReportType}
                         onChange={(e) => setNewReportType(e.target.value as any)}
                         className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl px-3.5 py-2.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                       >
-                        <option value="unlit_street">Unlit Street (Broken Bulbs)</option>
-                        <option value="suspicious_activity">Loitering Spot</option>
-                        <option value="safe_corridor">Safe Passage Corridor</option>
-                        <option value="police_patrol">Active Police Patrol Zone</option>
+                        <option value="unlit_street">{t('Unlit Street (Broken Bulbs)')}</option>
+                        <option value="suspicious_activity">{t('Loitering Spot')}</option>
+                        <option value="safe_corridor">{t('Safe Passage Corridor')}</option>
+                        <option value="police_patrol">{t('Active Police Patrol Zone')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Illumination Level</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Illumination Level')}</label>
                       <div className="flex gap-2">
                         {['Dark', 'Partial', 'Well-Lit'].map((lvl) => (
                           <button
@@ -837,7 +836,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Safety Rating</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Safety Rating')}</label>
                       <div className="flex gap-1 items-center pt-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -855,13 +854,13 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Condition Description</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Condition Description')}</label>
                     <textarea
                       required
                       rows={2}
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
-                      placeholder="Explain details of lighting, safe shop corners, or hazards..."
+                      placeholder={t("Explain details of lighting, safe shop corners, or hazards...")}
                       className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl p-3.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     ></textarea>
                   </div>
@@ -874,7 +873,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                         onChange={(e) => setNewAnon(e.target.checked)}
                         className="rounded border-[#E8E2D6] text-teal-700 focus:ring-teal-500 h-4 w-4"
                       />
-                      <span className="text-xs font-serif font-bold text-gray-600">Submit Anonymously</span>
+                      <span className="text-xs font-serif font-bold text-gray-600">{t('Submit Anonymously')}</span>
                     </label>
 
                     <button
@@ -888,7 +887,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   {reportingStatus === 'success' && (
                     <div className="p-3 bg-[#ECFDF5] text-teal-900 text-xs rounded-xl border border-[#D1F2E5] flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      <span>Thank you. Your safety report has been added to our live local mapping database!</span>
+                      <span>{t('Thank you. Your safety report has been added to our live local mapping database!')}</span>
                     </div>
                   )}
                 </form>
@@ -901,8 +900,8 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
               
               <div className="bg-[#F3F0E9] border border-[#DED9CE] rounded-[24px] p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-serif text-lg font-bold text-teal-900">Community Safety Sourced Live Feed</h4>
-                  <span className="text-[9px] bg-teal-800 text-white px-2 py-0.5 rounded font-bold uppercase">LIVE</span>
+                  <h4 className="font-serif text-lg font-bold text-teal-900">{t('Community Safety Sourced Live Feed')}</h4>
+                  <span className="text-[9px] bg-teal-800 text-white px-2 py-0.5 rounded font-bold uppercase">{t('LIVE')}</span>
                 </div>
                 <p className="text-[11px] text-gray-600 font-serif italic">
                   Live reports updated by women and school girls in local wards:
@@ -941,15 +940,15 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
               {/* Direct helplines */}
               <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-5 space-y-3 shadow-xs">
-                <h4 className="font-serif text-base font-bold text-teal-900">Emergency Safe-Zones Contacts</h4>
+                <h4 className="font-serif text-base font-bold text-teal-900">{t('Emergency Safe-Zones Contacts')}</h4>
                 <div className="space-y-2">
                   <a href="tel:181" className="flex justify-between items-center p-3 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl text-xs font-bold text-rose-700 transition-colors">
-                    <span className="font-serif">National Women Helpline (181)</span>
+                    <span className="font-serif">{t('National Women Helpline (181)')}</span>
                     <Phone className="h-4 w-4" />
                   </a>
 
                   <a href="tel:1091" className="flex justify-between items-center p-3 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl text-xs font-bold text-red-700 transition-colors">
-                    <span className="font-serif">Police Emergency Helpline (112 / 100)</span>
+                    <span className="font-serif">{t('Police Emergency Helpline (112 / 100)')}</span>
                     <Phone className="h-4 w-4" />
                   </a>
                 </div>
@@ -994,7 +993,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
               <div className="bg-[#F3F0E9] border border-[#DED9CE] rounded-[24px] p-5 space-y-4">
                 <h4 className="font-serif text-lg font-bold text-teal-900 flex items-center gap-2">
                   <MapPinned className="h-5 w-5 text-teal-700" />
-                  <span>Nearby Protection Shelters</span>
+                  <span>{t('Nearby Protection Shelters')}</span>
                 </h4>
                 <p className="text-[11px] text-gray-600 font-serif leading-relaxed italic">
                   Instant safety support without requiring police visits. Registered with District Child & Women Development:
@@ -1060,9 +1059,9 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                 <div className="flex items-center justify-between">
                   <h3 className="font-serif text-lg font-bold text-teal-900 flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-amber-500" />
-                    <span>Speak/Type to AI Legal Advisor</span>
+                    <span>{t('Speak/Type to AI Legal Advisor')}</span>
                   </h3>
-                  <span className="text-[9px] text-teal-700 bg-[#ECFDF5] px-2.5 py-1 rounded font-bold uppercase font-sans">Local Languages Support</span>
+                  <span className="text-[9px] text-teal-700 bg-[#ECFDF5] px-2.5 py-1 rounded font-bold uppercase font-sans">{t('Local Languages Support')}</span>
                 </div>
                 
                 <p className="text-xs text-gray-600 leading-relaxed font-serif italic">
@@ -1075,7 +1074,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                       type="text"
                       value={userLegalQuery}
                       onChange={(e) => setUserLegalQuery(e.target.value)}
-                      placeholder="e.g. My husband takes away my gold dowry by force, what are my legal rights?"
+                      placeholder={t("e.g. My husband takes away my gold dowry by force, what are my legal rights?")}
                       className="flex-1 text-sm outline-none placeholder:text-gray-400 bg-transparent py-1 font-serif text-[#1A2E2A]"
                     />
 
@@ -1086,7 +1085,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                         className={`p-2 rounded-full flex items-center justify-center transition-all ${
                           isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-[#F3F0E9] hover:bg-[#E8E2D6] text-teal-800'
                         }`}
-                        title="Simulate speaking your complaint"
+                        title={t("Simulate speaking your complaint")}
                       >
                         {isRecording ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
                       </button>
@@ -1113,7 +1112,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                   {recordedTranscript && (
                     <div className="text-xs p-3 bg-[#F3F0E9] rounded-xl border border-[#DED9CE] space-y-1">
-                      <span className="block font-bold text-gray-500 uppercase text-[9px]">Sourced Voice Transcript:</span>
+                      <span className="block font-bold text-gray-500 uppercase text-[9px]">{t('Sourced Voice Transcript:')}</span>
                       <p className="font-serif italic text-teal-950">"{recordedTranscript}"</p>
                     </div>
                   )}
@@ -1121,7 +1120,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   {isAiAnswering && (
                     <div className="flex items-center justify-center py-6 gap-2 text-xs text-teal-800 font-bold font-serif italic">
                       <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
-                      <span>Formulating legal references... please stand by...</span>
+                      <span>{t('Formulating legal references... please stand by...')}</span>
                     </div>
                   )}
 
@@ -1135,7 +1134,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                         {aiLegalAnswer}
                       </p>
                       <div className="pt-2 border-t border-teal-100 flex justify-between items-center text-[9px] text-teal-800">
-                        <span>Legal advice compliant with PWDVA 2005 Guidelines.</span>
+                        <span>{t('Legal advice compliant with PWDVA 2005 Guidelines.')}</span>
                         <button 
                           onClick={() => setUserLegalQuery("Can I seek protective shelter immediately without informing police?")}
                           className="font-bold underline hover:text-teal-900"
@@ -1152,7 +1151,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
               <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs space-y-4">
                 <h3 className="font-serif text-lg font-bold text-teal-900 flex items-center gap-2">
                   <Landmark className="h-5 w-5 text-teal-700" />
-                  <span>Draft & File Anonymous Protection Complaint</span>
+                  <span>{t('Draft & File Anonymous Protection Complaint')}</span>
                 </h3>
                 
                 <p className="text-xs text-gray-600 leading-relaxed font-serif italic">
@@ -1161,26 +1160,26 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Target Authority or Protection Department</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Target Authority or Protection Department')}</label>
                     <select
                       value={complaintTarget}
                       onChange={(e) => setComplaintTarget(e.target.value)}
                       className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl px-3.5 py-2.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     >
-                      <option value="District Protection Officer (PWDVA) Chevella">District Protection Officer (PWDVA) - Chevella Block</option>
-                      <option value="Moinabad Gram Panchayat Magistrate / BDO">Gram Panchayat Block Magistrate / BDO</option>
-                      <option value="Sakhi One Stop Centre Counsel Representative">Sakhi Legal Counselor Center Representative</option>
+                      <option value="District Protection Officer (PWDVA) Chevella">{t('District Protection Officer (PWDVA) - Chevella Block')}</option>
+                      <option value="Moinabad Gram Panchayat Magistrate / BDO">{t('Gram Panchayat Block Magistrate / BDO')}</option>
+                      <option value="Sakhi One Stop Centre Counsel Representative">{t('Sakhi Legal Counselor Center Representative')}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Incident description / grievance context</label>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Incident description / grievance context')}</label>
                     <textarea
                       rows={3}
                       required
                       value={complaintText}
                       onChange={(e) => setComplaintText(e.target.value)}
-                      placeholder="Describe incident, threats, financial withholding or abuse details. Type or click the mic button above to dictate..."
+                      placeholder={t("Describe incident, threats, financial withholding or abuse details. Type or click the mic button above to dictate...")}
                       className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl p-3.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                     ></textarea>
                   </div>
@@ -1193,15 +1192,15 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                       className="flex-1 py-3.5 bg-[#F3F0E9] border border-[#DED9CE] text-teal-900 font-serif font-bold text-xs rounded-xl hover:bg-[#E8E2D6] transition-colors flex items-center justify-center gap-1.5"
                     >
                       {isFiling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-600" />}
-                      <span>Formulate Legal Complaint Draft</span>
+                      <span>{t('Formulate Legal Complaint Draft')}</span>
                     </button>
                   </div>
 
                   {filedDraft && (
                     <div className="p-5 bg-white border-2 border-dashed border-[#E8E2D6] rounded-2xl space-y-4 animate-fade-in">
                       <div className="flex items-center justify-between border-b border-[#E8E2D6] pb-2">
-                        <span className="text-[10px] font-bold text-teal-800 uppercase font-sans">Formal Legal Petition Drafted</span>
-                        <span className="text-[9px] text-gray-400 uppercase font-mono">PWDVA Format</span>
+                        <span className="text-[10px] font-bold text-teal-800 uppercase font-sans">{t('Formal Legal Petition Drafted')}</span>
+                        <span className="text-[9px] text-gray-400 uppercase font-mono">{t('PWDVA Format')}</span>
                       </div>
 
                       <pre className="text-[11px] font-mono text-gray-700 whitespace-pre-wrap leading-relaxed max-h-[250px] overflow-y-auto bg-gray-50 p-3.5 rounded-xl border border-gray-100">
@@ -1234,7 +1233,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                   {filingFinished && (
                     <div className="p-4 bg-[#ECFDF5] border border-emerald-200 text-teal-950 text-xs rounded-xl space-y-2 animate-fade-in font-serif">
-                      <span className="font-bold block text-teal-900 text-sm">🟢 Secure Submission Complete</span>
+                      <span className="font-bold block text-teal-900 text-sm">{t('🟢 Secure Submission Complete')}</span>
                       <p className="italic">
                         Your protection appeal has been anonymized and registered inside AWAAZ's legal pipeline under reference id: <strong>HS-COMP-${Math.floor(10000 + Math.random() * 90000)}</strong>. A qualified local NGO legal caseworker has been tagged in the database, and they will coordinate with the block development magistrate's counselor on your behalf. You do not need to take any physical action.
                       </p>
@@ -1287,7 +1286,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs space-y-4">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-5 w-5 text-teal-700" />
-                      <h3 className="font-serif text-lg font-bold text-teal-900">Period Cycle Calculator</h3>
+                      <h3 className="font-serif text-lg font-bold text-teal-900">{t('Period Cycle Calculator')}</h3>
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed font-serif italic">
                       Estimate your next cycle dates safely. All medical tracking records are fully private and saved solely inside your local browser storage.
@@ -1295,7 +1294,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                     <div className="space-y-3 pt-2">
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Last Period Start Date</label>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Last Period Start Date')}</label>
                         <input
                           type="date"
                           value={lastPeriod}
@@ -1305,7 +1304,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cycle Length (Days)</label>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Cycle Length (Days)')}</label>
                         <input
                           type="number"
                           value={cycleLength}
@@ -1324,7 +1323,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                       {nextPeriodDate && (
                         <div className="bg-[#ECFDF5] border border-teal-200 p-4 rounded-xl text-center space-y-1.5 animate-fade-in">
-                          <span className="text-[10px] text-teal-800 font-bold uppercase tracking-wider block font-sans">Predicted Next Cycle Commencement</span>
+                          <span className="text-[10px] text-teal-800 font-bold uppercase tracking-wider block font-sans">{t('Predicted Next Cycle Commencement')}</span>
                           <span className="text-base font-extrabold text-teal-950 block font-serif">{nextPeriodDate}</span>
                         </div>
                       )}
@@ -1334,7 +1333,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs space-y-4">
                     <div className="flex items-center gap-2">
                       <Heart className="h-5 w-5 text-rose-600" />
-                      <h3 className="font-serif text-lg font-bold text-teal-900">Anemia Prevention & Nutrition</h3>
+                      <h3 className="font-serif text-lg font-bold text-teal-900">{t('Anemia Prevention & Nutrition')}</h3>
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed font-serif italic">
                       Natural, easily accessible ingredients recommended by village ASHAs and state health centers:
@@ -1342,32 +1341,32 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                     <div className="space-y-3 pt-2 text-xs font-serif text-gray-700">
                       <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-100">
-                        <span className="block font-bold text-rose-950 mb-0.5">Local Iron-Rich Foods</span>
-                        <p className="text-[11px] text-rose-900 mt-0.5 leading-relaxed italic">Consume Ragi roti, Jaggery (gud), boiled beetroot, peanuts, and roasted chickpeas daily to maintain hemoglobin.</p>
+                        <span className="block font-bold text-rose-950 mb-0.5">{t('Local Iron-Rich Foods')}</span>
+                        <p className="text-[11px] text-rose-900 mt-0.5 leading-relaxed italic">{t('Consume Ragi roti, Jaggery (gud), boiled beetroot, peanuts, and roasted chickpeas daily to maintain hemoglobin.')}</p>
                       </div>
 
                       <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
-                        <span className="block font-bold text-teal-950 mb-0.5">Hydration & Safe Water</span>
-                        <p className="text-[11px] text-teal-900 mt-0.5 leading-relaxed italic">Drink at least 3 liters of filtered water from RO village centers to boost blood circulation and mitigate muscle spasms.</p>
+                        <span className="block font-bold text-teal-950 mb-0.5">{t('Hydration & Safe Water')}</span>
+                        <p className="text-[11px] text-teal-900 mt-0.5 leading-relaxed italic">{t('Drink at least 3 liters of filtered water from RO village centers to boost blood circulation and mitigate muscle spasms.')}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs space-y-4">
-                    <h3 className="font-serif text-lg font-bold text-teal-900">Pink Toilets Sanitation Directory</h3>
+                    <h3 className="font-serif text-lg font-bold text-teal-900">{t('Pink Toilets Sanitation Directory')}</h3>
                     <p className="text-xs text-gray-500 leading-relaxed font-serif italic">
                       Clean school and public restrooms maintained with high water supply and hygiene dispensers:
                     </p>
 
                     <div className="space-y-3">
                       <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-1">
-                        <span className="block text-xs font-serif font-bold text-gray-800">Moinabad Bus Terminal Pod</span>
-                        <span className="block text-[9.5px] text-gray-400 font-bold">Distance: 150m • Verified clean by Panchayat Swachhta Team</span>
+                        <span className="block text-xs font-serif font-bold text-gray-800">{t('Moinabad Bus Terminal Pod')}</span>
+                        <span className="block text-[9.5px] text-gray-400 font-bold">{t('Distance: 150m • Verified clean by Panchayat Swachhta Team')}</span>
                       </div>
 
                       <div className="p-3 bg-gray-50 border border-gray-100 rounded-xl space-y-1">
-                        <span className="block text-xs font-serif font-bold text-gray-800">ZP Girls High School Block Toilet</span>
-                        <span className="block text-[9.5px] text-gray-400 font-bold">Inner Corridor • Running tap water & incinerator functional</span>
+                        <span className="block text-xs font-serif font-bold text-gray-800">{t('ZP Girls High School Block Toilet')}</span>
+                        <span className="block text-[9.5px] text-gray-400 font-bold">{t('Inner Corridor • Running tap water & incinerator functional')}</span>
                       </div>
                     </div>
                   </div>
@@ -1393,7 +1392,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                           <span>{edu.myth}</span>
                         </div>
                         <div className="p-3 bg-[#ECFDF5] border border-teal-100 rounded-xl text-[11px] font-serif leading-relaxed text-teal-950 italic">
-                          <span className="font-sans font-bold block mb-1 text-teal-900 uppercase text-[9px]">Science Reality check</span>
+                          <span className="font-sans font-bold block mb-1 text-teal-900 uppercase text-[9px]">{t('Science Reality check')}</span>
                           "{edu.fact}"
                         </div>
                       </div>
@@ -1408,7 +1407,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                 <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs space-y-6">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
-                      <h3 className="font-serif text-lg font-bold text-teal-900">Rural School Sanitary Pad Dispensers & Stock levels</h3>
+                      <h3 className="font-serif text-lg font-bold text-teal-900">{t('Rural School Sanitary Pad Dispensers & Stock levels')}</h3>
                       <p className="text-xs text-gray-500 font-serif italic mt-0.5">
                         Locate active automatic dispenser machines in schools and panchayat halls. Request pad refills anonymously.
                       </p>
@@ -1440,7 +1439,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
 
                           <div className="text-[11px] text-gray-600 font-serif italic space-y-1">
                             <p>📍 Location: {disp.location}</p>
-                            <p>📦 Current stock: <strong className="text-teal-900">{disp.padsAvailable} free pads remaining</strong></p>
+                            <p>{t('📦 Current stock:')} <strong className="text-teal-900">{disp.padsAvailable} free pads remaining</strong></p>
                             <p>📅 Last restocked: {disp.lastRestocked}</p>
                           </div>
                         </div>
@@ -1472,44 +1471,44 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   
                   {/* Write a New Support Question */}
                   <div className="bg-white border border-[#E8E2D6] rounded-[24px] p-6 shadow-xs h-fit space-y-4">
-                    <h3 className="font-serif text-lg font-bold text-teal-900">Ask the Girls Community Anonymously</h3>
+                    <h3 className="font-serif text-lg font-bold text-teal-900">{t('Ask the Girls Community Anonymously')}</h3>
                     <p className="text-xs text-gray-500 font-serif italic">
                       Share stories, voice concerns about washrooms, or ask rural counselors health questions completely anonymously.
                     </p>
 
                     <form onSubmit={handleAddForumPost} className="space-y-4 pt-1">
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Your Alias / Nickname</label>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Your Alias / Nickname')}</label>
                         <input
                           type="text"
                           value={newPostAuthor}
                           onChange={(e) => setNewPostAuthor(e.target.value)}
-                          placeholder="e.g. Hopeful Friend (14)"
+                          placeholder={t("e.g. Hopeful Friend (14)")}
                           className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl px-3.5 py-2.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Topic Classification</label>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Topic Classification')}</label>
                         <select
                           value={newPostCategory}
                           onChange={(e) => setNewPostCategory(e.target.value as any)}
                           className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl px-3.5 py-2.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                         >
-                          <option value="hygiene">Hygiene & Cramp Care</option>
-                          <option value="myths">Myth Debunking</option>
-                          <option value="support">School Sanitary Facilities</option>
+                          <option value="hygiene">{t('Hygiene & Cramp Care')}</option>
+                          <option value="myths">{t('Myth Debunking')}</option>
+                          <option value="support">{t('School Sanitary Facilities')}</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Your message / Question</label>
+                        <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">{t('Your message / Question')}</label>
                         <textarea
                           rows={3}
                           required
                           value={newPostText}
                           onChange={(e) => setNewPostText(e.target.value)}
-                          placeholder="Write your thought safely..."
+                          placeholder={t("Write your thought safely...")}
                           className="w-full bg-[#FDFBF7] border border-[#E8E2D6] rounded-xl p-3.5 text-xs font-serif focus:ring-1 focus:ring-teal-500 focus:outline-none"
                         ></textarea>
                       </div>
@@ -1526,8 +1525,8 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                   {/* Active peer board list */}
                   <div className="lg:col-span-2 space-y-4">
                     <div className="flex justify-between items-center px-2">
-                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans">Active Discussions Board</span>
-                      <span className="text-[10px] text-teal-800 font-bold font-serif italic">ASHA Counselors online</span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-sans">{t('Active Discussions Board')}</span>
+                      <span className="text-[10px] text-teal-800 font-bold font-serif italic">{t('ASHA Counselors online')}</span>
                     </div>
 
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
@@ -1578,7 +1577,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
                             <div className="flex gap-2">
                               <input 
                                 type="text"
-                                placeholder="Add support reply anonymized..."
+                                placeholder={t("Add support reply anonymized...")}
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                                     const text = e.currentTarget.value;

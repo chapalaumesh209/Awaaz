@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ApplicationRequest, LanguageCode } from '../types';
+import { useTranslation } from '../contexts/TranslationContext';
 import { dbClient } from '../lib/supabaseClient';
 import { generateGrievanceFollowUp } from '../lib/aiService';
 import { 
@@ -7,11 +8,9 @@ import {
   Clock, CheckCircle, RefreshCw, AlertCircle, Sparkles, Inbox 
 } from 'lucide-react';
 
-interface TrackerViewProps {
-  currentLanguage: LanguageCode;
-}
 
-export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => {
+
+export const TrackerView: React.FC<TrackerViewProps> = ({ }) => {
   const [requests, setRequests] = useState<ApplicationRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null);
@@ -89,7 +88,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
           className="flex items-center space-x-1.5 px-3 py-1.5 bg-teal-50 border border-teal-100 text-teal-800 rounded-xl text-xs font-bold hover:bg-teal-100 transition-colors"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <span>{t('Refresh')}</span>
         </button>
       </div>
 
@@ -117,7 +116,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                       {req.itemName}
                     </h3>
                     <div className="flex items-center space-x-2 text-[10px] text-gray-400 font-semibold mt-1">
-                      <span>Tracking ID: <span className="text-gray-700 font-bold">{req.trackingId}</span></span>
+                      <span>{t('Tracking ID:')} <span className="text-gray-700 font-bold">{req.trackingId}</span></span>
                       <span>•</span>
                       <span className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
@@ -142,29 +141,29 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                   
                   {/* Milestones Pipeline */}
                   <div>
-                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Progress Timeline</span>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">{t('Progress Timeline')}</span>
                     <div className="relative pl-6 space-y-4 before:absolute before:left-2 before:top-1.5 before:bottom-1.5 before:w-0.5 before:bg-gray-100">
                       
                       {/* Submission milestone */}
                       <div className="relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full before:bg-teal-600">
-                        <span className="block text-xs font-bold text-gray-800">Application Filed Securely</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Logged in AWAAZ central database repository.</p>
+                        <span className="block text-xs font-bold text-gray-800">{t('Application Filed Securely')}</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('Logged in AWAAZ central database repository.')}</p>
                       </div>
 
                       {/* Volunteer verification milestone */}
                       <div className={`relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full ${
                         (req.status !== 'submitted' && req.status !== 'pending') ? 'before:bg-teal-600' : 'before:bg-gray-200'
                       }`}>
-                        <span className="block text-xs font-bold text-gray-800">Assigned to Local Panchayat Volunteer</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Assigned to nearby volunteer Anjali to review income certificate criteria.</p>
+                        <span className="block text-xs font-bold text-gray-800">{t('Assigned to Local Panchayat Volunteer')}</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('Assigned to nearby volunteer Anjali to review income certificate criteria.')}</p>
                       </div>
 
                       {/* Final milestone */}
                       <div className={`relative before:absolute before:left-[-22px] before:top-1 before:h-2.5 before:w-2.5 before:rounded-full ${
                         (req.status === 'resolved' || req.status === 'approved') ? 'before:bg-emerald-600' : 'before:bg-gray-200'
                       }`}>
-                        <span className="block text-xs font-bold text-gray-800">Verification & Disbursal Cleared</span>
-                        <p className="text-[10px] text-gray-400 mt-0.5">Official sanction letter uploaded to your digital wallet.</p>
+                        <span className="block text-xs font-bold text-gray-800">{t('Verification & Disbursal Cleared')}</span>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{t('Official sanction letter uploaded to your digital wallet.')}</p>
                       </div>
 
                     </div>
@@ -173,7 +172,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                   {/* Comments log */}
                   {req.updates && req.updates.length > 0 && (
                     <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-100 space-y-3">
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">Officer Audit logs</span>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('Officer Audit logs')}</span>
                       {req.updates.map((up, i) => (
                         <div key={i} className="flex justify-between items-start text-xs border-b border-gray-100 last:border-0 pb-2 last:pb-0">
                           <div>
@@ -192,7 +191,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                       <MessageSquare className="h-4 w-4" />
                     </div>
                     <div>
-                      <span className="block text-xs font-bold text-teal-950">Need to modify something?</span>
+                      <span className="block text-xs font-bold text-teal-950">{t('Need to modify something?')}</span>
                       <p className="text-[10px] text-teal-800/80 mt-0.5">
                         Ask volunteer caseworker assigned to this tracking ID to help fix typos.
                       </p>
@@ -204,7 +203,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                     <div className="flex items-start space-x-2.5">
                       <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="block text-xs font-bold text-amber-950">Is this application delayed?</span>
+                        <span className="block text-xs font-bold text-amber-950">{t('Is this application delayed?')}</span>
                         <p className="text-[10px] text-amber-800/80 mt-0.5">
                           If this application goes unanswered beyond standard timelines, escalate instantly using our **AI Grievance Follow-up Bot**.
                         </p>
@@ -237,12 +236,12 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                         {escalatingId === req.id ? (
                           <>
                             <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-700" />
-                            <span>Generating RTI...</span>
+                            <span>{t('Generating RTI...')}</span>
                           </>
                         ) : (
                           <>
                             <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                            <span>Generate RTI Appeal</span>
+                            <span>{t('Generate RTI Appeal')}</span>
                           </>
                         )}
                       </button>
@@ -272,25 +271,25 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
                         {escalatingId === req.id ? (
                           <>
                             <RefreshCw className="h-3.5 w-3.5 animate-spin text-white" />
-                            <span>Drafting WhatsApp...</span>
+                            <span>{t('Drafting WhatsApp...')}</span>
                           </>
                         ) : (
                           <>
                             <MessageSquare className="h-3.5 w-3.5" />
-                            <span>WhatsApp Escalation</span>
+                            <span>{t('WhatsApp Escalation')}</span>
                           </>
                         )}
                       </button>
                     </div>
 
                     {escalatingId === req.id && (
-                      <div className="text-[10px] text-amber-700 animate-pulse font-bold">Drafting formal legal files...</div>
+                      <div className="text-[10px] text-amber-700 animate-pulse font-bold">{t('Drafting formal legal files...')}</div>
                     )}
 
                     {escalationResult && escalatingId !== req.id && (
                       <div className="bg-white p-3 rounded-xl border border-amber-200 text-[10px] font-mono whitespace-pre-line text-gray-800 leading-relaxed max-h-[180px] overflow-y-auto">
                         <div className="flex justify-between items-center mb-1.5 border-b pb-1 border-gray-100">
-                          <span className="font-sans font-bold text-amber-950 uppercase text-[9px]">Escalation Copy</span>
+                          <span className="font-sans font-bold text-amber-950 uppercase text-[9px]">{t('Escalation Copy')}</span>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
@@ -317,7 +316,7 @@ export const TrackerView: React.FC<TrackerViewProps> = ({ currentLanguage }) => 
         {requests.length === 0 && (
           <div className="bg-gray-50/50 rounded-3xl border border-dashed border-gray-200 py-12 px-4 text-center">
             <Inbox className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <h4 className="font-sans text-sm font-bold text-gray-700">No requests filed yet</h4>
+            <h4 className="font-sans text-sm font-bold text-gray-700">{t('No requests filed yet')}</h4>
             <p className="text-xs text-gray-400 mt-1">
               Visit the 'Government Schemes' dashboard, qualify, and file an application to track it here.
             </p>
