@@ -8,6 +8,7 @@ export interface Language {
 
 export interface UserProfile {
   id: string;
+  email?: string;
   name: string;
   phone?: string;
   selectedLanguage: LanguageCode;
@@ -18,6 +19,7 @@ export interface UserProfile {
 
 export interface CitizenProfile {
   id: string;
+  email?: string;
   name: string;
   age: number;
   gender: string;
@@ -68,6 +70,7 @@ export interface EligibilityResult {
 
 export interface UserDocument {
   id: string;
+  email?: string;
   userId: string;
   name: string;
   type: string; // 'aadhaar' | 'ration_card' | 'income_cert' | 'caste_cert' | 'pan_card' | 'voter_id' | 'disability_cert' | 'bank_passbook'
@@ -86,6 +89,7 @@ export interface TrackingUpdate {
 
 export interface ApplicationRequest {
   id: string;
+  email?: string;
   userId: string;
   citizenName: string;
   itemType: 'scheme' | 'document' | 'grievance' | 'safety' | 'volunteer_support';
@@ -99,6 +103,7 @@ export interface ApplicationRequest {
 
 export interface VolunteerCase {
   id: string;
+  email?: string;
   requestId: string;
   trackingId?: string;
   schemeId?: string;

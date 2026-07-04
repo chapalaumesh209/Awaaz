@@ -495,7 +495,7 @@ class FullStackClient {
       return this.localDocs.filter(d => d.userId === user.id);
     }
     try {
-      const q = query(collection(db, 'documents'), where('userId', '==', user.id));
+      const q = user.email ? query(collection(db, 'documents'), where('email', '==', user.email)) : query(collection(db, 'documents'), where('userId', '==', user.id));
       const querySnapshot = await getDocs(q);
       const docs: UserDocument[] = [];
       querySnapshot.forEach((doc) => {
@@ -566,7 +566,7 @@ class FullStackClient {
       return this.localRequests.filter(r => r.userId === user.id || r.citizenName === user.name);
     }
     try {
-      const q = query(collection(db, 'requests'), where('userId', '==', user.id));
+      const q = user.email ? query(collection(db, 'requests'), where('email', '==', user.email)) : query(collection(db, 'requests'), where('userId', '==', user.id));
       const querySnapshot = await getDocs(q);
       const reqs: ApplicationRequest[] = [];
       querySnapshot.forEach((doc) => {
@@ -588,7 +588,7 @@ class FullStackClient {
       return () => clearInterval(interval);
     }
 
-    const q = query(collection(db, 'requests'), where('userId', '==', user.id));
+    const q = user.email ? query(collection(db, 'requests'), where('email', '==', user.email)) : query(collection(db, 'requests'), where('userId', '==', user.id));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const reqs: ApplicationRequest[] = [];
       snapshot.forEach((doc) => {

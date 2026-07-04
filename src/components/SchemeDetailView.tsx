@@ -127,7 +127,8 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
 
   // Submit dynamic application request
   const handleApplyNow = async () => {
-    if (!scheme || !activeProfile) return;
+    if (!scheme) return;
+    const profileToUse = activeProfile || { name: 'Guest Citizen' };
     setIsSubmitting(true);
     try {
       await dbClient.submitRequest({
@@ -147,7 +148,8 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
 
   // Request hands-on support
   const handleRequestSupport = async () => {
-    if (!scheme || !activeProfile) return;
+    if (!scheme) return;
+    const profileToUse = activeProfile || { name: 'Guest Citizen' };
     try {
       await dbClient.submitRequest({
         citizenName: profileToUse.name,
