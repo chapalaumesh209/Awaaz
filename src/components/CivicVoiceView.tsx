@@ -17,7 +17,8 @@ import {
 
 
 
-export const CivicVoiceView: React.FC<CivicVoiceViewProps> = ({ }) => {
+export const CivicVoiceView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [meetings, setMeetings] = useState<GramSabhaMeeting[]>([]);
   
   // Game states

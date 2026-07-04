@@ -6,7 +6,8 @@ import { ShieldCheck, Users, Hand, Send, Check } from 'lucide-react';
 
 
 
-export const SupportView: React.FC<SupportViewProps> = ({ }) => {
+export const SupportView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [category, setCategory] = useState('scheme_help');
   const [priority, setPriority] = useState('medium');

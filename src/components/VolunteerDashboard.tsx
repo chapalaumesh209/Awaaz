@@ -14,6 +14,7 @@ interface VolunteerDashboardProps {
 export const VolunteerDashboard: React.FC<VolunteerDashboardProps> = ({
   onNavigate
 }) => {
+  const { t, currentLanguage } = useTranslation();
   const [cases, setCases] = useState<VolunteerCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');

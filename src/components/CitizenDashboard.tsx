@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../contexts/TranslationContext';
 import { TRANSLATIONS } from '../data/translations';
 import { CitizenProfile, LanguageCode } from '../types';
 import { dbClient } from '../lib/supabaseClient';
@@ -67,16 +68,15 @@ const formatLocationToEnglish = (loc: string, stateVal?: string): string => {
 };
 
 interface CitizenDashboardProps {
-  currentLanguage: LanguageCode;
   onNavigate: (route: string) => void;
   onProfileUpdated: () => void;
 }
 
 export const CitizenDashboard: React.FC<CitizenDashboardProps> = ({
-  currentLanguage,
   onNavigate,
   onProfileUpdated
 }) => {
+  const { t, currentLanguage } = useTranslation();
   
   const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState(false);
   

@@ -47,7 +47,8 @@ interface EvidenceBlock {
   points: number;
 }
 
-export const RecordlessView: React.FC<RecordlessViewProps> = ({ }) => {
+export const RecordlessView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState<'camps' | 'affidavit' | 'wallet'>('wallet');
   const [camps, setCamps] = useState<Camp[]>([]);
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);

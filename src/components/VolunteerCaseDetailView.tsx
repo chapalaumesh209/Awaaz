@@ -17,6 +17,7 @@ export const VolunteerCaseDetailView: React.FC<VolunteerCaseDetailViewProps> = (
   caseId,
   onNavigate
 }) => {
+  const { t, currentLanguage } = useTranslation();
   const [caseObj, setCaseObj] = useState<VolunteerCase | null>(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);

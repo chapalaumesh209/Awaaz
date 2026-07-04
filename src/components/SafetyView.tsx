@@ -57,7 +57,8 @@ interface PeerPost {
   date: string;
 }
 
-export const SafetyView: React.FC<SafetyViewProps> = ({ }) => {
+export const SafetyView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState<'route' | 'legal' | 'wellness'>('route');
 
   // ==========================================

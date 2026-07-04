@@ -10,7 +10,8 @@ import {
 
 
 
-export const TrackerView: React.FC<TrackerViewProps> = ({ }) => {
+export const TrackerView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [requests, setRequests] = useState<ApplicationRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState<string | null>(null);

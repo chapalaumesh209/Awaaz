@@ -13,6 +13,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigate }) => {
+  const { t, currentLanguage } = useTranslation();
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   
   // New scheme creation states

@@ -13,7 +13,8 @@ import {
 
 type ReportTab = 'civic' | 'caste_discrimination' | 'disability_audit';
 
-export const ReportView: React.FC<ReportViewProps> = ({ }) => {
+export const ReportView: React.FC<any> = ({ }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeTab, setActiveTab] = useState<ReportTab>('civic');
 
   // Generic & Civic fields

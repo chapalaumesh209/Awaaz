@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../contexts/TranslationContext';
 import { LANGUAGES } from '../data/languages';
 import { TRANSLATIONS } from '../data/translations';
 import { LanguageCode, UserProfile } from '../types';

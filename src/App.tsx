@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 
 function AppContent() {
-  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en');
+  const { currentLanguage, setLanguage, t } = useTranslation();
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ function AppContent() {
   const handleConsentAgree = () => {
     dbClient.setActiveUser({ consentGiven: true });
     setActiveUser(prev => ({ ...prev, consentGiven: true }));
-    setCurrentRoute('home');
+    navigate('/home');
   };
 
   const handleNavigate = (route: string, params: Record<string, string> = {}) => {

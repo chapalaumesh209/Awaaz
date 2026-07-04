@@ -12,6 +12,7 @@ interface ReadinessViewProps {
 }
 
 export const ReadinessView: React.FC<ReadinessViewProps> = ({ onNavigate }) => {
+  const { t, currentLanguage } = useTranslation();
   const [activeProfile, setActiveProfile] = useState<CitizenProfile | null>(null);
   const [missingDocs, setMissingDocs] = useState<string[]>([]);
   const [verifiedDocs, setVerifiedDocs] = useState<string[]>([]);
