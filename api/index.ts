@@ -1,5 +1,4 @@
-import app from '../server';
-
-// Removed bodyParser config since we now use pure JSON payloads and Vercel parses them automatically
+import app from '../dist/server.cjs';
 
 export default app;
+
