@@ -131,7 +131,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
     setIsSubmitting(true);
     try {
       await dbClient.submitRequest({
-        citizenName: activeProfile.name,
+        citizenName: profileToUse.name,
         itemType: 'scheme',
         itemId: scheme.id,
         itemName: `${scheme.name} Application`
@@ -150,7 +150,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
     if (!scheme || !activeProfile) return;
     try {
       await dbClient.submitRequest({
-        citizenName: activeProfile.name,
+        citizenName: profileToUse.name,
         itemType: 'volunteer_support',
         itemId: scheme.id,
         itemName: `Help with ${scheme.name}`
