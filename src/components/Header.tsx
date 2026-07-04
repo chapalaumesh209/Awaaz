@@ -144,20 +144,81 @@ export const Header: React.FC<HeaderProps> = ({
 
       </div>
 
-      {/* SOS Alert Modal/Toast */}
+            {/* SOS Alert Modal/Toast */}
       {sosActive && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#1e1e1e] border border-[#333] shadow-2xl rounded-lg p-6 max-w-lg w-full mx-4 animate-in slide-in-from-top-10 duration-300">
-            <div className="flex items-center space-x-3 text-orange-400 mb-6">
-              <AlertTriangle className="h-6 w-6 fill-current text-[#1e1e1e]" strokeWidth={1.5} />
-              <h2 className="text-xl font-semibold tracking-wide">{t('QUICK SOS TRIGGERED!')}</h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-red-950/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative overflow-hidden bg-slate-950 border border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.35)] rounded-3xl p-8 max-w-lg w-full animate-in zoom-in-95 duration-300">
+            {/* Warning Glow Effect in background */}
+            <div className="absolute -top-24 -left-24 w-48 h-48 bg-red-600/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-orange-600/20 rounded-full blur-3xl" />
+
+            {/* Glowing Red Header Bar */}
+            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-600 via-orange-500 to-red-600 animate-pulse" />
+
+            {/* Header Content */}
+            <div className="flex flex-col items-center text-center mb-6">
+              {/* Pulsing Radar Ring Icon */}
+              <div className="relative mb-4 flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
+                <div className="absolute inset-2 rounded-full bg-red-500/40 animate-pulse" />
+                <div className="relative bg-gradient-to-br from-red-600 to-orange-600 p-4 rounded-full text-white shadow-lg shadow-red-500/30">
+                  <AlertTriangle className="h-8 w-8 stroke-[2.5]" />
+                </div>
+              </div>
+              
+              <h2 className="text-2xl font-black tracking-wider text-red-500 uppercase font-sans animate-pulse">
+                {t('QUICK SOS TRIGGERED!')}
+              </h2>
+              <p className="text-xs text-red-200/60 font-semibold tracking-widest uppercase mt-1">
+                {t('Emergency Assistance Activated')}
+              </p>
             </div>
-            
-            <div className="space-y-3 text-gray-200 text-sm md:text-base leading-relaxed">
-              <p>1. {t('Simulating silent notification to local Panchayat Volunteers...')}</p>
-              <p>2. {t('Simulating SMS alert to trusted contacts with current mock GPS coordinates...')}</p>
-              <p>3. {t('Safety log hs-sos-493 registered.')}</p>
+
+            {/* Interactive progress steps with simulated animations */}
+            <div className="space-y-4 bg-slate-900/50 border border-slate-800 rounded-2xl p-5 mb-6">
+              <div className="flex items-center space-x-3 text-sm">
+                <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-ping" />
+                <span className="text-red-200/90 font-medium">
+                  {t('Simulating silent notification to local Panchayat Volunteers...')}
+                </span>
+              </div>
+              <div className="flex items-center space-x-3 text-sm">
+                <div className="h-2.5 w-2.5 rounded-full bg-orange-500 animate-pulse" />
+                <span className="text-orange-200/90 font-medium">
+                  {t('Simulating SMS alert to trusted contacts with current mock GPS coordinates...')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs border-t border-slate-800/60 pt-3">
+                <span className="text-slate-500 font-mono">LOG_ID: hs-sos-493</span>
+                <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                  {t('Transmitting')}
+                </span>
+              </div>
             </div>
+
+            {/* Pulsing Status Badges Grid */}
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">{t('GPS Link')}</span>
+                <span className="text-emerald-400 text-xs font-black uppercase tracking-wider animate-pulse">{t('Active')}</span>
+              </div>
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">{t('Audio Rec')}</span>
+                <span className="text-red-400 text-xs font-black uppercase tracking-wider animate-pulse">{t('Recording')}</span>
+              </div>
+              <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-2.5 text-center">
+                <span className="block text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">{t('Responders')}</span>
+                <span className="text-orange-400 text-xs font-black uppercase tracking-wider">{t('Alerted')}</span>
+              </div>
+            </div>
+
+            {/* Dismiss Button */}
+            <button
+              onClick={() => setSosActive(false)}
+              className="w-full py-3.5 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 active:scale-95 text-white font-bold text-sm rounded-xl tracking-wider uppercase transition-all shadow-lg shadow-red-950/50"
+            >
+              {t('Cancel Distress Alert')}
+            </button>
           </div>
         </div>
       )}
