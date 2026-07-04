@@ -124,6 +124,7 @@ function AppContent() {
       case 'landing':
         return (
           <LandingView
+            currentLanguage={currentLanguage}
             setLanguage={handleLanguageChange}
             onNavigate={handleNavigate}
             activeUser={activeUser}
