@@ -370,25 +370,7 @@ Briefly answer their question in their selected language: '${currentLanguage}'. 
             </div>
           )}
 
-          {/* AI Simple Speech explainer card */}
-          <div className="bg-teal-950 text-white rounded-3xl p-5 shadow-sm">
-            <div className="flex items-center space-x-2 mb-3">
-              <Bot className="h-4 w-4 text-teal-400 animate-pulse" />
-              <span className="text-xs font-bold text-teal-300 uppercase tracking-wide">Gemini Quick Explainer</span>
-            </div>
-            {aiLoading ? (
-              <div className="space-y-2 animate-pulse">
-                <div className="h-3 bg-teal-900 rounded-sm w-full" />
-                <div className="h-3 bg-teal-900 rounded-sm w-3/4" />
-              </div>
-            ) : (
-              <p className="text-xs text-teal-100/80 leading-relaxed font-medium">
-                {aiExplanation}
-              </p>
-            )}
-          </div>
-
-          {/* Dynamic question box */}
+                    {/* Dynamic question box */}
           <div className="bg-white border border-teal-100 rounded-3xl p-5 shadow-xs">
             <div className="flex items-center space-x-1.5 mb-2">
               <HelpCircle className="h-4 w-4 text-teal-700" />
