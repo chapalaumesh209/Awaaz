@@ -430,7 +430,9 @@ function AppContent() {
 export default function App() {
   return (
     <Router>
-      <AppContent />
+      <TranslationProvider>
+        <AppContent />
+      </TranslationProvider>
     </Router>
   );
 }
