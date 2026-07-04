@@ -99,11 +99,15 @@ export interface ApplicationRequest {
   status: 'pending' | 'in_progress' | 'approved' | 'rejected';
   trackingId: string;
   updates: TrackingUpdate[];
+  notes?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  category?: string;
 }
 
 export interface VolunteerCase {
   id: string;
   email?: string;
+  userId: string;
   requestId: string;
   trackingId?: string;
   schemeId?: string;

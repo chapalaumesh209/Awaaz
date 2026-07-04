@@ -27,22 +27,15 @@ export const SupportView: React.FC<any> = ({ }) => {
     e.preventDefault();
     if (!activeProfile) return;
 
-    // Create a new request in tracking DB
-    const request = await dbClient.submitRequest({
+                // Create a new request in tracking DB which auto-creates a single Volunteer Case
+    await dbClient.submitRequest({
       citizenName: activeProfile.name,
       itemType: 'volunteer_support',
       itemId: 'vol-' + Math.floor(1000 + Math.random() * 9000),
-      itemName: `${category === 'scheme_help' ? 'Scheme Filing Help' : category === 'document_help' ? 'Missing Documents Assist' : 'Emergency Aid'}`
-    });
-
-    // Also spawn a live Case in the volunteer dashboard database!
-    await dbClient.createVolunteerCase({
-      requestId: request.id,
-      citizenName: activeProfile.name,
-      primaryLanguage: currentLanguage,
+      itemName: `${category === 'scheme_help' ? 'Scheme Filing Help' : category === 'document_help' ? 'Missing Documents Assist' : 'Emergency Aid'}`,
+      notes,
       category,
-      priority,
-      notes
+      priority
     });
 
     setSubmitted(true);

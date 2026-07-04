@@ -109,7 +109,7 @@ service cloud.firestore {
 
     function isValidApplicationRequest(data) {
       return data.keys().hasAll(['id', 'userId', 'citizenName', 'itemType', 'itemId', 'itemName', 'submittedAt', 'status', 'trackingId', 'updates']) &&
-             data.keys().size() <= 11 &&
+             data.keys().size() <= 15 &&
              data.id is string && data.id.size() <= 128 &&
              data.userId is string && data.userId.size() <= 128 &&
              data.citizenName is string && data.citizenName.size() <= 200 &&
@@ -123,7 +123,7 @@ service cloud.firestore {
 
     function isValidVolunteerCase(data) {
       return data.keys().hasAll(['id', 'requestId', 'citizenName', 'primaryLanguage', 'category', 'priority', 'status', 'createdAt', 'updatedAt', 'notes', 'chatHistory']) &&
-             data.keys().size() <= 12 &&
+             data.keys().size() <= 20 &&
              data.id is string && data.id.size() <= 128 &&
              data.requestId is string && data.requestId.size() <= 128 &&
              data.citizenName is string && data.citizenName.size() <= 200 &&

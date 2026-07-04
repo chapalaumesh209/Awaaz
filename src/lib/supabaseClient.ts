@@ -602,7 +602,7 @@ class FullStackClient {
     return unsubscribe;
   }
 
-  async submitRequest(request: Omit<ApplicationRequest, 'id' | 'userId' | 'submittedAt' | 'status' | 'trackingId' | 'updates'>): Promise<ApplicationRequest> {
+    async submitRequest(request: Omit<ApplicationRequest, 'id' | 'userId' | 'submittedAt' | 'status' | 'trackingId' | 'updates'>): Promise<ApplicationRequest> {
     const user = this.getActiveUser();
     const trackingId = 'HS-' + Math.floor(100000 + Math.random() * 900000);
     const requestId = 'req-' + Math.floor(100000 + Math.random() * 900000);
@@ -610,6 +610,7 @@ class FullStackClient {
       ...request,
       id: requestId,
       userId: user.id,
+      email: user.email || undefined,
       submittedAt: new Date().toISOString(),
       status: 'pending',
       trackingId,
@@ -626,17 +627,21 @@ class FullStackClient {
       this.localRequests.push(payload);
       this.saveLocalCache();
       // Auto-create volunteer case for all requests/applications
-      await this.createVolunteerCase({
-        requestId: payload.id,
-        trackingId: payload.trackingId,
-        schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
-        schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
-        citizenName: payload.citizenName || user.name || 'Citizen',
-        primaryLanguage: user.selectedLanguage,
-        category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',
-        priority: request.itemType === 'grievance' ? 'high' : 'medium',
-        notes: `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
-      });
+      try {
+        await this.createVolunteerCase({
+          requestId: payload.id,
+          trackingId: payload.trackingId,
+          schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
+          schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
+          citizenName: payload.citizenName || user.name || 'Citizen',
+          primaryLanguage: user.selectedLanguage,
+          category: request.category || (request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help'),
+          priority: request.priority || (request.itemType === 'grievance' ? 'high' : 'medium'),
+          notes: request.notes || `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
+        });
+      } catch (err) {
+        console.warn("Failed to auto-create volunteer case locally:", err);
+      }
       return payload;
     }
 
@@ -644,17 +649,21 @@ class FullStackClient {
       await setDoc(doc(db, 'requests', requestId), payload);
 
       // Auto-create volunteer case for all requests/applications
-      await this.createVolunteerCase({
-        requestId: payload.id,
-        trackingId: payload.trackingId,
-        schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
-        schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
-        citizenName: payload.citizenName || user.name || 'Citizen',
-        primaryLanguage: user.selectedLanguage,
-        category: request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help',
-        priority: request.itemType === 'grievance' ? 'high' : 'medium',
-        notes: `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
-      });
+      try {
+        await this.createVolunteerCase({
+          requestId: payload.id,
+          trackingId: payload.trackingId,
+          schemeId: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemId : undefined,
+          schemeName: (request.itemType === 'scheme' || request.itemType === 'volunteer_support') ? request.itemName : undefined,
+          citizenName: payload.citizenName || user.name || 'Citizen',
+          primaryLanguage: user.selectedLanguage,
+          category: request.category || (request.itemType === 'grievance' ? 'legal_aid' : request.itemType === 'scheme' ? 'scheme_help' : 'document_help'),
+          priority: request.priority || (request.itemType === 'grievance' ? 'high' : 'medium'),
+          notes: request.notes || `Citizen submitted request for ${request.itemType === 'scheme' ? 'Scheme approval' : 'Casework support'}: "${request.itemName}"`
+        });
+      } catch (err) {
+        console.warn("Failed to auto-create volunteer case in firestore:", err);
+      }
       return payload;
     } catch (e) {
       handleFirestoreError(e, OperationType.CREATE, `requests/${requestId}`);
@@ -665,12 +674,14 @@ class FullStackClient {
     return payload;
   }
 
-  // Active Volunteer Caseworks with Firestore
-  async createVolunteerCase(volCase: Omit<VolunteerCase, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'chatHistory'>): Promise<VolunteerCase> {
+  async createVolunteerCase(volCase: Omit<VolunteerCase, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'status' | 'chatHistory'>): Promise<VolunteerCase> {
+    const user = this.getActiveUser();
     const caseId = 'case-' + Math.floor(100000 + Math.random() * 900000);
     const payload: VolunteerCase = {
       ...volCase,
       id: caseId,
+      userId: user.id,
+      email: user.email || undefined,
       status: 'new',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -890,7 +901,12 @@ class FullStackClient {
   }
 
   // Grievances & Security Incidents with Firestore
-  async submitIncidentReport(report: Omit<IncidentReport, 'id' | 'userId' | 'submittedAt' | 'status' | 'anonymousId'>): Promise<IncidentReport> {
+    async submitIncidentReport(
+    report: Omit<IncidentReport, 'id' | 'userId' | 'submittedAt' | 'status' | 'anonymousId'>,
+    customPriority?: 'low' | 'medium' | 'high' | 'urgent',
+    customNotes?: string,
+    customItemName?: string
+  ): Promise<IncidentReport> {
     const user = this.getActiveUser();
     const anonId = report.isAnonymous ? 'ANON-' + Math.floor(100000 + Math.random() * 900000) : undefined;
     const reportId = 'rep-' + Math.floor(100000 + Math.random() * 900000);
@@ -898,6 +914,7 @@ class FullStackClient {
       ...report,
       id: reportId,
       userId: user.id,
+      email: user.email || undefined,
       anonymousId: anonId,
       submittedAt: new Date().toISOString(),
       status: 'submitted'
@@ -909,7 +926,9 @@ class FullStackClient {
         citizenName: report.isAnonymous ? 'Anonymous' : user.name,
         itemType: 'grievance',
         itemId: payload.id,
-        itemName: `Secure Grievance: ${report.title}`
+        itemName: customItemName || `Secure Grievance: ${report.title}`,
+        priority: customPriority || 'high',
+        notes: customNotes
       });
 
       this.localReports.push(payload);
@@ -925,7 +944,9 @@ class FullStackClient {
         citizenName: report.isAnonymous ? 'Anonymous' : user.name,
         itemType: 'grievance',
         itemId: payload.id,
-        itemName: `Secure Grievance: ${report.title}`
+        itemName: customItemName || `Secure Grievance: ${report.title}`,
+        priority: customPriority || 'high',
+        notes: customNotes
       });
 
       return payload;

@@ -411,8 +411,8 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
     setIsFiling(true);
 
     try {
-      // Save complaint report anonymously to backend!
-      const report = await dbClient.submitIncidentReport({
+                        // Save complaint report anonymously to backend!
+      await dbClient.submitIncidentReport({
         type: 'harassment',
         title: `Domestic Protection Appeal (${complaintTarget})`,
         description: complaintText,
@@ -422,17 +422,7 @@ Filed securely via AWAAZ Protection Gateway (No physical police visit required).
         isAnonymous: true,
         targetAuthority: complaintTarget,
         evidenceUrls: []
-      });
-
-      // Also create a volunteer case of legal_aid category so our local legal volunteers can pick it up!
-      await dbClient.createVolunteerCase({
-        requestId: 'req-anon-safety',
-        citizenName: 'Anonymous Safety Appeal',
-        primaryLanguage: currentLanguage,
-        category: 'legal_aid',
-        priority: 'urgent',
-        notes: `EMERGENCY DOMESTIC PROTECTION CASE FLAGGED: "${complaintText}". Target Authority: ${complaintTarget}.`
-      });
+      }, 'urgent', `EMERGENCY DOMESTIC PROTECTION CASE FLAGGED: "${complaintText}". Target Authority: ${complaintTarget}.`, `Domestic Protection Appeal (${complaintTarget})`);
 
       setFilingFinished(true);
     } catch (e) {

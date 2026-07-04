@@ -119,7 +119,7 @@ export const ReportView: React.FC<any> = ({ }) => {
 
     const finalTitle = title || (activeTab === 'disability_audit' ? `Disability Barrier: ${inaccessibilityType}` : 'Incident Report');
 
-    const report = await dbClient.submitIncidentReport({
+        await dbClient.submitIncidentReport({
       type: typeMapping[activeTab] as any,
       title: finalTitle,
       description,
@@ -129,15 +129,7 @@ export const ReportView: React.FC<any> = ({ }) => {
       isAnonymous,
       targetAuthority: authority,
       evidenceUrls: activeTab === 'disability_audit' ? [photoSelected] : []
-    });
-
-    // Also register a request so they can track its status in the pipeline!
-    await dbClient.submitRequest({
-      citizenName: isAnonymous ? 'Anonymous Citizen' : 'Verified Citizen',
-      itemType: 'grievance',
-      itemId: report.id,
-      itemName: `${activeTab === 'caste_discrimination' ? 'Caste Discrimination complaint' : activeTab === 'disability_audit' ? 'Disability Audit report' : 'Grievance'}: ${finalTitle}`
-    });
+    }, 'high', undefined, `${activeTab === 'caste_discrimination' ? 'Caste Discrimination complaint' : activeTab === 'disability_audit' ? 'Disability Audit report' : 'Grievance'}: ${finalTitle}`);
 
     setSubmitted(true);
     alert(`🔐 Report successfully registered in the secure ledger.\n\nAn administrative proxy ID has been issued: HS-REP-${Math.floor(1000 + Math.random() * 9000)}\nYou can track the response progress and officer audit logs in the 'Tracker' tab.`);
