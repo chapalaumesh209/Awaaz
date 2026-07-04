@@ -50,6 +50,7 @@ function AppContent() {
     selectedLanguage: 'en',
     consentGiven: false
   });
+  const [sosActive, setSosActive] = useState(false);
 
   // Load active user on start
   useEffect(() => {
@@ -238,6 +239,8 @@ function AppContent() {
         onNavigate={handleNavigate}
         currentRoute={currentRoute}
         onLogout={handleLogout}
+        sosActive={sosActive}
+        onSosTrigger={() => setSosActive(true)}
       />
 
       {/* Main Viewport Container */}
@@ -422,6 +425,72 @@ function AppContent() {
           >
             <Volume2 className="h-5 w-5" />
           </button>
+        </div>
+      )}
+
+      {/* SOS Alert Modal Box */}
+      {sosActive && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md bg-white border border-red-200 rounded-3xl p-6 shadow-2xl relative animate-in zoom-in-95 duration-200">
+            
+            {/* Header info */}
+            <div className="text-center mb-6">
+              <div className="inline-flex bg-red-50 border border-red-100 rounded-full p-3.5 mb-3 animate-pulse">
+                <ShieldAlert className="h-8 w-8 text-red-600 animate-bounce" />
+              </div>
+              <h2 className="font-serif text-2xl font-extrabold text-red-800 tracking-tight">
+                {t('DISTRESS SOS ACTIVE')}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium mt-1">
+                Emergency protocols initiated successfully
+              </p>
+            </div>
+
+            {/* Status indicators */}
+            <div className="bg-red-50/50 border border-red-100 rounded-2xl p-4 mb-6 space-y-3">
+              <div className="flex items-center space-x-3">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <p className="text-xs text-red-950 font-bold">{t('Silent alert sent to Panchayat Volunteers')}</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                <p className="text-xs text-red-950 font-bold">{t('Mock location dispatched to trusted circle')}</p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                <p className="text-xs text-red-950 font-bold">{t('Audio recording active')}</p>
+              </div>
+            </div>
+
+            {/* Badges Grid */}
+            <div className="grid grid-cols-3 gap-2.5 mb-6">
+              <div className="bg-gray-50 border border-gray-100 rounded-xl py-2 text-center">
+                <span className="block text-[9px] text-gray-400 uppercase font-bold tracking-wider">{t('GPS Link')}</span>
+                <span className="text-emerald-600 text-xs font-extrabold uppercase mt-0.5 block">{t('Active')}</span>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl py-2 text-center">
+                <span className="block text-[9px] text-gray-400 uppercase font-bold tracking-wider">{t('Audio')}</span>
+                <span className="text-red-600 text-xs font-extrabold uppercase mt-0.5 block animate-pulse">{t('Rec')}</span>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-xl py-2 text-center">
+                <span className="block text-[9px] text-gray-400 uppercase font-bold tracking-wider">{t('Contacts')}</span>
+                <span className="text-teal-700 text-xs font-extrabold uppercase mt-0.5 block">{t('Alerted')}</span>
+              </div>
+            </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setSosActive(false)}
+              className="w-full py-3.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-extrabold text-xs rounded-xl shadow-md shadow-red-600/10 tracking-widest uppercase transition-all duration-150"
+            >
+              {t('Cancel Distress Alert')}
+            </button>
+
+            <p className="text-center text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-4">
+              {t('Stay Safe • Help is on the way')}
+            </p>
+
+          </div>
         </div>
       )}
 
