@@ -264,7 +264,7 @@ function AppContent() {
       />
 
       {/* Main Viewport Container */}
-      <main className="flex-1 pb-24 sm:pb-8">
+      <main className={`flex-1 pb-24 sm:pb-8 ${showNav && isCitizenMode ? 'sm:pl-24' : ''}`}>
         {renderView()}
       </main>
 
