@@ -36,6 +36,17 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 // =========================================================================
 // API CLIENT INTEGRATED WITH GOOGLE FIREBASE/FIRESTORE BACKEND
 // =========================================================================
@@ -60,17 +71,17 @@ class FullStackClient {
   private translationTimeout: any = null;
   
   private activeUser: UserProfile = {
-    id: 'user-default',
-    name: '',
+    id: generateUUID(),
+    name: 'Citizen',
     selectedLanguage: 'en',
-    consentGiven: false,
+    consentGiven: true,
     role: 'citizen',
     createdAt: new Date().toISOString()
   };
 
   private sanitizeUserProfile(user: UserProfile): any {
     return {
-      id: user.id || 'unknown',
+      id: user.id || generateUUID(),
       name: user.name || 'Citizen',
       selectedLanguage: user.selectedLanguage || 'en',
       consentGiven: user.consentGiven !== undefined ? user.consentGiven : true,
@@ -87,10 +98,7 @@ class FullStackClient {
   // Set up Firebase Auth real-time sync
   private initializeAuthListener() {
     onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (user.isAnonymous) {
-          return;
-        }
+      if (user && !user.isAnonymous) {
         let name = user.displayName || 'Citizen';
         let role: 'citizen' | 'volunteer' | 'admin' = 'citizen';
         let selectedLanguage: LanguageCode = 'en';
@@ -119,7 +127,7 @@ class FullStackClient {
         };
         this.activeUser = updatedUser;
         localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
-      } else {
+      } else if (!user) {
         // Automatically sign in anonymously to satisfy security rules constraints
         signInAnonymously(auth).catch((err) => {
           console.log("Anonymous authentication is disabled or restricted in this environment (optional feature):", err.message || err);
@@ -152,14 +160,28 @@ class FullStackClient {
     }
   }
 
-  // Active User Configuration
+  // Active User Configuration (UUID assigned automatically)
   getActiveUser(): UserProfile {
     const saved = localStorage.getItem('awaaz_user_profile');
     if (saved) {
       try {
-        this.activeUser = JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id && parsed.id !== 'user-default') {
+          this.activeUser = parsed;
+          return this.activeUser;
+        }
       } catch (e) {}
     }
+    const newUuid = generateUUID();
+    this.activeUser = {
+      id: newUuid,
+      name: 'Citizen',
+      selectedLanguage: 'en',
+      consentGiven: true,
+      role: 'citizen',
+      createdAt: new Date().toISOString()
+    };
+    localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
     return this.activeUser;
   }
 
@@ -315,37 +337,61 @@ class FullStackClient {
 
   async logout(): Promise<void> {
     try {
-      await signOut(auth);
+      await signOut(auth).catch(() => {});
       localStorage.removeItem('awaaz_user_profile');
+      const newUuid = generateUUID();
       this.activeUser = {
-        id: 'user-default',
-        name: '',
+        id: newUuid,
+        name: 'Citizen',
         selectedLanguage: 'en',
-        consentGiven: false,
+        consentGiven: true,
         role: 'citizen',
         createdAt: new Date().toISOString()
       };
+      localStorage.setItem('awaaz_user_profile', JSON.stringify(this.activeUser));
     } catch (e) {
-      console.error("Authentication sign-out failed:", e);
+      console.error("Session reset failed:", e);
     }
   }
 
   // Profile Management with Firestore
   async getProfile(): Promise<CitizenProfile | null> {
     const user = this.getActiveUser();
-    if (user.id === 'user-default' || !auth.currentUser) {
-      return this.localProfiles[user.id] || null;
+    if (this.localProfiles[user.id]) {
+      return this.localProfiles[user.id];
     }
-    try {
-      const docRef = doc(db, 'profiles', user.id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        return docSnap.data() as CitizenProfile;
+    if (auth.currentUser) {
+      try {
+        const docRef = doc(db, 'profiles', user.id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const prof = docSnap.data() as CitizenProfile;
+          this.localProfiles[user.id] = prof;
+          return prof;
+        }
+      } catch (e) {
+        console.warn("Firestore profile fetch failed, using local profile:", e);
       }
-    } catch (e) {
-      handleFirestoreError(e, OperationType.GET, `profiles/${user.id}`);
     }
-    return this.localProfiles[user.id] || null;
+    const defaultProfile: CitizenProfile = {
+      id: user.id,
+      name: user.name || 'Citizen',
+      age: 30,
+      gender: 'female',
+      occupation: 'Agricultural / Allied Worker',
+      location: 'Hyderabad Rural',
+      state: 'Telangana',
+      primaryLanguage: user.selectedLanguage || 'en',
+      householdIncome: 48000,
+      category: 'General',
+      disabilityStatus: false,
+      existingDocuments: ['aadhaar'],
+      readinessScore: 75,
+      createdAt: new Date().toISOString()
+    };
+    this.localProfiles[user.id] = defaultProfile;
+    this.saveLocalCache();
+    return defaultProfile;
   }
 
   async saveProfile(profile: Omit<CitizenProfile, 'id' | 'createdAt'>): Promise<CitizenProfile> {
@@ -356,26 +402,19 @@ class FullStackClient {
       createdAt: new Date().toISOString()
     };
 
-    if (user.id === 'user-default' || !auth.currentUser) {
-      this.localProfiles[user.id] = payload;
-      this.setActiveUser({ name: profile.name });
-      this.saveLocalCache();
-      return payload;
-    }
-
-    try {
-      const docRef = doc(db, 'profiles', user.id);
-      await setDoc(docRef, payload);
-      
-      // Also update the active user's visual identity name
-      this.setActiveUser({ name: profile.name });
-      return payload;
-    } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, `profiles/${user.id}`);
-    }
-
     this.localProfiles[user.id] = payload;
+    this.setActiveUser({ name: profile.name });
     this.saveLocalCache();
+
+    if (auth.currentUser) {
+      try {
+        const docRef = doc(db, 'profiles', user.id);
+        await setDoc(docRef, payload);
+      } catch (e) {
+        console.warn("Firestore profile write failed, saved locally:", e);
+      }
+    }
+
     return payload;
   }
 

@@ -55,34 +55,18 @@ export const LandingView: React.FC<LandingViewProps> = ({
   };
 
   const enterCitizenMode = () => {
-    // If they are already a logged-in user or guest, go to consent/home
-    if (activeUser.id !== 'user-default') {
-      setRole('citizen');
-      if (!activeUser.consentGiven) {
-        onNavigate('consent');
-      } else {
-        onNavigate('home');
-      }
-    } else {
-      // Otherwise go to auth to choose login / sign up / guest
-      onNavigate('auth', { role: 'citizen' });
-    }
+    setRole('citizen');
+    onNavigate('home');
   };
 
   const enterVolunteerMode = () => {
-    if (activeUser.id !== 'user-default' && activeUser.role === 'volunteer') {
-      onNavigate('volunteer');
-    } else {
-      onNavigate('auth', { role: 'volunteer' });
-    }
+    setRole('volunteer');
+    onNavigate('volunteer');
   };
 
   const enterAdminMode = () => {
-    if (activeUser.id !== 'user-default' && activeUser.role === 'admin') {
-      onNavigate('admin');
-    } else {
-      onNavigate('auth', { role: 'admin' });
-    }
+    setRole('admin');
+    onNavigate('admin');
   };
 
   return (

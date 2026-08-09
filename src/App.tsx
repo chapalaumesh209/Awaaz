@@ -43,13 +43,7 @@ function AppContent() {
 
   
   
-  const [activeUser, setActiveUser] = useState<UserProfile>({
-    id: 'user-default',
-    name: '',
-    role: 'citizen',
-    selectedLanguage: 'en',
-    consentGiven: false
-  });
+  const [activeUser, setActiveUser] = useState<UserProfile>(() => dbClient.getActiveUser());
   const [sosActive, setSosActive] = useState(false);
 
   // Load active user on start
@@ -109,14 +103,9 @@ function AppContent() {
 
   const handleLogout = async () => {
     await dbClient.logout();
-    setActiveUser({
-      id: 'user-default',
-      name: '',
-      role: 'citizen',
-      selectedLanguage: currentLanguage,
-      consentGiven: false
-    });
-    handleNavigate('landing');
+    const newUser = dbClient.getActiveUser();
+    setActiveUser(newUser);
+    handleNavigate('home');
   };
 
   // Render main screen component based on current state
@@ -141,26 +130,9 @@ function AppContent() {
         );
       case 'auth':
         return (
-          <AuthView
-            initialRole={(routeParams.role as UserProfile['role']) || 'citizen'}
-            onAuthSuccess={(user) => {
-              setActiveUser(user);
-              if (user.selectedLanguage) {
-                setLanguage(user.selectedLanguage);
-              }
-              if (user.role === 'citizen') {
-                if (!user.consentGiven) {
-                  handleNavigate('consent');
-                } else {
-                  handleNavigate('home');
-                }
-              } else if (user.role === 'volunteer') {
-                handleNavigate('volunteer');
-              } else if (user.role === 'admin') {
-                handleNavigate('admin');
-              }
-            }}
-            onNavigateBack={() => handleNavigate('landing')}
+          <CitizenDashboard
+            onNavigate={handleNavigate}
+            onProfileUpdated={handleProfileUpdated}
           />
         );
       case 'home':
@@ -226,7 +198,7 @@ function AppContent() {
   };
 
   const isCitizenMode = activeUser.role === 'citizen';
-  const showNav = currentRoute !== 'landing' && currentRoute !== 'consent' && currentRoute !== 'auth';
+  const showNav = currentRoute !== 'landing' && currentRoute !== 'consent';
 
   return (
     <div className="min-h-screen bg-warm-white flex flex-col font-sans selection:bg-teal-100 selection:text-teal-900" id="awaaz-root">

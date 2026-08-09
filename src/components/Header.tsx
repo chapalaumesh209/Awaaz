@@ -99,19 +99,11 @@ export const Header: React.FC<HeaderProps> = ({
                   setRole('citizen');
                   onNavigate('home');
                 } else if (nextRole === 'volunteer') {
-                  if (activeUser.id !== 'user-default' && activeUser.role === 'volunteer') {
-                    setRole('volunteer');
-                    onNavigate('volunteer');
-                  } else {
-                    onNavigate('auth', { role: 'volunteer' });
-                  }
+                  setRole('volunteer');
+                  onNavigate('volunteer');
                 } else if (nextRole === 'admin') {
-                  if (activeUser.id !== 'user-default' && activeUser.role === 'admin') {
-                    setRole('admin');
-                    onNavigate('admin');
-                  } else {
-                    onNavigate('auth', { role: 'admin' });
-                  }
+                  setRole('admin');
+                  onNavigate('admin');
                 }
               }}
               className="flex h-9 items-center space-x-1.5 rounded-xl bg-teal-800 px-3 text-xs font-semibold text-white hover:bg-teal-950 active:scale-95"
@@ -121,18 +113,6 @@ export const Header: React.FC<HeaderProps> = ({
                 {activeUser.role === 'citizen' ? t('Citizen') : activeUser.role === 'volunteer' ? t('Volunteer') : t('Admin')}
               </span>
             </button>
-
-            {/* Logout button for authenticated sessions */}
-            {activeUser.id !== 'user-default' && (
-              <button
-                onClick={onLogout}
-                className="flex h-9 items-center justify-center rounded-xl bg-red-50 border border-red-100 hover:bg-red-100 text-red-600 px-3 text-xs font-bold active:scale-95 transition-all"
-                title="Sign Out Session"
-              >
-                <LogOut className="h-4 w-4 mr-1 sm:mr-0 md:mr-1" />
-                <span className="hidden md:inline">{t('Sign Out')}</span>
-              </button>
-            )}
           </div>
 
         </div>
