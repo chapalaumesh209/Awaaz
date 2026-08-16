@@ -131,6 +131,15 @@ export const LandingView: React.FC<LandingViewProps> = ({
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </button>
 
+          <button
+            onClick={() => onNavigate('auth')}
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 rounded-2xl bg-white border-2 border-teal-600 text-teal-700 font-semibold text-base py-4 px-12 shadow-md hover:bg-teal-50 hover:shadow-lg transition-all duration-200 active:scale-95 group"
+            id="login-signup-btn"
+          >
+            <Lock className="h-4 w-4" />
+            <span>{t("Login / Sign Up")}</span>
+          </button>
+
         </div>
 
         {/* National Welfare Impact Metrics */}

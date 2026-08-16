@@ -130,9 +130,19 @@ function AppContent() {
         );
       case 'auth':
         return (
-          <CitizenDashboard
-            onNavigate={handleNavigate}
-            onProfileUpdated={handleProfileUpdated}
+          <AuthView
+            onAuthSuccess={(user) => {
+              setActiveUser(user);
+              setLanguage(user.selectedLanguage);
+              if (user.role === 'volunteer') {
+                handleNavigate('volunteer');
+              } else if (user.role === 'admin') {
+                handleNavigate('admin');
+              } else {
+                handleNavigate('home');
+              }
+            }}
+            onNavigateBack={() => handleNavigate('landing')}
           />
         );
       case 'home':
